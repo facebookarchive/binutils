@@ -2312,6 +2312,13 @@ enable_break (struct svr4_info *info, int from_tty)
 	  so = so->next;
 	}
 
+      if (load_addr_found && !load_addr)
+	{
+	  // We occasionally find a garbage load_addr on Android
+	  // see https://code.google.com/p/android/issues/detail?id=34856
+	  load_addr_found = 0;
+	}
+
       /* If we were not able to find the base address of the loader
          from our so_list, then try using the AT_BASE auxilliary entry.  */
       if (!load_addr_found)
