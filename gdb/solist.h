@@ -77,6 +77,17 @@ struct so_list
     CORE_ADDR addr_low, addr_high;
   };
 
+enum describe_lm_info_type {
+  describe_lm_info_int32,
+  describe_lm_info_core_addr,
+};
+
+typedef void (*describe_lm_info_callback)
+  (void *opaque,
+   const char *name,
+   enum describe_lm_info_type type,
+   ...);
+
 struct target_so_ops
   {
     /* Adjust the section binding addresses by the base address at
@@ -129,6 +140,11 @@ struct target_so_ops
     /* Find and open shared library binary file.  */
     bfd *(*bfd_open) (char *pathname);
 
+    /* Find and open shared library binary file.
+       Optional variant that accepts an so_list
+       describing the file to load. */
+    bfd *(*bfd_open2) (char *pathname, struct so_list *so);
+
     /* Optional extra hook for finding and opening a solib.
        If TEMP_PATHNAME is non-NULL: If the file is successfully opened a
        pointer to a malloc'd and realpath'd copy of SONAME is stored there,
@@ -168,6 +184,12 @@ struct target_so_ops
        NULL, in which case no specific preprocessing is necessary
        for this target.  */
     void (*handle_event) (void);
+
+    /* Describe an otherwise-opaque lm_info structure
+       for the benefit of extension solib-loading hooks.  */
+    void (*describe_lm_info) (describe_lm_info_callback cb,
+                              void *opaque,
+                              struct lm_info *lm_info);
   };
 
 /* Free the memory associated with a (so_list *).  */
@@ -177,7 +199,9 @@ void free_so (struct so_list *so);
 struct so_list *master_so_list (void);
 
 /* Find shared library binary file.  */
-extern char *solib_find (char *in_pathname, int *fd);
+extern char *solib_find (char *in_pathname,
+                         struct so_list *so,
+                         int *fd);
 
 /* Open BFD for shared library file.  */
 extern bfd *solib_bfd_fopen (char *pathname, int fd);
@@ -185,8 +209,9 @@ extern bfd *solib_bfd_fopen (char *pathname, int fd);
 /* Find solib binary file and open it.  */
 extern bfd *solib_bfd_open (char *in_pathname);
 
-/* FIXME: gdbarch needs to control this variable.  */
-extern struct target_so_ops *current_target_so_ops;
+/* Find solib binary file and open it, with
+   additional context.  */
+extern bfd *solib_bfd_open2 (char *in_pathname, struct so_list *so);
 
 /* Handler for library-specific global symbol lookup in solib.c.  */
 struct symbol *solib_global_lookup (struct objfile *objfile,

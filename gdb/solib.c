@@ -46,11 +46,14 @@
 #include "filesystem.h"
 #include "gdb_bfd.h"
 #include "filestuff.h"
+#include "extension.h"
 
 /* Architecture-specific operations.  */
 
 /* Per-architecture data key.  */
 static struct gdbarch_data *solib_data;
+
+extern struct target_so_ops solib_target_so_ops;
 
 static void *
 solib_init (struct obstack *obstack)
@@ -58,11 +61,11 @@ solib_init (struct obstack *obstack)
   struct target_so_ops **ops;
 
   ops = OBSTACK_ZALLOC (obstack, struct target_so_ops *);
-  *ops = current_target_so_ops;
+  *ops = &solib_target_so_ops;
   return ops;
 }
 
-static const struct target_so_ops *
+const struct target_so_ops *
 solib_ops (struct gdbarch *gdbarch)
 {
   const struct target_so_ops **ops = gdbarch_data (gdbarch, solib_data);
@@ -82,10 +85,6 @@ set_solib_ops (struct gdbarch *gdbarch, const struct target_so_ops *new_ops)
 
 
 /* external data declarations */
-
-/* FIXME: gdbarch needs to control this variable, or else every
-   configuration needs to call set_solib_ops.  */
-struct target_so_ops *current_target_so_ops;
 
 /* List of known shared objects */
 #define so_list_head current_program_space->so_list
@@ -140,7 +139,7 @@ show_solib_search_path (struct ui_file *file, int from_tty,
 */
 
 char *
-solib_find (char *in_pathname, int *fd)
+solib_find (char *in_pathname, struct so_list *so, int *fd)
 {
   const struct target_so_ops *ops = solib_ops (target_gdbarch ());
   int found_file = -1;
@@ -414,13 +413,27 @@ solib_bfd_fopen (char *pathname, int fd)
 bfd *
 solib_bfd_open (char *pathname)
 {
+  return solib_bfd_open2 (pathname, NULL);
+}
+
+bfd *
+solib_bfd_open2 (char *pathname, struct so_list *so)
+{
   char *found_pathname;
   int found_file;
   bfd *abfd;
   const struct bfd_arch_info *b;
 
+  found_file = -1;
+  found_pathname = invoke_solib_find_hook (pathname, so);
+
   /* Search for shared library file.  */
-  found_pathname = solib_find (pathname, &found_file);
+  if (found_pathname == NULL)
+    {
+      errno = 0;
+      found_pathname = solib_find (pathname, so, &found_file);
+    }
+
   if (found_pathname == NULL)
     {
       /* Return failure if the file could not be found, so that we can
@@ -475,7 +488,11 @@ solib_map_sections (struct so_list *so)
 
   filename = tilde_expand (so->so_name);
   old_chain = make_cleanup (xfree, filename);
-  abfd = ops->bfd_open (filename);
+  if (ops->bfd_open2)
+    abfd = ops->bfd_open2 (filename, so);
+  else
+    abfd = ops->bfd_open (filename);
+
   do_cleanups (old_chain);
 
   if (abfd == NULL)
@@ -754,7 +771,7 @@ update_solib_list (int from_tty, struct target_ops *target)
 	  else
 	    {
 	      if (! filename_cmp (gdb->so_original_name, i->so_original_name))
-		break;	      
+		break;
 	    }
 
 	  i_link = &i->next;
@@ -1061,7 +1078,7 @@ info_sharedlibrary_command (char *pattern, int from_tty)
 	  ui_out_field_string (uiout, "syms-read", "Yes (*)");
 	}
       else
-	ui_out_field_string (uiout, "syms-read", 
+	ui_out_field_string (uiout, "syms-read",
 			     so->symbols_loaded ? "Yes" : "No");
 
       ui_out_field_string (uiout, "name", so->so_name);
@@ -1347,13 +1364,13 @@ reload_shared_libraries (char *ignored, int from_tty,
 
   ops = solib_ops (target_gdbarch ());
 
-  /* Creating inferior hooks here has two purposes.  First, if we reload 
+  /* Creating inferior hooks here has two purposes.  First, if we reload
      shared libraries then the address of solib breakpoint we've computed
      previously might be no longer valid.  For example, if we forgot to set
      solib-absolute-prefix and are setting it right now, then the previous
      breakpoint address is plain wrong.  Second, installing solib hooks
      also implicitly figures were ld.so is and loads symbols for it.
-     Absent this call, if we've just connected to a target and set 
+     Absent this call, if we've just connected to a target and set
      solib-absolute-prefix or solib-search-path, we'll lose all information
      about ld.so.  */
   if (target_has_execution)

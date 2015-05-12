@@ -33,6 +33,7 @@
 #include "python.h"
 #include "extension-priv.h"
 #include "cli/cli-utils.h"
+#include "solist.h"
 #include <ctype.h>
 
 /* Declared constants and enum for python stack printing.  */
@@ -149,6 +150,10 @@ static void gdbpy_set_quit_flag (const struct extension_language_defn *);
 static int gdbpy_check_quit_flag (const struct extension_language_defn *);
 static enum ext_lang_rc gdbpy_before_prompt_hook
   (const struct extension_language_defn *, const char *current_gdb_prompt);
+static char* gdbpy_invoke_solib_find_hook
+  (const struct extension_language_defn *extlang,
+   const char *original_name,
+   struct so_list *so);
 
 /* The interface between gdb proper and loading of python scripts.  */
 
@@ -192,7 +197,8 @@ const struct extension_language_ops python_extension_ops =
   gdbpy_free_xmethod_worker_data,
   gdbpy_get_matching_xmethod_workers,
   gdbpy_get_xmethod_arg_types,
-  gdbpy_invoke_xmethod
+  gdbpy_invoke_xmethod,
+  gdbpy_invoke_solib_find_hook,
 };
 
 /* Architecture and language to be used in callbacks from
@@ -1528,6 +1534,165 @@ python_command (char *arg, int from_tty)
 
 
 
+/* Python load hook mechanism. */
+
+static PyObject *solib_find_hook = NULL;
+
+static PyObject *
+gdbpy_get_solib_find_hook (PyObject *self, PyObject *args)
+{
+  if (solib_find_hook == NULL)
+    Py_RETURN_NONE;
+
+  Py_INCREF (solib_find_hook);
+  return solib_find_hook;
+}
+
+static PyObject *
+gdbpy_set_solib_find_hook (PyObject *self, PyObject *args)
+{
+  PyObject *new_solib_find_hook;
+
+  if (!PyArg_ParseTuple (args, "O", &new_solib_find_hook))
+    return NULL;
+
+  if (solib_find_hook != NULL)
+    {
+      Py_DECREF (solib_find_hook);
+      solib_find_hook = NULL;
+    }
+
+  if (new_solib_find_hook != Py_None) {
+    solib_find_hook = new_solib_find_hook;
+    Py_INCREF (solib_find_hook);
+  }
+
+  Py_RETURN_NONE;
+}
+
+struct lm_info_desc_ctx {
+  PyObject* dict;
+  int error;
+};
+
+static void
+gdbpy_describe_lm_info_callback (
+  void *opaque,
+  const char *name,
+  enum describe_lm_info_type type,
+  ...)
+{
+  va_list args;
+  PyObject* value;
+  CORE_ADDR core_addr;
+  struct lm_info_desc_ctx* ctx = opaque;
+
+  if (ctx->error)
+    return;
+
+  switch (type) {
+  case describe_lm_info_core_addr:
+    va_start (args, type);
+    core_addr = va_arg (args, CORE_ADDR);
+    va_end (args);
+    value = PyLong_FromUnsignedLongLong ((unsigned long long) core_addr);
+    if (value == NULL)
+      {
+	ctx->error = 1;
+	return;
+      }
+
+    make_cleanup_py_decref (value);
+    if (PyDict_SetItemString (ctx->dict, name, value) == -1)
+      {
+	ctx->error = 1;
+	return;
+      }
+
+    break;
+
+  default:
+    error (_ ("Unknown lm_info description type %d"), (int) type);
+  }
+}
+
+static char *
+gdbpy_invoke_solib_find_hook
+  (const struct extension_language_defn *extlang,
+   const char *original_name,
+   struct so_list *so)
+{
+  const struct target_so_ops *ops;
+  struct lm_info_desc_ctx ctx;
+  PyObject *py_so;
+  PyObject *py_ret;
+  struct cleanup *cleanup;
+  char* ret = NULL;
+
+  if (!solib_find_hook)
+    return NULL;
+
+  cleanup = ensure_python_env (get_current_arch (), current_language);
+
+  ops = solib_ops (target_gdbarch ());
+  if (!ops)
+    goto done;
+
+  py_so = PyDict_New ();
+  if (py_so == NULL)
+    {
+      gdbpy_print_stack ();
+      error (_ ("Error while executing Python code."));
+    }
+
+  make_cleanup_py_decref (py_so);
+
+  memset (&ctx, 0, sizeof (ctx));
+  ctx.dict = py_so;
+  if (so && so->lm_info && ops->describe_lm_info)
+    ops->describe_lm_info (
+      gdbpy_describe_lm_info_callback,
+      &ctx,
+      so->lm_info);
+
+  if (ctx.error)
+    {
+      gdbpy_print_stack ();
+      error (_ ("Error while describing lm_info."));
+    }
+
+  py_ret = PyObject_CallFunction (
+    solib_find_hook,
+    "sO",
+    original_name,
+    py_so);
+
+  if (py_ret == NULL)
+    {
+      gdbpy_print_stack ();
+      error (_ ("Error while executing Python code."));
+    }
+
+  if (py_ret != Py_None)
+    {
+      ret = gdbpy_obj_to_string (py_ret);
+      if (ret == NULL)
+	{
+	  gdbpy_print_stack ();
+	  error (_ ("Error while executing Python code."));
+	}
+    }
+
+  make_cleanup_py_decref (py_ret);
+
+ done:
+
+  do_cleanups (cleanup);
+  return ret;
+}
+
+
+
 /* Lists for 'set python' commands.  */
 
 static struct cmd_list_element *user_set_python_list;
@@ -2040,6 +2205,10 @@ Return the selected inferior object." },
   { "inferiors", gdbpy_inferiors, METH_NOARGS,
     "inferiors () -> (gdb.Inferior, ...).\n\
 Return a tuple containing all inferiors." },
+  { "get_solib_find_hook", gdbpy_get_solib_find_hook, METH_NOARGS,
+    "Get the current solib find hook." },
+  { "set_solib_find_hook", gdbpy_set_solib_find_hook, METH_VARARGS,
+    "Get the current solib find hook." },
   {NULL, NULL, 0, NULL}
 };
 

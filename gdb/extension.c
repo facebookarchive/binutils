@@ -1004,6 +1004,33 @@ free_xmethod_worker_vec (void *vec)
   VEC_free (xmethod_worker_ptr, v);
 }
 
+/* Called before we try to find a disk file backing a shared object
+   loaded in our target process.  */
+char *
+invoke_solib_find_hook (const char *original_name, struct so_list *so)
+{
+  int i;
+  const struct extension_language_defn *extlang;
+  char* new_name = NULL;
+
+  ALL_ENABLED_EXTENSION_LANGUAGES (i, extlang)
+    {
+      if (extlang->ops->invoke_solib_find_hook)
+	{
+	  new_name = extlang->ops->invoke_solib_find_hook (
+	    extlang,
+	    original_name,
+	    so);
+
+	  if (new_name != NULL)
+	    break;
+	}
+    }
+
+  return new_name;
+}
+
+
 /* Called via an observer before gdb prints its prompt.
    Iterate over the extension languages giving them a chance to
    change the prompt.  The first one to change the prompt wins,

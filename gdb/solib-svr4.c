@@ -3228,6 +3228,30 @@ elf_lookup_lib_symbol (struct objfile *objfile,
   return lookup_global_symbol_from_objfile (objfile, name, domain);
 }
 
+void
+svr4_describe_lm_info (describe_lm_info_callback cb,
+		       void *opaque,
+		       struct lm_info *lm_info);
+
+void
+svr4_describe_lm_info (describe_lm_info_callback cb,
+		       void *opaque,
+		       struct lm_info *lm_info)
+{
+    if (lm_info->l_addr_p)
+	cb (opaque, "l_addr", describe_lm_info_core_addr, lm_info->l_addr);
+
+    cb (opaque, "l_addr_inferior",
+	describe_lm_info_core_addr,
+	lm_info->l_addr_inferior);
+
+    cb (opaque, "l_ld", describe_lm_info_core_addr, lm_info->l_ld);
+    cb (opaque, "l_next", describe_lm_info_core_addr, lm_info->l_next);
+    cb (opaque, "l_prev", describe_lm_info_core_addr, lm_info->l_prev);
+    cb (opaque, "l_name", describe_lm_info_core_addr, lm_info->l_name);
+    cb (opaque, "lm_addr", describe_lm_info_core_addr, lm_info->lm_addr);
+}
+
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */
 
 void
@@ -3247,9 +3271,11 @@ _initialize_svr4_solib (void)
   svr4_so_ops.open_symbol_file_object = open_symbol_file_object;
   svr4_so_ops.in_dynsym_resolve_code = svr4_in_dynsym_resolve_code;
   svr4_so_ops.bfd_open = solib_bfd_open;
+  svr4_so_ops.bfd_open2 = solib_bfd_open2;
   svr4_so_ops.lookup_lib_global_symbol = elf_lookup_lib_symbol;
   svr4_so_ops.same = svr4_same;
   svr4_so_ops.keep_data_in_core = svr4_keep_data_in_core;
   svr4_so_ops.update_breakpoints = svr4_update_solib_event_breakpoints;
   svr4_so_ops.handle_event = svr4_handle_solib_event;
+  svr4_so_ops.describe_lm_info = svr4_describe_lm_info;
 }

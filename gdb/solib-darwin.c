@@ -586,7 +586,7 @@ darwin_bfd_open (char *pathname)
   bfd *res;
 
   /* Search for shared library file.  */
-  found_pathname = solib_find (pathname, &found_file);
+  found_pathname = solib_find (pathname, NULL, &found_file);
   if (found_pathname == NULL)
     perror_with_name (pathname);
 

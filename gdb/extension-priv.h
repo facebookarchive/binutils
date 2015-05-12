@@ -307,6 +307,16 @@ struct extension_language_ops
      struct value *object,
      struct value **args,
      int nargs);
+
+  /* Give an extension language an opportunity to change the filename
+     of a shared object before passing it through the usual
+     file-location system.  ORIGINAL_NAME is the name of the shared
+     object directly from the target process.  Return the malloced new
+     name, or NULL to continue normally.  */
+  char * (*invoke_solib_find_hook)
+    (const struct extension_language_defn *extlang,
+     const char *original_name,
+     struct so_list *so);
 };
 
 /* State necessary to restore a signal handler to its previous value.  */

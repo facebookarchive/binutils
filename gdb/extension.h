@@ -260,4 +260,7 @@ extern xmethod_worker_vec *get_matching_xmethod_workers
 
 extern struct type **get_xmethod_arg_types (struct xmethod_worker *, int *);
 
+struct so_list;
+extern char *invoke_solib_find_hook (const char *, struct so_list *so);
+
 #endif /* EXTENSION_H */
