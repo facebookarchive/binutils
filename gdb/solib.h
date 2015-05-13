@@ -47,6 +47,11 @@ extern void solib_create_inferior_hook (int from_tty);
 
 extern char *solib_name_from_address (struct program_space *, CORE_ADDR);
 
+/* If aDDR lies in a shared library, return its original name.  */
+
+extern char *solib_original_name_from_address (struct program_space *,
+                                               CORE_ADDR);
+
 /* Return 1 if ADDR lies within SOLIB.  */
 
 extern int solib_contains_address_p (const struct so_list *, CORE_ADDR);

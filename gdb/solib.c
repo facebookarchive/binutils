@@ -1146,6 +1146,19 @@ solib_name_from_address (struct program_space *pspace, CORE_ADDR address)
   return (0);
 }
 
+char *
+solib_original_name_from_address (struct program_space *pspace,
+				  CORE_ADDR address)
+{
+  struct so_list *so = NULL;
+
+  for (so = pspace->so_list; so; so = so->next)
+    if (solib_contains_address_p (so, address))
+      return (so->so_original_name);
+
+  return (0);
+}
+
 /* Return whether the data starting at VADDR, size SIZE, must be kept
    in a core file for shared libraries loaded before "gcore" is used
    to be handled correctly when the core file is loaded.  This only

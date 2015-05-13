@@ -1235,8 +1235,15 @@ print_frame (struct frame_info *frame, int print_level,
 
   if (pc_p && (funname == NULL || sal.symtab == NULL))
     {
-      char *lib = solib_name_from_address (get_frame_program_space (frame),
-					   get_frame_pc (frame));
+      char* lib;
+
+      if (ui_out_is_mi_like_p (uiout))
+	lib = solib_name_from_address (get_frame_program_space (frame),
+				       get_frame_pc (frame));
+      else
+	lib = solib_original_name_from_address (
+	  get_frame_program_space (frame),
+	  get_frame_pc (frame));
 
       if (lib)
 	{
