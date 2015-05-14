@@ -21,6 +21,7 @@
 #define COMMON_LINUX_OSDATA_H
 
 extern int linux_common_core_of_thread (ptid_t ptid);
+extern char *linux_common_name_of_thread (ptid_t ptid);
 extern LONGEST linux_common_xfer_osdata (const char *annex, gdb_byte *readbuf,
 					 ULONGEST offset, ULONGEST len);
 

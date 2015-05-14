@@ -195,6 +195,38 @@ linux_proc_pid_get_ns (pid_t pid, const char *ns)
   return NULL;
 }
 
+char *
+linux_proc_tid_get_name (ptid_t ptid)
+{
+  char buf[100];
+  char commbuf[64];
+  char* commval;
+  FILE *comm_file;
+
+  xsnprintf (buf, sizeof (buf), "/proc/%ld/task/%ld/comm",
+	     (long) ptid_get_pid (ptid),
+	     (long) (ptid_lwp_p (ptid)
+		     ? ptid_get_lwp (ptid)
+		     : ptid_get_pid (ptid)));
+
+  comm_file = gdb_fopen_cloexec (buf, "r");
+  if (comm_file == NULL)
+    return NULL;
+
+  commval = fgets (commbuf, sizeof (commbuf), comm_file);
+  fclose (comm_file);
+
+  if (commval)
+    {
+      if (commval[0] != '\0' && commval[strlen (commval) - 1] == '\n')
+	commval[strlen (commval) - 1] = '\0';
+      return xstrdup (commval);
+    }
+
+  return NULL;
+}
+
+
 /* See linux-procfs.h.  */
 
 void

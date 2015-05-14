@@ -382,6 +382,7 @@ struct remote_state
 struct private_thread_info
 {
   char *extra;
+  char *name;
   int core;
 };
 
@@ -389,6 +390,7 @@ static void
 free_private_thread_info (struct private_thread_info *info)
 {
   xfree (info->extra);
+  xfree (info->name);
   xfree (info);
 }
 
@@ -1915,6 +1917,17 @@ remote_thread_alive (struct target_ops *ops, ptid_t ptid)
   return (rs->buf[0] == 'O' && rs->buf[1] == 'K');
 }
 
+/* Return a pointer to a thread name if we know it and NULL otherwise.
+   The thread_info object owns the memory for the name.  */
+static char*
+remote_thread_name (struct target_ops *ops, struct thread_info *info)
+{
+  if (info && info->priv)
+    return info->priv->name;
+
+  return NULL;
+}
+
 /* About these extended threadlist and threadinfo packets.  They are
    variable length packets but, the fields within them are often fixed
    length.  They are redundent enough to send over UDP as is the
@@ -2587,6 +2600,9 @@ typedef struct thread_item
   /* The thread's extra info.  May be NULL.  */
   char *extra;
 
+  /* The thread's name.  May be NULL.  */
+  char *name;
+
   /* The core the thread was running on.  -1 if not known.  */
   int core;
 } thread_item_t;
@@ -2612,7 +2628,10 @@ clear_threads_listing_context (void *p)
   struct thread_item *item;
 
   for (i = 0; VEC_iterate (thread_item_t, context->items, i, item); ++i)
-    xfree (item->extra);
+    {
+      xfree (item->extra);
+      xfree (item->name);
+    }
 
   VEC_free (thread_item_t, context->items);
 }
@@ -2683,6 +2702,9 @@ start_thread (struct gdb_xml_parser *parser,
   else
     item.core = -1;
 
+  attr = xml_find_attribute (attributes, "name");
+  item.name = attr ? xstrdup (attr->value) : NULL;
+
   item.extra = 0;
 
   VEC_safe_push (thread_item_t, data->items, &item);
@@ -2702,6 +2724,7 @@ end_thread (struct gdb_xml_parser *parser,
 const struct gdb_xml_attribute thread_attributes[] = {
   { "id", GDB_XML_AF_NONE, NULL, NULL },
   { "core", GDB_XML_AF_OPTIONAL, gdb_xml_parse_attr_ulongest, NULL },
+  { "name", GDB_XML_AF_OPTIONAL, NULL, NULL },
   { NULL, GDB_XML_AF_NONE, NULL, NULL }
 };
 
@@ -2875,6 +2898,8 @@ remote_update_thread_list (struct target_ops *ops)
 	      info->core = item->core;
 	      info->extra = item->extra;
 	      item->extra = NULL;
+	      info->name = item->name;
+	      item->name = NULL;
 	    }
 	}
     }
@@ -11729,6 +11754,7 @@ Specify the serial device it is connected to\n\
   remote_ops.to_pass_signals = remote_pass_signals;
   remote_ops.to_program_signals = remote_program_signals;
   remote_ops.to_thread_alive = remote_thread_alive;
+  remote_ops.to_thread_name = remote_thread_name;
   remote_ops.to_update_thread_list = remote_update_thread_list;
   remote_ops.to_pid_to_str = remote_pid_to_str;
   remote_ops.to_extra_thread_info = remote_threads_extra_info;

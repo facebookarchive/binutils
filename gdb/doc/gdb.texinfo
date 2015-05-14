@@ -39111,17 +39111,19 @@ the following structure:
 @smallexample
 <?xml version="1.0"?>
 <threads>
-    <thread id="id" core="0">
+    <thread id="id" core="0" name="name">
     ... description ...
     </thread>
 </threads>
 @end smallexample
 
 Each @samp{thread} element must have the @samp{id} attribute that
-identifies the thread (@pxref{thread-id syntax}).  The
-@samp{core} attribute, if present, specifies which processor core
-the thread was last executing on.  The content of the of @samp{thread}
-element is interpreted as human-readable auxilliary information.
+identifies the thread (@pxref{thread-id syntax}).  The @samp{core}
+attribute, if present, specifies which processor core the thread was
+last executing on.  The @samp{name} attribute, if present, specifies
+the human-readable name of the thread.  The content of the of
+@samp{thread} element is interpreted as human-readable
+auxilliary information.
 
 @node Traceframe Info Format
 @section Traceframe Info Format

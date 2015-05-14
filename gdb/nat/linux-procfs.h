@@ -58,6 +58,11 @@ extern int linux_proc_pid_is_gone (pid_t pid);
 
 extern char *linux_proc_pid_get_ns (pid_t pid, const char *ns);
 
+/* Return an opaque string giving the thread's name or NULL if the
+   information is unavailable.  The returned string must be released
+   with xfree.  */
+extern char *linux_proc_tid_get_name (ptid_t ptid);
+
 /* Callback function for linux_proc_attach_tgid_threads.  If the PTID
    thread is not yet known, try to attach to it and return true,
    otherwise return false.  */

@@ -6255,6 +6255,7 @@ static struct target_ops linux_target_ops = {
   NULL,
 #endif
   linux_supports_range_stepping,
+  linux_common_name_of_thread,
 };
 
 static void

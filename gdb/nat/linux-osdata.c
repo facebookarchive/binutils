@@ -34,6 +34,7 @@
 
 #include "xml-utils.h"
 #include "buffer.h"
+#include "linux-procfs.h"
 #include <dirent.h>
 #include <sys/stat.h>
 #include "filestuff.h"
@@ -107,6 +108,22 @@ linux_common_core_of_thread (ptid_t ptid)
   fclose (f);
 
   return core;
+}
+
+char *
+linux_common_name_of_thread (ptid_t ptid)
+{
+  static char buf[16 /*kernel maximum */ + 1];
+  char* name = linux_proc_tid_get_name (ptid);
+  if (name)
+    {
+      snprintf (buf, sizeof (buf), "%s", name);
+      free (name);
+    }
+  else
+    buf[0] = '\0';
+
+  return buf;
 }
 
 /* Finds the command-line of process PID and copies it into COMMAND.
