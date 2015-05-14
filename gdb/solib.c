@@ -1325,7 +1325,7 @@ reload_shared_libraries_1 (int from_tty)
 
       filename = tilde_expand (so->so_original_name);
       make_cleanup (xfree, filename);
-      abfd = solib_bfd_open (filename);
+      abfd = solib_bfd_open2 (filename, so);
       if (abfd != NULL)
 	{
 	  found_pathname = xstrdup (bfd_get_filename (abfd));
