@@ -1950,6 +1950,7 @@ message == an error message without a stack will be printed."),
       || gdbpy_initialize_inferior_call_post_event () < 0
       || gdbpy_initialize_register_changed_event () < 0
       || gdbpy_initialize_memory_changed_event () < 0
+      || gdbpy_initialize_solib_about_to_search_event () < 0
       || gdbpy_initialize_exited_event () < 0
       || gdbpy_initialize_thread_event () < 0
       || gdbpy_initialize_new_objfile_event ()  < 0

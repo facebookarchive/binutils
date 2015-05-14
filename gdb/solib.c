@@ -825,6 +825,8 @@ update_solib_list (int from_tty, struct target_ops *target)
 
       struct so_list *i;
 
+      observer_notify_solib_about_to_search (current_inferior ());
+
       /* Add the new shared objects to GDB's list.  */
       *gdb_link = inferior;
 

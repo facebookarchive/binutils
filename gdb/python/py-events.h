@@ -50,6 +50,7 @@ typedef struct
   eventregistry_object *inferior_call;
   eventregistry_object *memory_changed;
   eventregistry_object *register_changed;
+  eventregistry_object *solib_about_to_search;
 
   PyObject *module;
 

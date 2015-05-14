@@ -136,4 +136,6 @@ extern int evpy_add_attribute (PyObject *event,
 int gdbpy_initialize_event_generic (PyTypeObject *type, char *name)
   CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION;
 
+extern int emit_solib_about_to_search (struct inferior *inf);
+
 #endif /* GDB_PY_EVENT_H */

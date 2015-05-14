@@ -233,6 +233,27 @@ python_new_objfile (struct objfile *objfile)
   do_cleanups (cleanup);
 }
 
+/* Callback used to notify Python listeners that the GDB core is about
+   to search for new shared libraries, and that now would be a good
+   time to flush caches used for that purpose.  */
+static void
+python_solib_about_to_search (struct inferior *inferior)
+{
+  struct cleanup *cleanup;
+  const LONGEST *exit_code = NULL;
+
+  if (!gdb_python_initialized)
+    return;
+
+  cleanup = ensure_python_env (target_gdbarch (), current_language);
+
+  if (emit_solib_about_to_search (inferior) < 0)
+    gdbpy_print_stack ();
+
+  do_cleanups (cleanup);
+
+}
+
 /* Return a reference to the Python object of type Inferior
    representing INFERIOR.  If the object has already been created,
    return it and increment the reference count,  otherwise, create it.
@@ -874,6 +895,7 @@ gdbpy_initialize_inferior (void)
   observer_attach_register_changed (python_on_register_change);
   observer_attach_inferior_exit (python_inferior_exit);
   observer_attach_new_objfile (python_new_objfile);
+  observer_attach_solib_about_to_search (python_solib_about_to_search);
 
   membuf_object_type.tp_new = PyType_GenericNew;
   if (PyType_Ready (&membuf_object_type) < 0)

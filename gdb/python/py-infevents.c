@@ -28,6 +28,8 @@ extern PyTypeObject register_changed_event_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("event_object");
 extern PyTypeObject memory_changed_event_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("event_object");
+extern PyTypeObject solib_about_to_search_event_object_type
+    CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("event_object");
 
 /* Construct either a gdb.InferiorCallPreEvent or a
    gdb.InferiorCallPostEvent. */
@@ -233,6 +235,49 @@ emit_register_changed_event (struct frame_info* frame, int regnum)
   return -1;
 }
 
+/* Callback when we're about to search for new shared libraries. */
+
+static PyObject*
+create_solib_about_to_search_event_object (struct inferior *inf)
+{
+  PyObject *solib_about_to_search_event;
+  PyObject *inf_obj = NULL;
+
+  solib_about_to_search_event = create_event_object (&solib_about_to_search_event_object_type);
+
+  if (!solib_about_to_search_event)
+    goto fail;
+
+  inf_obj = inferior_to_inferior_object (inf);
+  if (!inf_obj || evpy_add_attribute (solib_about_to_search_event,
+                                      "inferior",
+                                      inf_obj) < 0)
+    goto fail;
+  Py_DECREF (inf_obj);
+
+  return solib_about_to_search_event;
+
+ fail:
+  Py_XDECREF (inf_obj);
+  Py_XDECREF (solib_about_to_search_event);
+  return NULL;
+}
+
+int
+emit_solib_about_to_search (struct inferior *inf)
+{
+  PyObject *event;
+
+  if (evregpy_no_listeners_p (gdb_py_events.solib_about_to_search))
+    return 0;
+
+  event = create_solib_about_to_search_event_object (inf);
+
+  if (event)
+    return evpy_emit_event (event, gdb_py_events.solib_about_to_search);
+
+  return -1;
+}
 
 GDBPY_NEW_EVENT_TYPE (inferior_call_pre,
 		      "gdb.InferiorCallPreEvent",
@@ -256,4 +301,10 @@ GDBPY_NEW_EVENT_TYPE (memory_changed,
 		      "gdb.MemoryChangedEvent",
 		      "MemoryChangedEvent",
 		      "GDB memory change event object",
+		      event_object_type);
+
+GDBPY_NEW_EVENT_TYPE (solib_about_to_search,
+		      "gdb.SolibAboutToSearchEvent",
+		      "SolibAboutToSearchEvent",
+		      "GDB solib search notification event object",
 		      event_object_type);

@@ -148,6 +148,11 @@ The status of process record for inferior @var{inferior} in
 @var{started} is false.
 @end deftypefun
 
+@deftypefun void solib_about_to_search (struct inferior *@var{inferior})
+The shared library list in @var{inferior} has changed, and we may be
+able to try to find symbols for any just-loaded libraries.  This hook
+is a good place to flush caches used to find shared libraries.
+
 @deftypefun void solib_loaded (struct so_list *@var{solib})
 The shared library specified by @var{solib} has been loaded.  Note that
 when @value{GDBN} calls this observer, the library's symbols probably
