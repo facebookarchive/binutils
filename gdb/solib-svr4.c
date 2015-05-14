@@ -1418,11 +1418,7 @@ svr4_current_sos_direct (struct svr4_info *info)
       if (library_list.main_lm)
 	info->main_lm_addr = library_list.main_lm;
 
-      if (exec_bfd && bfd_get_section_by_name (exec_bfd, ".dynamic") == NULL)
-	return library_list.head ? library_list.head : svr4_default_sos ();
-      else
-	return library_list.head && library_list.head->next ?
-	    library_list.head->next : svr4_default_sos ();
+      return library_list.head ? library_list.head : svr4_default_sos ();
     }
 
   /* Always locate the debug struct, in case it has moved.  */
