@@ -115,10 +115,24 @@ static const char *xmltarget_amd64_linux_no_xml = "@<target>\
 </target>";
 #endif
 
+#ifndef __ANDROID__
+/* Work around buggy NDK headers */
 #include <sys/reg.h>
 #include <sys/procfs.h>
+#endif
+
 #include <sys/ptrace.h>
 #include <sys/uio.h>
+
+#ifdef __ANDROID__
+/* Work around buggy NDK headers */
+#define ptrace(a,b,c,d) ptrace((a),(b),(void*)(c),(void*)(d))
+
+#ifndef NT_X86_XSTATE
+#define NT_X86_XSTATE 0x202
+#endif
+
+#endif /* __ANDROID__ */
 
 #ifndef PTRACE_GETREGSET
 #define PTRACE_GETREGSET	0x4204

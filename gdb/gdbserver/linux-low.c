@@ -53,6 +53,13 @@
 #include <elf.h>
 #endif
 
+#ifdef __ANDROID__
+/* Discard above warning on Android, which has buggy NDK headers.  */
+#include <linux/elf.h>
+#undef HAVE_ELF32_AUXV_T
+#undef HAVE_ELF64_AUXV_T
+#endif
+
 #ifndef SPUFS_MAGIC
 #define SPUFS_MAGIC 0x23c9b64e
 #endif

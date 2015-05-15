@@ -82,7 +82,11 @@ linux_ptrace_attach_fail_reason_string (ptid_t ptid, int err)
 /* Address of the 'ret' instruction in asm code block below.  */
 EXTERN_C void linux_ptrace_test_ret_to_nx_instr (void);
 
+#ifndef __ANDROID__
+/* Work around buggy NDK headers.  */
 #include <sys/reg.h>
+#endif
+
 #include <sys/mman.h>
 #include <signal.h>
 
