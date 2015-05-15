@@ -1,3 +1,12 @@
+2015-05-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* mkstemps.c: #include <time.h> if HAVE_TIME_H is defined
+	but not HAVE_SYS_TIME_H.
+
+2015-04-22  Eli Zaretskii  <eliz@gnu.org>
+
+	* setenv.c <environ>: Declare only if not a macro.
+
 2015-01-19  Eli Zaretskii  <eliz@gnu.org>
 
 	* strerror.c <sys_nerr, sys_errlist>: Declare only if they aren't

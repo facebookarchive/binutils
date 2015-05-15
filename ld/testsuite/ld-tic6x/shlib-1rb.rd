@@ -9,14 +9,14 @@ Section Headers:
   \[ 4\] \.rela\.got         RELA            00008140 001140 000024 0c  AI  2  10  4
   \[ 5\] \.rela\.neardata    RELA            00008164 001164 000018 0c  AI  2  11  4
   \[ 6\] \.dynamic          DYNAMIC         0000817c 00117c 0000a8 08  WA  3   0  4
-  \[ 7\] \.rela\.plt         RELA            10000000 002000 000018 0c  AI  2   8  4
+  \[ 7\] \.rela\.plt         RELA            10000000 002000 000018 0c  AI  2  10  4
   \[ 8\] \.plt              PROGBITS        10000020 002020 000060 18  AX  0   0 32
   \[ 9\] \.text             PROGBITS        10000080 002080 000080 00  AX  0   0 32
   \[10\] \.got              PROGBITS        10000100 002100 000028 00  WA  0   0  4
   \[11\] \.neardata         PROGBITS        10000128 002128 000008 00  WA  0   0  4
   \[12\] \.bss              NOBITS          10000130 002130 000004 00  WA  0   0  4
   \[13\] \.c6xabi\.attributes C6000_ATTRIBUTES 00000000 002130 000019 00      0   0  1
-  \[14\] \.shstrtab         STRTAB          00000000 002149 00007b 00      0   0  1
+  \[14\] \.shstrtab         STRTAB          00000000 [0-9a-f]+ 00007b 00      0   0  1
   \[15\] \.symtab           SYMTAB          00000000 [0-9a-f]+ [0-9a-f]+ 10     16  [0-9]+  4
   \[16\] \.strtab           STRTAB          00000000 [0-9a-f]+ [0-9a-f]+ 00      0   0  1
 Key to Flags:

@@ -526,7 +526,8 @@ class Symbol
   {
     return (this->is_undefined()
 	    && (this->binding() == elfcpp::STB_WEAK
-		|| this->is_undef_binding_weak()));
+		|| this->is_undef_binding_weak()
+		|| parameters->options().weak_unresolved_symbols()));
   }
 
   // Return whether this is a strong undefined symbol.
@@ -535,7 +536,8 @@ class Symbol
   {
     return (this->is_undefined()
 	    && this->binding() != elfcpp::STB_WEAK
-	    && !this->is_undef_binding_weak());
+	    && !this->is_undef_binding_weak()
+	    && !parameters->options().weak_unresolved_symbols());
   }
 
   // Return whether this is an absolute symbol.
@@ -1370,7 +1372,7 @@ class Symbol_table
  
   // Returns true if ICF determined that this is a duplicate section. 
   bool
-  is_section_folded(Object* obj, unsigned int shndx) const;
+  is_section_folded(Relobj* obj, unsigned int shndx) const;
 
   void
   set_gc(Garbage_collection* gc)

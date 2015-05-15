@@ -1,3 +1,251 @@
+2015-05-14  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* ppc-opc.c (IH) New define.
+	(powerpc_opcodes) <wait>: Do not enable for POWER7.
+	<tlbie>: Add RS operand for POWER7.
+	<slbia>: Add IH operand for POWER6.
+
+2015-05-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* opcodes/i386-opc.tbl (call): Remove Disp16|Disp32 from 64-bit
+	direct branch.
+	(jmp): Likewise.
+	* i386-tbl.h: Regenerated.
+
+2015-05-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac: Support bfd_iamcu_arch.
+	* disassemble.c (disassembler): Support bfd_iamcu_arch.
+	* i386-gen.c (cpu_flag_init): Add CPU_IAMCU_FLAGS and
+	CPU_IAMCU_COMPAT_FLAGS.
+	(cpu_flags): Add CpuIAMCU.
+	* i386-opc.h (CpuIAMCU): New.
+	(i386_cpu_flags): Add cpuiamcu.
+	* configure: Regenerated.
+	* i386-init.h: Likewise.
+	* i386-tbl.h: Likewise.
+
+2015-05-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutis/18386
+	* i386-dis.c (X86_64_E8): New.
+	(X86_64_E9): Likewise.
+	Update comments on 'T', 'U', 'V'.  Add comments for '^'.
+	(dis386): Replace callT/jmpT with X86_64_E8/X86_64_E9.
+	(x86_64_table): Add X86_64_E8 and X86_64_E9.
+	(mod_table): Replace {T|} with ^ on Jcall/Jmp.
+	(putop): Handle '^'.
+	(OP_J): Ignore the operand size prefix in 64-bit.  Don't check
+	REX_W.
+
+2015-04-30  DJ Delorie  <dj@redhat.com>
+
+	* disassemble.c (disassembler): Choose suitable disassembler based
+	on E_ABI.
+	* rl78-decode.opc (rl78_decode_opcode): Take ISA parameter.  Use
+	it to decode mul/div insns.
+	* rl78-decode.c: Regenerate.
+	* rl78-dis.c (print_insn_rl78): Rename to...
+	(print_insn_rl78_common): ...this, take ISA parameter.
+	(print_insn_rl78): New.
+	(print_insn_rl78_g10): New.
+	(print_insn_rl78_g13): New.
+	(print_insn_rl78_g14): New.
+	(rl78_get_disassembler): New.
+
+2015-04-29  Nick Clifton  <nickc@redhat.com>
+
+	* po/fr.po: Updated French translation.
+
+2015-04-27  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* ppc-opc.c (DCBT_EO): New define.
+	(powerpc_opcodes) <lbarx>: Enable for POWER8 and later.
+	<lharx>: Likewise.
+	<stbcx.>: Likewise.
+	<sthcx.>: Likewise.
+	<waitrsv>: Do not enable for POWER7 and later.
+	<waitimpl>: Likewise.
+	<dcbt>: Default to the two operand form of the instruction for all
+	"old" cpus.  For "new" cpus, use the operand ordering that matches
+	whether the cpu is server or embedded.
+	<dcbtst>: Likewise.
+
+2015-04-27  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* s390-opc.c: New instruction type VV0UU2.
+	* s390-opc.txt: Fix instruction types for VFCE, VLDE, VFSQ, WFK,
+	and WFC.
+
+2015-04-23  Jan Beulich  <jbeulich@suse.com>
+
+	* i386-dis.c (putop): Extend "XY" handling to AVX512. Handle "XZ".
+	* i386-dis-evex.h.c (vcvtpd2ps, vcvtqq2ps, vcvttpd2udq,
+	vcvtpd2udq, vcvtuqq2ps, vcvttpd2dq, vcvtpd2dq): Add %XY.
+	(vfpclasspd, vfpclassps): Add %XZ.
+
+2015-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis.c (PREFIX_UD_SHIFT): Removed.
+	(PREFIX_UD_REPZ): Likewise.
+	(PREFIX_UD_REPNZ): Likewise.
+	(PREFIX_UD_DATA): Likewise.
+	(PREFIX_UD_ADDR): Likewise.
+	(PREFIX_UD_LOCK): Likewise.
+
+2015-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis.c (prefix_requirement): Removed.
+	(print_insn): Don't set prefix_requirement.  Check
+	dp->prefix_requirement instead of prefix_requirement.
+
+2015-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/17898
+	* i386-dis.c (PREFIX_0FC7_REG_6): Renamed to ...
+	(PREFIX_MOD_0_0FC7_REG_6): This.
+	(PREFIX_MOD_3_0FC7_REG_6): New.
+	(PREFIX_MOD_3_0FC7_REG_7): Likewise.
+	(prefix_table): Replace PREFIX_0FC7_REG_6 with
+	PREFIX_MOD_0_0FC7_REG_6.  Add PREFIX_MOD_3_0FC7_REG_6 and
+	PREFIX_MOD_3_0FC7_REG_7.
+	(mod_table): Replace PREFIX_0FC7_REG_6 with
+	PREFIX_MOD_0_0FC7_REG_6.  Use PREFIX_MOD_3_0FC7_REG_6 and
+	PREFIX_MOD_3_0FC7_REG_7.
+
+2015-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis.c (PREFIX_MANDATORY_REPZ): Removed.
+	(PREFIX_MANDATORY_REPNZ): Likewise.
+	(PREFIX_MANDATORY_DATA): Likewise.
+	(PREFIX_MANDATORY_ADDR): Likewise.
+	(PREFIX_MANDATORY_LOCK): Likewise.
+	(PREFIX_MANDATORY): Likewise.
+	(PREFIX_UD_SHIFT): Set to 8
+	(PREFIX_UD_REPZ): Updated.
+	(PREFIX_UD_REPNZ): Likewise.
+	(PREFIX_UD_DATA): Likewise.
+	(PREFIX_UD_ADDR): Likewise.
+	(PREFIX_UD_LOCK): Likewise.
+	(PREFIX_IGNORED_SHIFT): New.
+	(PREFIX_IGNORED_REPZ): Likewise.
+	(PREFIX_IGNORED_REPNZ): Likewise.
+	(PREFIX_IGNORED_DATA): Likewise.
+	(PREFIX_IGNORED_ADDR): Likewise.
+	(PREFIX_IGNORED_LOCK): Likewise.
+	(PREFIX_OPCODE): Likewise.
+	(PREFIX_IGNORED): Likewise.
+	(Bad_Opcode): Replace PREFIX_MANDATORY with 0.
+	(dis386_twobyte): Replace PREFIX_MANDATORY with PREFIX_OPCODE.
+	(three_byte_table): Likewise.
+	(mod_table): Likewise.
+	(mandatory_prefix): Renamed to ...
+	(prefix_requirement): This.
+	(prefix_table): Replace PREFIX_MANDATORY with PREFIX_OPCODE.
+	Update PREFIX_90 entry.
+	(get_valid_dis386): Check prefix_requirement to see if a prefix
+	should be ignored.
+	(print_insn): Replace mandatory_prefix with prefix_requirement.
+
+2015-04-15  Renlin Li  <renlin.li@arm.com>
+
+	* arm-dis.c (thumb32_opcodes): Define 'D' format control code,
+	use it for ssat and ssat16.
+	(print_insn_thumb32): Add handle case for 'D' control code.
+
+2015-04-06  Ilya Tocar  <ilya.tocar@intel.com>
+	    H.J. Lu  <hongjiu.lu@intel.com>
+
+	* i386-dis-evex.h (evex_table): Fill prefix_requirement field.
+	* i386-dis.c (PREFIX_MANDATORY_REPZ, PREFIX_MANDATORY_REPNZ,
+	PREFIX_MANDATORY_DATA, PREFIX_MANDATORY_ADDR, PREFIX_MANDATORY_LOCK,
+	PREFIX_UD_SHIFT, PREFIX_UD_REPZ, REFIX_UD_REPNZ, PREFIX_UD_DATA,
+	PREFIX_UD_ADDR, PREFIX_UD_LOCK, PREFIX_MANDATORY): Define.
+	(Bad_Opcode, FLOAT, DIS386, DIS386_PREFIX, THREE_BYTE_TABLE_PREFIX):
+	Fill prefix_requirement field.
+	(struct dis386): Add prefix_requirement field.
+	(dis386): Fill prefix_requirement field.
+	(dis386_twobyte): Ditto.
+	(twobyte_has_mandatory_prefix_: Remove.
+	(reg_table): Fill prefix_requirement field.
+	(prefix_table): Ditto.
+	(x86_64_table): Ditto.
+	(three_byte_table): Ditto.
+	(xop_table): Ditto.
+	(vex_table): Ditto.
+	(vex_len_table): Ditto.
+	(vex_w_table): Ditto.
+	(mod_table): Ditto.
+	(bad_opcode): Ditto.
+	(print_insn): Use prefix_requirement.
+	(FGRPd9_2, FGRPd9_4, FGRPd9_5, FGRPd9_6, FGRPd9_7, FGRPda_5, FGRPdb_4,
+	FGRPde_3, FGRPdf_4): Fill prefix_requirement field.
+	(float_reg): Ditto.
+
+2015-03-30  Mike Frysinger  <vapier@gentoo.org>
+
+	* d10v-opc.c (d10v_reg_name_cnt): Convert old style prototype.
+
+2015-03-29  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.in: Regenerated.
+
+2015-03-25  Anton Blanchard  <anton@samba.org>
+
+	* ppc-dis.c (disassemble_init_powerpc): Only initialise
+	powerpc_opcd_indices and vle_opcd_indices once.
+
+2015-03-25  Anton Blanchard  <anton@samba.org>
+
+	* ppc-opc.c (powerpc_opcodes): Add slbfee.
+
+2015-03-24  Terry Guo  <terry.guo@arm.com>
+
+	* arm-dis.c (opcode32): Updated to use new arm feature struct.
+	(opcode16): Likewise.
+	(coprocessor_opcodes): Replace bit with feature struct.
+	(neon_opcodes): Likewise.
+	(arm_opcodes): Likewise.
+	(thumb_opcodes): Likewise.
+	(thumb32_opcodes): Likewise.
+	(print_insn_coprocessor): Likewise.
+	(print_insn_arm): Likewise.
+	(select_arm_features): Follow new feature struct.
+
+2015-03-17  Ganesh Gopalasubramanian  <Ganesh.Gopalasubramanian@amd.com>
+
+	* i386-dis.c (rm_table): Add clzero.
+	* i386-gen.c (cpu_flag_init): Add new CPU_ZNVER1_FLAGS.
+	Add CPU_CLZERO_FLAGS.
+	(cpu_flags): Add CpuCLZERO.
+	* i386-opc.h: Add CpuCLZERO.
+	* i386-opc.tbl: Add clzero.
+	* i386-init.h: Re-generated.
+	* i386-tbl.h: Re-generated.
+
+2015-03-13  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* mips-opc.c (decode_mips_operand): Fix constraint issues
+	with u and y operands.
+
+2015-03-13  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* mips-opc.c (mips_builtin_opcodes): Add evp and dvp instructions.
+
+2015-03-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* s390-opc.c: Add new IBM z13 instructions.
+	* s390-opc.txt: Likewise.
+
+2015-03-10  Renlin Li  <renlin.li@arm.com>
+
+	* aarch64-tbl.h (aarch64_opcode_table): Remove strub, ldurb, ldursb,
+	stur, ldur, sturh, ldurh, ldursh, ldursw, prfum F_HAS_ALIAS flag and
+	related alias.
+	* aarch64-asm-2.c: Regenerate.
+	* aarch64-dis-2.c: Likewise.
+	* aarch64-opc-2.c: Likewise.
+
 2015-03-03  Jiong Wang  <jiong.wang@arm.com>
 
 	* arm-dis.c (arm_symbol_is_valid): Skip ARM private symbols.

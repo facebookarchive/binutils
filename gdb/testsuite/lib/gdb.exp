@@ -31,6 +31,14 @@ load_lib gdb-utils.exp
 
 global GDB
 
+# The spawn ID used for I/O interaction with the inferior.  For native
+# targets, or remote targets that can do I/O through GDB
+# (semi-hosting) this will be the same as the host/GDB's spawn ID.
+# Otherwise, the board may set this to some other spawn ID.  E.g.,
+# when debugging with GDBserver, this is set to GDBserver's spawn ID,
+# so input/output is done on gdbserver's tty.
+global inferior_spawn_id
+
 if [info exists TOOL_EXECUTABLE] {
     set GDB $TOOL_EXECUTABLE
 }
@@ -656,16 +664,35 @@ proc gdb_internal_error_resync {} {
 #    }
 # }
 #
+# Like with "expect", you can also specify the spawn id to match with
+# -i "$id".  Interesting spawn ids are $inferior_spawn_id and
+# $gdb_spawn_id.  The former matches inferior I/O, while the latter
+# matches GDB I/O.  E.g.:
+#
+# send_inferior "hello\n"
+# gdb_test_multiple "continue" "test echo" {
+#    -i "$inferior_spawn_id" -re "^hello\r\nhello\r\n$" {
+#        pass "got echo"
+#    }
+#    -i "$gdb_spawn_id" -re "Breakpoint.*$gdb_prompt $" {
+#        fail "hit breakpoint"
+#    }
+# }
+#
 # The standard patterns, such as "Inferior exited..." and "A problem
-# ...", all being implicitly appended to that list.
+# ...", all being implicitly appended to that list.  These are always
+# expected from $gdb_spawn_id.  IOW, callers do not need to worry
+# about resetting "-i" back to $gdb_spawn_id explicitly.
 #
 proc gdb_test_multiple { command message user_code } {
     global verbose use_gdb_stub
     global gdb_prompt pagination_prompt
     global GDB
+    global gdb_spawn_id
     global inferior_exited_re
     upvar timeout timeout
     upvar expect_out expect_out
+    global any_spawn_id
 
     if { $message == "" } {
 	set message $command
@@ -723,14 +750,14 @@ proc gdb_test_multiple { command message user_code } {
 	    lappend processed_code $item
 	    continue
 	}
-	if { $item == "-timeout" } {
+	if { $item == "-timeout" || $item == "-i" } {
 	    set expecting_arg 1
 	    lappend processed_code $item
 	    continue
 	}
 	if { $expecting_arg } {
 	    set expecting_arg 0
-	    lappend processed_code $item
+	    lappend processed_code $subst_item
 	    continue
 	}
 	if { $expecting_action } {
@@ -820,6 +847,9 @@ proc gdb_test_multiple { command message user_code } {
     }
     append code $processed_code
     append code {
+	# Reset the spawn id, in case the processed code used -i.
+	-i "$gdb_spawn_id"
+
 	-re "Ending remote debugging.*$gdb_prompt $" {
 	    if ![isnative] then {
 		warning "Can`t communicate to remote target."
@@ -889,6 +919,9 @@ proc gdb_test_multiple { command message user_code } {
 	    fail "$message (got breakpoint menu)"
 	    set result -1
 	}
+
+	# Patterns below apply to any spawn id specified.
+	-i $any_spawn_id
 	eof {
 	    perror "Process no longer exists"
 	    if { $message != "" } {
@@ -1465,6 +1498,7 @@ proc default_gdb_spawn { } {
 proc default_gdb_start { } {
     global gdb_prompt pagination_prompt
     global gdb_spawn_id
+    global inferior_spawn_id
 
     if [info exists gdb_spawn_id] {
 	return 0
@@ -1473,6 +1507,11 @@ proc default_gdb_start { } {
     set res [gdb_spawn]
     if { $res != 0} {
 	return $res
+    }
+
+    # Default to assuming inferior I/O is done on GDB's terminal.
+    if {![info exists inferior_spawn_id]} {
+	set inferior_spawn_id $gdb_spawn_id
     }
 
     # When running over NFS, particularly if running many simultaneous
@@ -1851,6 +1890,54 @@ proc with_target_charset { target_charset body } {
 
     gdb_test_no_output "set target-charset $saved" ""
 
+    if {$code == 1} {
+	global errorInfo errorCode
+	return -code $code -errorinfo $errorInfo -errorcode $errorCode $result
+    } else {
+	return -code $code $result
+    }
+}
+
+# Select the largest timeout from all the timeouts:
+# - the local "timeout" variable of the scope two levels above,
+# - the global "timeout" variable,
+# - the board variable "gdb,timeout".
+
+proc get_largest_timeout {} {
+    upvar #0 timeout gtimeout
+    upvar 2 timeout timeout
+
+    set tmt 0
+    if [info exists timeout] {
+      set tmt $timeout
+    }
+    if { [info exists gtimeout] && $gtimeout > $tmt } {
+	set tmt $gtimeout
+    }
+    if { [target_info exists gdb,timeout]
+	 && [target_info gdb,timeout] > $tmt } {
+	set tmt [target_info gdb,timeout]
+    }
+    if { $tmt == 0 } {
+	# Eeeeew.
+	set tmt 60
+    }
+
+    return $tmt
+}
+
+# Run tests in BODY with timeout increased by factor of FACTOR.  When
+# BODY is finished, restore timeout.
+
+proc with_timeout_factor { factor body } {
+    global timeout
+
+    set savedtimeout $timeout
+
+    set timeout [expr [get_largest_timeout] * $factor]
+    set code [catch {uplevel 1 $body} result]
+
+    set timeout $savedtimeout
     if {$code == 1} {
 	global errorInfo errorCode
 	return -code $code -errorinfo $errorInfo -errorcode $errorCode $result
@@ -3206,6 +3293,18 @@ proc send_gdb { string } {
     return [remote_send host "$string"]
 }
 
+# Send STRING to the inferior's terminal.
+
+proc send_inferior { string } {
+    global inferior_spawn_id
+
+    if {[catch "send -i $inferior_spawn_id -- \$string" errorInfo]} {
+	return "$errorInfo"
+    } else {
+	return ""
+    }
+}
+
 #
 #
 
@@ -3219,26 +3318,10 @@ proc gdb_expect { args } {
 
     # A timeout argument takes precedence, otherwise of all the timeouts
     # select the largest.
-    upvar #0 timeout gtimeout
-    upvar timeout timeout
     if [info exists atimeout] {
 	set tmt $atimeout
     } else {
-	set tmt 0
-	if [info exists timeout] {
-	    set tmt $timeout
-	}
-	if { [info exists gtimeout] && $gtimeout > $tmt } {
-	    set tmt $gtimeout
-	}
-	if { [target_info exists gdb,timeout]
-	     && [target_info gdb,timeout] > $tmt } {
-	    set tmt [target_info gdb,timeout]
-	}
-	if { $tmt == 0 } {
-	    # Eeeeew.
-	    set tmt 60
-	}
+	set tmt [get_largest_timeout]
     }
 
     global suppress_flag
@@ -3423,6 +3506,9 @@ proc gdb_spawn_with_cmdline_opts { cmdline_flags } {
 
     set saved_gdbflags $GDBFLAGS
 
+    if {$GDBFLAGS != ""} {
+	append GDBFLAGS " "
+    }
     append GDBFLAGS $cmdline_flags
 
     set res [gdb_spawn]
@@ -3996,20 +4082,6 @@ proc gdb_finish { } {
     global gdbserver_reconnect_p
     global gdb_prompt
     global cleanfiles
-
-    # Give persistent gdbserver a chance to terminate before GDB is killed.
-    if {[info exists gdbserver_reconnect_p] && $gdbserver_reconnect_p
-	&& [info exists gdb_spawn_id]} {
-	send_gdb "kill\n";
-	gdb_expect 10 {
-	    -re "y or n" {
-		send_gdb "y\n";
-		exp_continue;
-	    }
-	    -re "$gdb_prompt $" {
-	    }
-	}
-    }
 
     # Exit first, so that the files are no longer in use.
     gdb_exit
@@ -4708,6 +4780,7 @@ proc build_executable { testname executable {sources ""} {options {debug}} } {
 
 # Starts fresh GDB binary and loads EXECUTABLE into GDB. EXECUTABLE is
 # the basename of the binary.
+# The return value is 0 for success, -1 for failure.
 proc clean_restart { executable } {
     global srcdir
     global subdir
@@ -4716,7 +4789,7 @@ proc clean_restart { executable } {
     gdb_exit
     gdb_start
     gdb_reinitialize_dir $srcdir/$subdir
-    gdb_load ${binfile}
+    return [gdb_load ${binfile}]
 }
 
 # Prepares for testing by calling build_executable_full, then
@@ -4998,7 +5071,7 @@ proc core_find {binfile {deletefiles {}} {arg ""}} {
 # TODO: find out automatically if the target needs this.
 
 proc gdb_target_symbol_prefix_flags {} {
-    if { [istarget "*-*-cygwin*"] || [istarget "i?86-*-mingw*"]
+    if { [istarget "i?86-*-cygwin*"] || [istarget "i?86-*-mingw*"]
 	 || [istarget "*-*-msdosdjgpp*"] || [istarget "*-*-go32*"] } {
 	return "additional_flags=-DSYMBOL_PREFIX=\"_\""
     } else {
@@ -5117,6 +5190,17 @@ proc capture_command_output { command prefix } {
 	}
     }
     return $output_string
+}
+
+# A convenience function that joins all the arguments together, with a
+# regexp that matches exactly one end of line in between each argument.
+# This function is ideal to write the expected output of a GDB command
+# that generates more than a couple of lines, as this allows us to write
+# each line as a separate string, which is easier to read by a human
+# being.
+
+proc multi_line { args } {
+    return [join $args "\r\n"]
 }
 
 # Always load compatibility stuff.

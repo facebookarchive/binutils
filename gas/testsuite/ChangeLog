@@ -1,3 +1,362 @@
+2015-05-14  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gas/ppc/power4.d: Add a slbia test.
+	* gas/ppc/power4.s: Likewise.
+	* gas/ppc/power6.d: Add slbia and tlbie tests.
+	* gas/ppc/power6.s: Likewise.
+	* gas/ppc/power7.d: Remove wait tests. Add a tlbie test.
+	* gas/ppc/power7.s: Likewise.
+
+2015-05-13  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* gas/xtensa/trampoline.s: Add regression testcase.
+
+2015-05-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gas/i386/i386.exp: Run iamcu-1, iamcu-2, iamcu-3, iamcu-inval-1,
+	iamcu-inval-2 and iamcu-inval-3.
+	* gas/i386/iamcu-1.d: New file.
+	* gas/i386/iamcu-1.s: Likewise.
+	* gas/i386/iamcu-2.d: Likewise.
+	* gas/i386/iamcu-2.s: Likewise.
+	* gas/i386/iamcu-3.d: Likewise.
+	* gas/i386/iamcu-3.s: Likewise.
+	* gas/i386/iamcu-inval-1.l: Likewise.
+	* gas/i386/iamcu-inval-1.s: Likewise.
+	* gas/i386/iamcu-inval-2.l: Likewise.
+	* gas/i386/iamcu-inval-2.s: Likewise.
+	* gas/i386/iamcu-inval-3.l: Likewise.
+	* gas/i386/iamcu-inval-3.s: Likewise.
+
+2015-05-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutis/18386
+	* gas/i386/i386.exp: Run x86-64-jump.
+	* gas/i386/x86-64-branch.d: Updated.
+	* gas/i386/ilp32/x86-64-branch.d: Likewise.
+	* gas/i386/x86-64-branch.s: Add tests for the operand size prefix
+	with call, jmp and jb.
+	* gas/i386/x86-64-jump.d: New file.
+	* gas/i386/x86-64-jump.s: Likewise.
+
+2015-05-08  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/18347
+	* gas/arm/pr18347.s: Add tests of other symbol assignments which
+	should not generate the warning.
+	* gas/arm/pr18347.l: Update expected output.
+
+2015-05-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gas/i386/i386.exp: Run relax-3 and x86-64-relax-2.
+	* gas/i386/relax-3.d: New file.
+	* gas/i386/relax-3.s: Likewise.
+	* gas/i386/x86-64-relax-2.d: Likewise.
+
+2015-05-06  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* gas/sparc/natural-32.d: Test ldn, ldna, stn, stna, slln, srln,
+	sran, casn, casna and clrn.
+	* gas/sparc/natural-32.s: Likewise.
+	* gas/sparc/natural.s: Likewise.
+	* gas/sparc/natural.d: Likewise.
+
+2015-05-06  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+
+	* gas/sparc/natural.s: New file.
+	* gas/sparc/natural-32.s: Likewise.
+	* gas/sparc/natural.d: Likewise.
+	* gas/sparc/natural-32.d: Likewise.
+	* gas/sparc/sparc.exp (sparc_elf_setup): Run the tests natural and
+	natural-32.
+
+2015-05-06  Renlin Li  <renlin.li@arm.com>
+
+	* gas/aarch64/codealign_1.s: New.
+	* gas/aarch64/codealign_1.d: New.
+
+2015-05-05  Renlin Li  <renlin.li@arm.com>
+
+	* gas/aarch64/mapping_5.d: New.
+	* gas/aarch64/mapping_5.s: New.
+	* gas/aarch64/mapping_6.d: New.
+	* gas/aarch64/mapping_6.s: New.
+
+2015-05-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gas/i386/i386.exp: Run note.
+	* gas/i386/note.d: New file.
+	* gas/i386/note.s: Likewise.
+
+2015-04-30  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/18347
+	* gas/arm/pr18347.s: New file: Test case.
+	* gas/arm/pr18347.l: New file: Expected assembler output.
+	* gas/arm/pr18347.d: New file: Test driver.
+
+2015-04-29  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/18265
+	* gas/arm/pr18256.s: New file: Test case.
+	* gas/arm/pr18256.l: New file: Expected assembler output.
+	* gas/arm/pr18256.d: New file: Test driver.
+
+2015-04-28  Renlin Li  <renlin.li@arm.com>
+
+	* gas/arm/thumb2_vpool_be.d: Adjust the desired output.
+	* gas/arm/vldconst_be.d: Ditto.
+
+2015-04-27  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gas/ppc/a2.s: Fixup test case due to dcbt/dcbtst embedded operand
+	ordering change.
+	* gas/ppc/a2.d: Likewise.
+	* gas/ppc/476.d: Likewise.
+	* gas/ppc/booke.s: Remove invalid 3 operand dcbt tests.
+	* gas/ppc/booke.d: Likewise.
+	* gas/ppc/power7.s: Remove lbarx, lharx, stbcx., sthcx., waitrsv
+	and waitimpl tests.
+	* gas/ppc/power7.d: Likewise.
+
+2015-04-27  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* doc/as.texinfo: Document Tag_GNU_S390_ABI_Vector.
+
+2015-04-27  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gas/s390/zarch-z13.d: Fix tests for VFCE, VLDE, VFSQ, WFK, and
+	WFC.
+	* gas/s390/zarch-z13.s: Likewise.
+
+2015-04-24  Richard Earnshaw  <rearnsha@arm.com>
+
+	* gas/arm/align64.d: Delete trailing padding NOPs.
+
+2015-04-23  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	* gas/mips/dla-warn.l: New file.
+	* gas/mips/dla-warn.s: New file.
+	* gas/mips/la-warn.l: New file.
+	* gas/mips/la-warn.s: New file.
+	* gas/mips/mips.exp: Run new tests.
+
+2015-04-23  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	* gas/mips/mips.exp: Require o32 for r6-branch-constraints.
+
+2015-04-23  Jan Beulich  <jbeulich@suse.com>
+
+	* gas/i386/avx512dq.d: Add 'z' suffix to vfpclassp{d,s} non-
+	register, non-broadcast cases.
+	* gas/i386/x86-64-avx512dq.d: Likewise.
+	* gas/i386/avx512dq_vl.d: Add 'x' and 'y' suffixes to
+	vcvt{,u}qq2ps and vfpclassp{d,s} non-register, non-broadcast
+	cases.
+	* gas/i386/x86-64-avx512dq_vl.d: Likewise.
+	* gas/i386/avx512f_vl.d: Add 'x' and 'y' suffixes to
+	vcvt{,t}pd2{,u}dq and vcvtpd2ps non-register, non-broadcast
+	cases.
+	* gas/i386/x86-64-avx512f_vl.d: Likewise.
+
+2015-04-23  Jan Beulich  <jbeulich@suse.com>
+
+	* gas/i386/avx512dq.s: Drop 'z' suffix from vfpclassp{d,s} in
+	some AT&T and all Intel cases.
+	* gas/i386/x86-64-avx512dq.s: Likewise.
+	* gas/i386/avx512dq_vl.s: Drop 'x' and 'y' suffixes from
+	vcvt{,u}qq2ps and vfpclassp{d,s} in some AT&T and all Intel
+	cases.
+	* gas/i386/x86-64-avx512dq_vl.s: Likewise.
+	* gas/i386/avx512f_vl.s: Drop 'x' and 'y' suffixes from
+	vcvt{,t}pd2{,u}dq and vcvtpd2ps in some AT&T and all Intel
+	cases.
+	* gas/i386/x86-64-avx512f_vl.s: Likewise.
+
+2015-04-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gas/i386/ilp32/x86-64-unwind.d: Don't hardcode offset of
+	.shstrtab section.
+	* gas/i386/x86-64-unwind.d: Likewise.
+	* gas/ia64/alias-ilp32.d: Likewise.
+	* gas/ia64/alias.d: Likewise.
+	* gas/ia64/group-1.d: Likewise.
+	* gas/ia64/group-2.d: Likewise.
+	* gas/ia64/secname-ilp32.d: Likewise.
+	* gas/ia64/secname.d: Likewise.
+	* gas/ia64/unwind-ilp32.d: Likewise.
+	* gas/ia64/unwind.d: Likewise.
+	* gas/mmix/bspec-1.d: Likewise.
+	* gas/mmix/byte-1.d: Likewise.
+	* gas/mmix/loc-1.d: Likewise.
+	* gas/mmix/loc-2.d: Likewise.
+	* gas/mmix/loc-3.d: Likewise.
+	* gas/mmix/loc-4.d: Likewise.
+	* gas/mmix/loc-5.d: Likewise.
+	* gas/tic6x/scomm-directive-4.d: Likewise.
+
+2015-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/17898
+	* gas/i386/prefix.s: Add rdrand/rdseed prefix tests.
+	* gas/i386/prefix.d: Updated.
+
+2015-04-15  Renlin Li  <renlin.li@arm.com>
+
+	* gas/arm/arch7em.d: Adjust required ssat and ssat16 immediate field.
+	* gas/arm/thumb32.d: Likewise.
+
+2015-04-14  Nick Clifton  <nickc@redhat.com>
+
+	* gas/lns/lns.exp: Add RL78 to list of targets using
+	DW_LNS_fixed_advance_pc.
+
+2015-04-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gas/i386/dw2-compressed-1.d: New file.
+	* gas/i386/dw2-compressed-2.d: Likewise.
+	* gas/i386/dw2-compressed-3.d: Likewise.
+	* gas/i386/x86-64-dw2-compressed-2.d: Likewise.
+	* gas/i386/i386.exp: Run dw2-compressed-2, dw2-compressed-1,
+	dw2-compressed-3 and x86-64-dw2-compressed-2.
+
+2015-04-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* lib/gas-defs.exp (run_dump_test): Remove is_zlib_supported check.
+
+2015-03-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gas/i386/i386.exp: Don't run nops-1-bdver1, nops-1-bdver2,
+	nops-1-bdver3, nops-1-bdver4, nops-1-znver1, nops-1-btver1
+	nops-1-btver2, x86-64-nops-1-nocona, x86-64-nops-1-bdver1,
+	x86-64-nops-1-bdver2, x86-64-nops-1-bdver3, x86-64-nops-1-bdver4,
+	x86-64-nops-1-znver1, x86-64-nops-1-btver1 nor
+	x86-64-nops-1-btver2.
+	* gas/i386/nops-1-core2.d: Updated.
+	* gas/i386/nops-1-k8.d: Likewise.
+	* gas/i386/nops-4a-i686.d: Likewise.
+	* gas/i386/nops-5-i686.d: Likewise.
+	* gas/i386/nops-5.d: Likewise.
+	* gas/i386/nops-6.d: Likewise.
+	* gas/i386/x86-64-nops-1-core2.d: Likewise.
+	* gas/i386/x86-64-nops-1-g64.d: Likewise.
+	* gas/i386/x86-64-nops-1-k8.d: Likewise.
+	* gas/i386/x86-64-nops-1.d: Likewise.
+	* gas/i386/x86-64-nops-2.d: Likewise.
+	* gas/i386/x86-64-nops-3.d: Likewise.
+	* gas/i386/x86-64-nops-4-core2.d: Likewise.
+	* gas/i386/x86-64-nops-4-k8.d: Likewise.
+	* gas/i386/x86-64-nops-4.d: Likewise.
+	* gas/i386/x86-64-nops-5-k8.d: Likewise.
+	* gas/i386/x86-64-nops-5.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-1-core2.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-1-k8.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-1.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-2.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-3.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-4-core2.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-4-k8.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-4.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-5-k8.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-5.d: Likewise.
+	* gas/i386/nops-1-bdver1.d: Removed.
+	* gas/i386/nops-1-bdver2.d: Likewise.
+	* gas/i386/nops-1-bdver3.d: Likewise.
+	* gas/i386/nops-1-bdver4.d: Likewise.
+	* gas/i386/nops-1-btver1.d: Likewise.
+	* gas/i386/nops-1-btver2.d: Likewise.
+	* gas/i386/nops-1-znver1.d: Likewise.
+	* gas/i386/x86-64-nops-1-bdver1.d: Likewise.
+	* gas/i386/x86-64-nops-1-bdver2.d: Likewise.
+	* gas/i386/x86-64-nops-1-bdver3.d: Likewise.
+	* gas/i386/x86-64-nops-1-bdver4.d: Likewise.
+	* gas/i386/x86-64-nops-1-btver1.d: Likewise.
+	* gas/i386/x86-64-nops-1-btver2.d: Likewise.
+	* gas/i386/x86-64-nops-1-nocona.d: Likewise.
+	* gas/i386/x86-64-nops-1-znver1.d: Likewise.
+	* gas/i386/ilp32/x86-64-nops-1-nocona.d: Likewise.
+
+2015-03-19  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/18087
+	* gas/i386/dw2-compress-1.d: Allow the test to pass regardless of
+	whether the .debug_info section was compressed on not.
+
+2015-03-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR gas/18087
+	* gas/i386/dw2-compress-1.d: Revert the last change.
+	* gas/i386/dw2-compress-3.d: New.
+	* gas/i386/dw2-compress-3.s: Likewise.
+	* gas/i386/i386.exp: Run dw2-compress-3 for ELF targets.
+
+2015-03-18  Jon Turney  <jon.turney@dronecode.org.uk>
+	    Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/18087
+	* gas/i386/dw2-compress-1.d: Do not expect the .debug_abbrev or
+	.debug_info sections to be compressed.
+
+2015-03-17  Ganesh Gopalasubramanian  <Ganesh.Gopalasubramanian@amd.com>
+
+	* gas/i386/i386.exp: Add new znver1 test cases.
+	* gas/i386/arch-13-znver1.d: New.
+	* gas/i386/arch-13.d: New.
+	* gas/i386/arch-13.s: New.
+	* gas/i386/clzero.d: New.
+	* gas/i386/clzero.s: New.
+	* gas/i386/nops-1-znver1.d: New.
+	* gas/i386/x86-64-arch-3-znver1.d: New.
+	* gas/i386/x86-64-arch-3.d: New.
+	* gas/i386/x86-64-arch-3.s: New.
+	* gas/i386/x86-64-clzero.d: New.
+	* gas/i386/x86-64-nops-1-znver1.d: New.
+
+2015-03-13  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gas/mips/mips.exp: Added branch constraints testcase.
+	* gas/mips/r6-branch-constraints.s: New test.
+	* gas/mips/r6-branch-constraints.l: New test.
+
+2015-03-13  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gas/mips/r6.s: Add evp and dvp instructions.
+	* gas/mips/r6.d: Likewise.
+	* gas/mips/r6-n32.d: Likewise.
+	* gas/mips/r6-n64.d: Likewise.
+
+2015-03-13  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/diagnostic.s: New testcases.
+	* gas/aarch64/diagnostic.l: New error match.
+
+2015-03-13  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/tail_padding.s: New testcase.
+	* gas/aarch64/tail_padding.d: New expectation file.
+
+2015-03-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gas/s390/zarch-z13.d: Add more z13 instructions.
+	* gas/s390/zarch-z13.s: Likewise.
+
+2015-03-05  Renlin Li  <renlin.li@arm.com>
+
+	* gas/arm/dis-data.d: Adjust the desired output.
+	* gas/arm/dis-data2.d: Ditto.
+
+2015-03-10  Renlin Li  <renlin.li@arm.com>
+
+	* gas/aarch64/ldst-reg-uns-imm.d: Adjust expected output.
+	* gas/aarch64/ldst-reg-unscaled-imm.d: Likewise.
+	* gas/aarch64/reloc-insn.d: Likewise.
+
+2015-03-10  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* gas/aarch64/codealign.d: Add test for code section alignment.
+	* gas/aarch64/codealign.s: New file.
+
 2015-03-04  Richard Sandiford  <richard.sandiford@arm.com>
 
 	PR gas/17843

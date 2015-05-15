@@ -1,3 +1,294 @@
+2015-05-14  Nick Clifton  <nickc@redhat.com>
+
+	* ld.texinfo (ASSERT): Describe the interaction with PROVIDEd
+	symbols.
+
+2015-05-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.tgt: Support i[3-7]86-*-elfiamcu target.
+
+2015-05-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.am (ALL_EMULATION_SOURCES): Add eelf_iamcu.c.
+	(eelf_iamcu.c): New.
+	* configure.tgt (targ_extra_emuls): Add elf_iamcu if elf_i386 is
+	enabled in BFD.
+	* Makefile.in: Regenerated.
+	* emulparams/elf_iamcu.sh: New file.
+
+2015-05-05  Nick Clifton  <nickc@redhat.com>
+
+	* emulparams/msp430elf.sh (TEMPLATE_NAME): Change to msp430.
+	* scripttempl/msp430.sc (.text): Add .lower.text and .either.text.
+	(.data): Add .lower.data and .either.data.
+	(.bss): Add .lower.bss and .either.bss.
+	(.rodata): Add .lower.rodata and .either.rodata.
+	* emultempl/msp430.em: New file.  Implements a new orphan
+	placement algorithm that divides sections between lower and upper
+	memory regions.
+	* Makefile.am (emsp430elf.c): Depend upon msp430.em.
+	*emsp430X.c): Likewise.
+	* Makefine.in: Regenerate.
+
+2015-04-28  Andreas Schwab  <schwab@linux-m68k.org>
+
+	PR ld/18344
+	* ldlex.l (INPUTLIST): Increment lineno on newline.
+
+2015-04-24  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/ppc64elf.em (gld${EMULATION_NAME}_after_allocation):
+	Call gld${EMULATION_NAME}_map_segments regardless of need_laying_out.
+
+2015-04-24  DJ Delorie  <dj@redhat.com>
+
+	* Makefile.am (msp430): Rename primary emulation to msp430elf.
+	(emsp430.c): Rename to emsp430elf.c, update dependencies
+	(emsp430X.c): Update dependencies.
+	* Makefile.in: Likewise.
+	* configure.tgt (msp430-*-*): Rename primary emulation to msp430elf.
+	* emulparams/msp430.sh: Rename to msp430elf.sh.
+	* emulparams/msp430X.sh: Update.
+
+2015-04-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/18209
+	* ldfile.c (ldfile_try_open_bfd): Set is_linker_input to 1.
+
+2015-04-23  Alan Modra  <amodra@gmail.com>
+
+	* emulparams/elf64ppc.sh (GOT): Align.
+
+2015-04-22  Alan Modra  <amodra@gmail.com>
+
+	* ldexp.h (struct ldexp_control): Delete dataseg.min_base.  Add
+	data_seg.relro_offset.
+	* ldexp.c (fold_binary <DATA_SEGMENT_ALIGN>): Don't set min_base.
+	(fold_binary <DATA_SEGMENT_RELRO_END>): Do set relro_offset.
+	* ldlang.c (lang_size_sections): Rewrite code adjusting relro
+	segment base to line up last section on page boundary.
+
+2015-04-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* NEWS: Mention
+	--compress-debug-sections=[none|zlib|zlib-gnu|zlib-gabi].
+
+2015-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld.texinfo: Document --compress-debug-sections=.
+	* ldmain.c (main): Set BFD_COMPRESS on output_bfd if
+	COMPRESS_DEBUG is set.  Set BFD_COMPRESS_GABI on output_bfd
+	for COMPRESS_DEBUG_GABI_ZLIB.
+	* lexsup.c (elf_static_list_options): Add
+	--compress-debug-sections=.
+	* emultempl/elf32.em (OPTION_COMPRESS_DEBUG): New.
+	(xtra_long): Add "compress-debug-sections".
+	(gld${EMULATION_NAME}_handle_option): Handle
+	OPTION_COMPRESS_DEBUG.
+
+2015-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/pr17709
+	* ld.texinfo: Document "-z noextern-protected-data".
+	* ldmain.c (main): Initialize link_info.extern_protected_data
+	to -1.
+	* lexsup.c (elf_shlib_list_options): Add
+	"-z [no]extern-protected-data".
+	* emulparams/elf32_x86_64.sh: Source extern_protected_data.sh.
+	* emulparams/elf_i386.sh: Likewise.
+	* emulparams/elf_i386_be.sh: Likewise.
+	* emulparams/elf_i386_chaos.sh: Likewise.
+	* emulparams/elf_i386_ldso.sh: Likewise.
+	* emulparams/elf_i386_vxworks.sh: Likewise.
+	* emulparams/elf_k1om.sh: Likewise.
+	* emulparams/elf_l1om.sh: Likewise.
+	* emulparams/elf_x86_64.sh: Source extern_protected_data.sh.
+	(PARSE_AND_LIST_OPTIONS): Renamed to ...
+	(PARSE_AND_LIST_OPTIONS_BNDPLT): This.
+	(PARSE_AND_LIST_ARGS_CASE_Z): Renamed to ...
+	(PARSE_AND_LIST_ARGS_CASE_Z_BNDPLT): This.
+	(PARSE_AND_LIST_OPTIONS): Append $PARSE_AND_LIST_OPTIONS_BNDPLT.
+	(PARSE_AND_LIST_ARGS_CASE_Z): Append
+	$PARSE_AND_LIST_ARGS_CASE_Z_BNDPLT.
+	* emulparams/extern_protected_data.sh: New file.
+
+2015-04-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* plugin.c (plugin_load_plugins): Removed an extra ';'.
+
+2015-04-10  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/18198
+	* ld.texinfo (--be8): Add a note about the interaction of this
+	option with the assembler's -EB option.
+
+2015-04-10  Alan Modra  <amodra@gmail.com>
+
+	* configure.ac: Set elf_list_options etc. in proper case.
+	* configure: Regenerate.
+
+2015-04-10  Alan Modra  <amodra@gmail.com>
+
+	PR ld/18223
+	* ldlang.c (lang_process): Add _init and _fini to gc_sym_list.
+
+2015-04-09  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* emulparams/elf_x86_64.sh (BNDPLT): Removed.
+	(PARSE_AND_LIST_OPTIONS): New.
+	(PARSE_AND_LIST_ARGS_CASE_Z): Likewise.
+	* emultempl/elf32.em (gld${EMULATION_NAME}_handle_option): Remove
+	BNDPLT check.  Handle PARSE_AND_LIST_ARGS_CASE_Z.
+	(gld${EMULATION_NAME}_list_options): Remove BNDPLT check.
+
+2015-04-09  Nick Clifton  <nickc@redhat.com>
+
+	* po/fr.po: Updated French translation.
+
+2015-04-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac (elf_list_options): Set to TRUE for
+	--enable-targets=all.
+	(elf_shlib_list_options): Likewise.
+	(elf_plt_unwind_list_options): Likewise.
+	* configure: Regenerated.
+
+2015-04-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* emulparams/elf32bmipn32-defs.sh: Skip empty EMULATION_NAME.
+
+2015-04-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.am (ELF_CLFAGS): New.
+	(AM_CFLAGS): Add $(ELF_CLFAGS).
+	* configure.ac (elf_list_options): New.  AC_SUBST.
+	(elf_shlib_list_options): Likewise.
+	(elf_plt_unwind_list_options): Likewise.
+	* lexsup.c (elf_shlib_list_options): New.
+	(elf_static_list_options): Likewise.
+	(elf_plt_unwind_list_options): Likewise.
+	(ld_list_options): Likewise.
+	(help): Call ld_list_options.
+	* Makefile.in: Regenerated.
+	* configure: Likewise.
+	* emulparams/plt_unwind.sh (PLT_UNWIND): New.
+	(PARSE_AND_LIST_OPTIONS): Removed.
+	* emultempl/elf32.em (gld_list_options): New.
+	(gld${EMULATION_NAME}_list_options): Define only if BNDPLT or
+	PARSE_AND_LIST_OPTIONS is defined.
+	(ld_${EMULATION_NAME}_emulation): Replace
+	gld${EMULATION_NAME}_list_options with ${gld_list_options.
+
+2015-04-07  Alan Modra  <amodra@gmail.com>
+
+	PR ld/18176
+	* ldlang.c (lang_size_sections): Cast shift expression.
+
+2015-04-07  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/ppc32elf.em: Handle --no-pic-fixup.
+	(params): Init new field.
+	(ppc_before_allocation): Enable relaxation for pic_fixup.
+
+2015-04-07  Nick Clifton  <nickc@redhat.com>
+
+	* ld.h (struct ld_config_type): Add new field: warn_orphan.
+	* ldlex.h (enum option_values): Add OPTION_WARN_ORPHAN and
+	OPTION_NO_WARN_ORPHAN.
+	* lexsup.c (ld_options): Add --warn-orphan and --no-warn-orphan.
+	(parse_args): Handle the new options.
+	* ldemul.c (ldemul_place_orphan): If requested, generate a warning
+	message when an orphan section is placed in the output file.
+	* ld.texinfo: Document the new option.
+	* NEWS: Mention the new feature.
+
+2015-04-02  Andrew Turner <andrew@freebsd.org>
+
+	* Makefile.am: Add FreeBSD aarch64 files.
+	* Makefile.in: Regenerate.
+	* configure.tgt: Add aarch64-*-freebsd* target triple.
+	* emulparams/aarch64fbsd.sh: New file.
+	* emulparams/aarch64fbsdb.sh: New file.
+
+2015-04-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* emultempl/elf32.em (gld${EMULATION_NAME}_before_allocation): Work
+	around a GCC uninitialized warning bug fixed in GCC 4.6.
+
+2015-04-01  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* emultempl/aarch64elf.em
+	(aarch64_elf_create_output_section_statements): Add parameter in
+	bfd_elf${ELFSIZE}_aarch64_set_options call.
+	(OPTION_FIX_ERRATUM_843419): Define.
+	(PARSE_AND_LIST_LONGOPTS): Add fix-cortex-a53-843419.
+	(PARSE_AND_LIST_ARGS_CASES): Add OPTION_FIX_ERRATUM_843419.
+
+2015-04-01  Chen Gang  <gang.chen.5i5j@gmail.com>
+
+	* emulparams/elf32_tic6x_le.sh: Skip OTHER_BSS_SECTIONS for
+	relocating operation.
+
+2015-04-01  Alan Modra  <amodra@gmail.com>
+
+	PR ld/18176
+	* ldlang.c (lang_size_sections): When alignment of sections
+	results in relro base adjustment being too large, don't go lower
+	than the initial value.
+	* ldexp.c (fold_binary <DATA_SEGMENT_RELRO_END>): Comment.
+	* scripttempl/elf.sc (DATA_SEGMENT_ALIGN): Omit SEGMENT_SIZE
+	alignment when SEGMENT_SIZE is the same as MAXPAGESIZE.
+
+2015-04-01  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/elf32.em (gld${EMULATION_NAME}_before_allocation): Don't
+	init ehdr_start_save.
+
+2015-04-01  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am (eelf32ppcvxworks.c): Depend on ppc32elf.em and
+	ldemul-list.h.
+	(eelf32lppc.c, eelf32lppclinux.c, eelf32lppcnto.c, eelf32lppcsim.c,
+	eelf32ppc.c, eelf32ppc_fbsd.c, eelf32ppclinux.c, eelf32ppcnto.c,
+	eelf32ppcsim.c): Rearrange deps for consistency.
+	* Makefile.in: Regenerate.
+
+2015-04-01  Ed Schouten  <ed@nuxi.nl>
+
+	* emultempl/elf32.em (gld*_before_allocation): Zero-initialize
+	the ehdr_start_save variable.
+
+2015-03-31  Ed Schouten  <ed@nuxi.nl>
+
+	* Makefile.am (ALL_64_EMULATION_SOURCES): Add
+	eelf_x86_64_cloudabi.c.
+	(eelf_x86_64_cloudabi.c): New.
+	* configure.tgt (targ_emul): Set to elf_x86_64_cloudabi for
+	x86_64-*-cloudabi*.
+	* Makefile.in: Regenerated.
+	* emulparams/elf_x86_64_cloudabi.sh: New file.
+
+2015-03-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac (AM_ZLIB): Removed.
+	* Makefile.in: Regenerated.
+	* config.in: Likewise.
+	* configure: Likewise.
+
+2015-03-24  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* emultempl/aarch64elf.em (_aarch64_add_stub_section): Set section
+	alignment to 2.
+
+2015-03-23  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* emultempl/aarch64elf.em
+	(elf${ELFSIZE}_aarch64_add_stub_section): Adjust layout.
+
+2015-03-18  Chen Gang  <gang.chen.5i5j@gmail.com>
+
+	* ldmain.c (main): Use %F instead of %X for einfo.
+
 2015-03-02  Alan Modra  <amodra@gmail.com>
 
 	* ld.texinfo (Options <-z nocopyreloc>): Rewrite.

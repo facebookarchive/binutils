@@ -178,8 +178,6 @@ struct thread_db_info
 
   td_err_e (*td_ta_new_p) (struct ps_prochandle * ps,
 				td_thragent_t **ta);
-  td_err_e (*td_ta_map_id2thr_p) (const td_thragent_t *ta, thread_t pt,
-				  td_thrhandle_t *__th);
   td_err_e (*td_ta_map_lwp2thr_p) (const td_thragent_t *ta,
 				   lwpid_t lwpid, td_thrhandle_t *th);
   td_err_e (*td_ta_thr_iter_p) (const td_thragent_t *ta,
@@ -196,7 +194,6 @@ struct thread_db_info
   td_err_e (*td_ta_event_getmsg_p) (const td_thragent_t *ta,
 				    td_event_msg_t *msg);
 
-  td_err_e (*td_thr_validate_p) (const td_thrhandle_t *th);
   td_err_e (*td_thr_get_info_p) (const td_thrhandle_t *th,
 				 td_thrinfo_t *infop);
   td_err_e (*td_thr_event_enable_p) (const td_thrhandle_t *th,
@@ -611,14 +608,13 @@ enable_thread_event_reporting (void)
 static int
 thread_db_find_new_threads_silently (ptid_t ptid)
 {
-  volatile struct gdb_exception except;
 
-  TRY_CATCH (except, RETURN_MASK_ERROR)
+  TRY
     {
       thread_db_find_new_threads_2 (ptid, 1);
     }
 
-  if (except.reason < 0)
+  CATCH (except, RETURN_MASK_ERROR)
     {
       if (libthread_db_debug)
 	exception_fprintf (gdb_stdlog, except,
@@ -648,6 +644,8 @@ thread_db_find_new_threads_silently (ptid_t ptid)
 	  return 1;
 	}
     }
+  END_CATCH
+
   return 0;
 }
 
@@ -722,10 +720,6 @@ try_thread_db_load_1 (struct thread_db_info *info)
       return 0;
     }
 
-  info->td_ta_map_id2thr_p = verbose_dlsym (info->handle, "td_ta_map_id2thr");
-  if (info->td_ta_map_id2thr_p == NULL)
-    return 0;
-
   info->td_ta_map_lwp2thr_p = verbose_dlsym (info->handle,
 					     "td_ta_map_lwp2thr");
   if (info->td_ta_map_lwp2thr_p == NULL)
@@ -733,10 +727,6 @@ try_thread_db_load_1 (struct thread_db_info *info)
 
   info->td_ta_thr_iter_p = verbose_dlsym (info->handle, "td_ta_thr_iter");
   if (info->td_ta_thr_iter_p == NULL)
-    return 0;
-
-  info->td_thr_validate_p = verbose_dlsym (info->handle, "td_thr_validate");
-  if (info->td_thr_validate_p == NULL)
     return 0;
 
   info->td_thr_get_info_p = verbose_dlsym (info->handle, "td_thr_get_info");
@@ -1345,8 +1335,10 @@ record_thread (struct thread_db_info *info,
   priv->tid = ti_p->ti_tid;
   update_thread_state (priv, ti_p);
 
-  /* Add the thread to GDB's thread list.  */
-  if (tp == NULL)
+  /* Add the thread to GDB's thread list.  If we already know about a
+     thread with this PTID, but it's marked exited, then the kernel
+     reused the tid of an old thread.  */
+  if (tp == NULL || tp->state == THREAD_EXITED)
     tp = add_thread_with_info (ptid, priv);
   else
     tp->priv = priv;
@@ -1681,7 +1673,6 @@ static int
 find_new_threads_once (struct thread_db_info *info, int iteration,
 		       td_err_e *errp)
 {
-  volatile struct gdb_exception except;
   struct callback_data data;
   td_err_e err = TD_ERR;
 
@@ -1691,7 +1682,7 @@ find_new_threads_once (struct thread_db_info *info, int iteration,
   /* See comment in thread_db_update_thread_list.  */
   gdb_assert (!target_has_execution || thread_db_use_events ());
 
-  TRY_CATCH (except, RETURN_MASK_ERROR)
+  TRY
     {
       /* Iterate over all user-space threads to discover new threads.  */
       err = info->td_ta_thr_iter_p (info->thread_agent,
@@ -1702,13 +1693,18 @@ find_new_threads_once (struct thread_db_info *info, int iteration,
 				    TD_SIGNO_MASK,
 				    TD_THR_ANY_USER_FLAGS);
     }
+  CATCH (except, RETURN_MASK_ERROR)
+    {
+      if (libthread_db_debug)
+	{
+	  exception_fprintf (gdb_stdlog, except,
+			     "Warning: find_new_threads_once: ");
+	}
+    }
+  END_CATCH
 
   if (libthread_db_debug)
     {
-      if (except.reason < 0)
-	exception_fprintf (gdb_stdlog, except,
-			   "Warning: find_new_threads_once: ");
-
       fprintf_unfiltered (gdb_stdlog,
 			  _("Found %d new threads in iteration %d.\n"),
 			  data.new_threads, iteration);

@@ -2636,7 +2636,7 @@ scan_xcoff_symtab (struct objfile *objfile)
 	case C_DECL:
 	case C_STSYM:
 	  {
-	    char *p;
+	    const char *p;
 
 	    swap_sym (&symbol, &main_aux[0], &namestring, &sraw_symbol,
 		      &ssymnum, objfile);
@@ -2763,7 +2763,7 @@ scan_xcoff_symtab (struct objfile *objfile)
 		       Accept either.  */
 		    while (*p && *p != ';' && *p != ',')
 		      {
-			char *q;
+			const char *q;
 
 			/* Check for and handle cretinous dbx symbol name
 			   continuation!  */
@@ -2839,7 +2839,7 @@ scan_xcoff_symtab (struct objfile *objfile)
 		   loader-generated definitions.  Keeping the global
 		   symbols leads to "in psymbols but not in symbols"
 		   errors.  */
-		if (strncmp (namestring, "@FIX", 4) == 0)
+		if (startswith (namestring, "@FIX"))
 		  continue;
 
 		symbol.n_value += ANOFFSET (objfile->section_offsets,

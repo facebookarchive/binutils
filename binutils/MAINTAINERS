@@ -68,7 +68,7 @@ responsibility among the other maintainers.
   AVR		   Marek Michalkiewicz <marekm@amelek.gda.pl>
   BFIN		   Jie Zhang <jzhang918@gmail.com>
   BFIN		   Bernd Schmidt <bernd.schmidt@analog.com>
-  BFIN		   Mike Frysinger <michael.frysinger@analog.com>
+  BFIN		   Mike Frysinger <vapier@gentoo.org>
   BUILD SYSTEM	   Daniel Jacobowitz <drow@false.org>
   CR16		   M R Swami Reddy <MR.Swami.Reddy@nsc.com>
   CRIS		   Hans-Peter Nilsson <hp@axis.com>
@@ -119,11 +119,13 @@ responsibility among the other maintainers.
   OR1K		   Stefan Kristiansson <stefan.kristiansson@saunalahti.fi>
   PPC		   Geoff Keating <geoffk@geoffk.org>
   PPC		   Alan Modra <amodra@gmail.com>
+  PPC		   Peter Bergner <bergner@vnet.ibm.com>
   PPC vector ext   Aldy Hernandez <aldyh@redhat.com>
   RL78             DJ Delorie <dj@redhat.com>
   RX               DJ Delorie <dj@redhat.com>
   RX               Nick Clifton <nickc@redhat.com>
   s390, s390x	   Martin Schwidefsky <schwidefsky@de.ibm.com>
+  s390, s390x	   Andreas Krebbel <krebbel@linux.vnet.ibm.com>
   SCORE		   Mei Ligang <ligang@sunnorth.com.cn>
   SH		   Alexandre Oliva <aoliva@redhat.com>
   SH		   Kaz Kojima <kkojima@rr.iij4u.or.jp>

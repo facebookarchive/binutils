@@ -1,3 +1,45 @@
+2015-05-12  Jiong Wang  <jiong.wang@arm.com>
+
+	* elf/aarch64.h (R_AARCH64_P32_LD32_GOTPAGE_LO14): New enumeration.
+
+2015-05-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Merge with gcc:
+	2014-11-11  Anthony Brandon  <anthony.brandon@gmail.com>
+		    Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR driver/36312
+	* filenames.h: Add prototype for canonical_filename_eq.
+
+2015-04-30  DJ Delorie  <dj@redhat.com>
+
+	* dis-asm.h (print_insn_rl78_g10): New.
+	(print_insn_rl78_g13): New.
+	(print_insn_rl78_g14): New.
+	(rl78_get_disassembler): New.
+
+2015-04-17  Richard Earnshaw  <rearnsha@arm.com>
+
+	Merge from gcc:
+	2015-03-19  Richard Biener  <rguenther@suse.de>
+
+		* partition.h (struct partition_elem): Re-order elements to
+		avoid padding.
+
+2015-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* bfdlink.h (bfd_link_info): Add compress_debug.
+
+2015-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/pr17709
+	* bfdlink.h (bfd_link_info): Add extern_protected_data.
+
+2015-03-10  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR ld/16572
+	* elf/arm.h (EF_ARM_HASENTRY): Remove.
+
 2015-02-19  Pedro Alves  <palves@redhat.com>
 
 	* floatformat.h [__cplusplus]: Wrap in extern "C".

@@ -355,8 +355,11 @@ cp_search_static_and_baseclasses (const char *name,
   make_cleanup (xfree, nested);
 
   /* Lookup a class named KLASS.  If none is found, there is nothing
-     more that can be done.  */
-  klass_sym = lookup_global_symbol (klass, block, domain);
+     more that can be done.  KLASS could be a namespace, so always look
+     in VAR_DOMAIN.  This works for classes too because of
+     symbol_matches_domain (which should be replaced with something else,
+     but it's what we have today).  */
+  klass_sym = lookup_global_symbol (klass, block, VAR_DOMAIN);
   if (klass_sym == NULL)
     {
       do_cleanups (cleanup);
@@ -497,8 +500,7 @@ cp_lookup_symbol_via_imports (const char *scope,
 
       len = strlen (current->import_dest);
       directive_match = (search_parents
-                         ? (strncmp (scope, current->import_dest,
-                                     strlen (current->import_dest)) == 0
+                         ? (startswith (scope, current->import_dest)
                             && (len == 0
                                 || scope[len] == ':'
 				|| scope[len] == '\0'))

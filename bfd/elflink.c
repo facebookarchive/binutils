@@ -844,7 +844,7 @@ _bfd_elf_link_renumber_dynsyms (bfd *output_bfd,
 
 static void
 elf_merge_st_other (bfd *abfd, struct elf_link_hash_entry *h,
-		    const Elf_Internal_Sym *isym,
+		    const Elf_Internal_Sym *isym, asection *sec,
 		    bfd_boolean definition, bfd_boolean dynamic)
 {
   const struct elf_backend_data *bed = get_elf_backend_data (abfd);
@@ -865,7 +865,9 @@ elf_merge_st_other (bfd *abfd, struct elf_link_hash_entry *h,
       if (symvis - 1 < hvis - 1)
 	h->other = symvis | (h->other & ~ELF_ST_VISIBILITY (-1));
     }
-  else if (definition && ELF_ST_VISIBILITY (isym->st_other) != STV_DEFAULT)
+  else if (definition
+	   && ELF_ST_VISIBILITY (isym->st_other) != STV_DEFAULT
+	   && (sec->flags & SEC_READONLY) == 0)
     h->protected_def = 1;
 }
 
@@ -1417,7 +1419,7 @@ _bfd_elf_merge_symbol (bfd *abfd,
       /* Merge st_other.  If the symbol already has a dynamic index,
 	 but visibility says it should not be visible, turn it into a
 	 local symbol.  */
-      elf_merge_st_other (abfd, h, sym, newdef, newdyn);
+      elf_merge_st_other (abfd, h, sym, sec, newdef, newdyn);
       if (h->dynindx != -1)
 	switch (ELF_ST_VISIBILITY (h->other))
 	  {
@@ -2673,14 +2675,12 @@ _bfd_elf_adjust_dynamic_copy (struct bfd_link_info *info,
 
   /* No error if extern_protected_data is true.  */
   if (h->protected_def
-      && !get_elf_backend_data (dynbss->owner)->extern_protected_data)
-    {
-      info->callbacks->einfo
-	(_("%P: copy reloc against protected `%T' is invalid\n"),
-	 h->root.root.string);
-      bfd_set_error (bfd_error_bad_value);
-      return FALSE;
-    }
+      && (!info->extern_protected_data
+	  || (info->extern_protected_data < 0
+	      && !get_elf_backend_data (dynbss->owner)->extern_protected_data)))
+    info->callbacks->einfo
+      (_("%P: copy reloc against protected `%T' is dangerous\n"),
+       h->root.root.string);
 
   return TRUE;
 }
@@ -2839,7 +2839,10 @@ _bfd_elf_symbol_refs_local_p (struct elf_link_hash_entry *h,
 
   /* If extern_protected_data is false, STV_PROTECTED non-function
      symbols are local.  */
-  if (!bed->extern_protected_data && !bed->is_function_type (h->type))
+  if ((!info->extern_protected_data
+       || (info->extern_protected_data < 0
+	   && !bed->extern_protected_data))
+      && !bed->is_function_type (h->type))
     return TRUE;
 
   /* Function pointer equality tests may require that STV_PROTECTED
@@ -2936,6 +2939,10 @@ elf_link_is_defined_archive_symbol (bfd * abfd, carsym * symdef)
 
   abfd = _bfd_get_elt_at_filepos (abfd, symdef->file_offset);
   if (abfd == NULL)
+    return FALSE;
+
+  /* Return FALSE if the object has been claimed by plugin.  */
+  if (abfd->plugin_format == bfd_plugin_yes)
     return FALSE;
 
   if (! bfd_check_format (abfd, bfd_object))
@@ -4358,7 +4365,7 @@ error_free_dyn:
 	    }
 
 	  /* Merge st_other field.  */
-	  elf_merge_st_other (abfd, h, isym, definition, dynamic);
+	  elf_merge_st_other (abfd, h, isym, sec, definition, dynamic);
 
 	  /* We don't want to make debug symbol dynamic.  */
 	  if (definition && (sec->flags & SEC_DEBUGGING) && !info->relocatable)
@@ -7807,7 +7814,9 @@ put_value (bfd_vma size,
 	  break;
 	case 4:
 	  bfd_put_32 (input_bfd, x, location);
-	  x >>= 32;
+	  /* Computed this way because x >>= 32 is undefined if x is a 32-bit value.  */
+	  x >>= 16;
+	  x >>= 16;
 	  break;
 #ifdef BFD64
 	case 8:
@@ -10881,6 +10890,21 @@ bfd_elf_final_link (bfd *abfd, struct bfd_link_info *info)
 	 to count upwards while actually outputting the relocations.  */
       esdo->rel.count = 0;
       esdo->rela.count = 0;
+
+      if (esdo->this_hdr.sh_offset == (file_ptr) -1)
+	{
+	  /* Cache the section contents so that they can be compressed
+	     later.  Use bfd_malloc since it will be freed by
+	     bfd_compress_section_contents.  */
+	  unsigned char *contents = esdo->this_hdr.contents;
+	  if ((o->flags & SEC_ELF_COMPRESS) == 0 || contents != NULL)
+	    abort ();
+	  contents
+	    = (unsigned char *) bfd_malloc (esdo->this_hdr.sh_size);
+	  if (contents == NULL)
+	    goto error_return;
+	  esdo->this_hdr.contents = contents;
+	}
     }
 
   /* We have now assigned file positions for all the sections except
@@ -12100,7 +12124,6 @@ _bfd_elf_gc_mark_extra_sections (struct bfd_link_info *info,
 				isec->name, ilen) == 0)
 		  {
 		    dsec->gc_mark = 0;
-		    break;
 		  }
 	      }
 	  }
@@ -12158,7 +12181,8 @@ elf_gc_sweep (bfd *abfd, struct bfd_link_info *info)
     {
       asection *o;
 
-      if (bfd_get_flavour (sub) != bfd_target_elf_flavour)
+      if (bfd_get_flavour (sub) != bfd_target_elf_flavour
+	  || !(*bed->relocs_compatible) (sub->xvec, abfd->xvec))
 	continue;
 
       for (o = sub->sections; o != NULL; o = o->next)
@@ -12445,7 +12469,8 @@ bfd_elf_gc_sections (bfd *abfd, struct bfd_link_info *info)
     {
       asection *o;
 
-      if (bfd_get_flavour (sub) != bfd_target_elf_flavour)
+      if (bfd_get_flavour (sub) != bfd_target_elf_flavour
+	  || !(*bed->relocs_compatible) (sub->xvec, abfd->xvec))
 	continue;
 
       /* Start at sections marked with SEC_KEEP (ref _bfd_elf_gc_keep).
@@ -13265,7 +13290,7 @@ _bfd_elf_copy_link_hash_symbol_type (bfd *abfd,
   ehdest->target_internal = ehsrc->target_internal;
 
   isym.st_other = ehsrc->other;
-  elf_merge_st_other (abfd, ehdest, &isym, TRUE, FALSE);
+  elf_merge_st_other (abfd, ehdest, &isym, NULL, TRUE, FALSE);
 }
 
 /* Append a RELA relocation REL to section S in BFD.  */

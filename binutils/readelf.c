@@ -43,9 +43,7 @@
 #include "sysdep.h"
 #include <assert.h>
 #include <time.h>
-#ifdef HAVE_ZLIB_H
 #include <zlib.h>
-#endif
 #ifdef HAVE_WCHAR_H
 #include <wchar.h>
 #endif
@@ -552,7 +550,7 @@ print_symbol (int width, const char *symbol)
    to print multibyte characters, it just interprets them as hex values.  */
 
 static const char *
-printable_section_name (Elf_Internal_Shdr * sec)
+printable_section_name (const Elf_Internal_Shdr * sec)
 {
 #define MAX_PRINT_SEC_NAME_LEN 128
   static char  sec_name_buf [MAX_PRINT_SEC_NAME_LEN + 1];
@@ -703,7 +701,7 @@ guess_is_rela (unsigned int e_machine)
     {
       /* Targets that use REL relocations.  */
     case EM_386:
-    case EM_486:
+    case EM_IAMCU:
     case EM_960:
     case EM_ARM:
     case EM_D10V:
@@ -1180,7 +1178,7 @@ dump_relocations (FILE * file,
 	  break;
 
 	case EM_386:
-	case EM_486:
+	case EM_IAMCU:
 	  rtype = elf_i386_reloc_type (type);
 	  break;
 
@@ -2093,7 +2091,7 @@ get_machine_name (unsigned e_machine)
     case EM_386:		return "Intel 80386";
     case EM_68K:		return "MC68000";
     case EM_88K:		return "MC88000";
-    case EM_486:		return "Intel 80486";
+    case EM_IAMCU:		return "Intel MCU";
     case EM_860:		return "Intel 80860";
     case EM_MIPS:		return "MIPS R3000";
     case EM_S370:		return "IBM System/370";
@@ -2278,12 +2276,6 @@ decode_ARM_machine_flags (unsigned e_flags, char buf[])
     {
       strcat (buf, ", relocatable executable");
       e_flags &= ~ EF_ARM_RELEXEC;
-    }
-
-  if (e_flags & EF_ARM_HASENTRY)
-    {
-      strcat (buf, ", has entry point");
-      e_flags &= ~ EF_ARM_HASENTRY;
     }
 
   /* Now handle EABI specific flags.  */
@@ -2900,6 +2892,40 @@ get_machine_flags (unsigned e_flags, unsigned e_machine)
 	    }
 	  break;
 
+	case EM_CYGNUS_MEP:
+	  switch (e_flags & EF_MEP_CPU_MASK)
+	    {
+	    case EF_MEP_CPU_MEP: strcat (buf, ", generic MeP"); break;
+	    case EF_MEP_CPU_C2: strcat (buf, ", MeP C2"); break;
+	    case EF_MEP_CPU_C3: strcat (buf, ", MeP C3"); break;
+	    case EF_MEP_CPU_C4: strcat (buf, ", MeP C4"); break;
+	    case EF_MEP_CPU_C5: strcat (buf, ", MeP C5"); break;
+	    case EF_MEP_CPU_H1: strcat (buf, ", MeP H1"); break;
+	    default: strcat (buf, _(", <unknown MeP cpu type>")); break;
+	    }
+
+	  switch (e_flags & EF_MEP_COP_MASK)
+	    {
+	    case EF_MEP_COP_NONE: break;
+	    case EF_MEP_COP_AVC: strcat (buf, ", AVC coprocessor"); break;
+	    case EF_MEP_COP_AVC2: strcat (buf, ", AVC2 coprocessor"); break;
+	    case EF_MEP_COP_FMAX: strcat (buf, ", FMAX coprocessor"); break;
+	    case EF_MEP_COP_IVC2: strcat (buf, ", IVC2 coprocessor"); break;
+	    default: strcat (buf, _("<unknown MeP copro type>")); break;
+	    }
+
+	  if (e_flags & EF_MEP_LIBRARY)
+	    strcat (buf, ", Built for Library");
+
+	  if (e_flags & EF_MEP_INDEX_MASK)
+	    sprintf (buf + strlen (buf), ", Configuration Index: %#x",
+		     e_flags & EF_MEP_INDEX_MASK);
+
+	  if (e_flags & ~ EF_MEP_ALL_FLAGS)
+	    sprintf (buf + strlen (buf), _(", unknown flags bits: %#x"),
+		     e_flags & ~ EF_MEP_ALL_FLAGS);
+	  break;
+
 	case EM_PPC:
 	  if (e_flags & EF_PPC_EMB)
 	    strcat (buf, ", emb");
@@ -3262,8 +3288,13 @@ get_machine_flags (unsigned e_flags, unsigned e_machine)
 	  break;
 
 	case EM_RL78:
-	  if (e_flags & E_FLAG_RL78_G10)
-	    strcat (buf, ", G10");
+	  switch (e_flags & E_FLAG_RL78_CPU_MASK)
+	    {
+	    case E_FLAG_RL78_ANY_CPU: break;
+	    case E_FLAG_RL78_G10: strcat (buf, ", G10"); break;
+	    case E_FLAG_RL78_G13: strcat (buf, ", G13"); break;
+	    case E_FLAG_RL78_G14: strcat (buf, ", G14"); break;
+	    }
 	  if (e_flags & E_FLAG_RL78_64BIT_DOUBLES)
 	    strcat (buf, ", 64-bit doubles");
 	  break;
@@ -3277,6 +3308,9 @@ get_machine_flags (unsigned e_flags, unsigned e_machine)
 	    strcat (buf, ", pid");
 	  if (e_flags & E_FLAG_RX_ABI)
 	    strcat (buf, ", RX ABI");
+	  if (e_flags & E_FLAG_RX_SINSNS_SET)
+	    strcat (buf, e_flags & E_FLAG_RX_SINSNS_YES
+		    ? ", uses String instructions" : ", bans String instructions");
 	  break;
 
 	case EM_S390:
@@ -4238,11 +4272,6 @@ parse_args (int argc, char ** argv)
       && !do_section_groups && !do_archive_index
       && !do_dyn_syms)
     usage (stderr);
-  else if (argc < 3)
-    {
-      warn (_("Nothing to do.\n"));
-      usage (stderr);
-    }
 }
 
 static const char *
@@ -5163,7 +5192,8 @@ get_elf_section_flags (bfd_vma sh_flags)
       /* Generic.  */
       /* 18 */ { STRING_COMMA_LEN ("EXCLUDE") },
       /* SPARC specific.  */
-      /* 19 */ { STRING_COMMA_LEN ("ORDERED") }
+      /* 19 */ { STRING_COMMA_LEN ("ORDERED") },
+      /* 20 */ { STRING_COMMA_LEN ("COMPRESSED") }
     };
 
   if (do_section_details)
@@ -5195,6 +5225,7 @@ get_elf_section_flags (bfd_vma sh_flags)
 	    case SHF_GROUP:		sindex = 8; break;
 	    case SHF_TLS:		sindex = 9; break;
 	    case SHF_EXCLUDE:		sindex = 18; break;
+	    case SHF_COMPRESSED:	sindex = 20; break;
 
 	    default:
 	      sindex = -1;
@@ -5221,7 +5252,7 @@ get_elf_section_flags (bfd_vma sh_flags)
 		  break;
 
 		case EM_386:
-		case EM_486:
+		case EM_IAMCU:
 		case EM_X86_64:
 		case EM_L1OM:
 		case EM_K1OM:
@@ -5276,6 +5307,7 @@ get_elf_section_flags (bfd_vma sh_flags)
 	    case SHF_GROUP:		*p = 'G'; break;
 	    case SHF_TLS:		*p = 'T'; break;
 	    case SHF_EXCLUDE:		*p = 'E'; break;
+	    case SHF_COMPRESSED:	*p = 'C'; break;
 
 	    default:
 	      if ((elf_header.e_machine == EM_X86_64
@@ -5361,6 +5393,27 @@ get_elf_section_flags (bfd_vma sh_flags)
 
   *p = '\0';
   return buff;
+}
+
+static unsigned int
+get_compression_header (Elf_Internal_Chdr *chdr, unsigned char *buf)
+{
+  if (is_32bit_elf)
+    {
+      Elf32_External_Chdr *echdr = (Elf32_External_Chdr *) buf;
+      chdr->ch_type = BYTE_GET (echdr->ch_type);
+      chdr->ch_size = BYTE_GET (echdr->ch_size);
+      chdr->ch_addralign = BYTE_GET (echdr->ch_addralign);
+      return sizeof (*echdr);
+    }
+  else
+    {
+      Elf64_External_Chdr *echdr = (Elf64_External_Chdr *) buf;
+      chdr->ch_type = BYTE_GET (echdr->ch_type);
+      chdr->ch_size = BYTE_GET (echdr->ch_size);
+      chdr->ch_addralign = BYTE_GET (echdr->ch_addralign);
+      return sizeof (*echdr);
+    }
 }
 
 static int
@@ -5681,7 +5734,7 @@ process_section_headers (FILE * file)
 	      switch (elf_header.e_machine)
 		{
 		case EM_386:
-		case EM_486:
+		case EM_IAMCU:
 		case EM_X86_64:
 		case EM_L1OM:
 		case EM_K1OM:
@@ -5807,7 +5860,29 @@ process_section_headers (FILE * file)
 	}
 
       if (do_section_details)
-	printf ("       %s\n", get_elf_section_flags (section->sh_flags));
+	{
+	  printf ("       %s\n", get_elf_section_flags (section->sh_flags));
+	  if ((section->sh_flags & SHF_COMPRESSED) != 0)
+	    {
+	      /* Minimum section size is 12 bytes for 32-bit compression
+		 header + 12 bytes for compressed data header.  */
+	      unsigned char buf[24];
+	      assert (sizeof (buf) >= sizeof (Elf64_External_Chdr));
+	      if (get_data (&buf, (FILE *) file, section->sh_offset, 1,
+			    sizeof (buf), _("compression header")))
+		{
+		  Elf_Internal_Chdr chdr;
+		  get_compression_header (&chdr, buf);
+		  if (chdr.ch_type == ELFCOMPRESS_ZLIB)
+		    printf ("       ZLIB, ");
+		  else
+		    printf (_("       [<unknown>: 0x%x], "),
+			    chdr.ch_type);
+		  print_vma (chdr.ch_size, LONG_HEX);
+		  printf (", %lu\n", (unsigned long) chdr.ch_addralign);
+		}
+	    }
+	}
     }
 
   if (!do_section_details)
@@ -11120,6 +11195,42 @@ target_specific_reloc_handling (Elf_Internal_Rela * reloc,
 	  }
 	break;
       }
+
+    case EM_RL78:
+      {
+	static bfd_vma saved_sym1 = 0;
+	static bfd_vma saved_sym2 = 0;
+	static bfd_vma value;
+
+	switch (reloc_type)
+	  {
+	  case 0x80: /* R_RL78_SYM.  */
+	    saved_sym1 = saved_sym2;
+	    saved_sym2 = symtab[get_reloc_symindex (reloc->r_info)].st_value;
+	    saved_sym2 += reloc->r_addend;
+	    return TRUE;
+
+	  case 0x83: /* R_RL78_OPsub.  */
+	    value = saved_sym1 - saved_sym2;
+	    saved_sym2 = saved_sym1 = 0;
+	    return TRUE;
+	    break;
+
+	  case 0x41: /* R_RL78_ABS32.  */
+	    byte_put (start + reloc->r_offset, value, 4);
+	    value = 0;
+	    return TRUE;
+
+	  case 0x43: /* R_RL78_ABS16.  */
+	    byte_put (start + reloc->r_offset, value, 2);
+	    value = 0;
+	    return TRUE;
+
+	  default:
+	    break;
+	  }
+	break;
+      }
     }
 
   return FALSE;
@@ -11142,7 +11253,7 @@ is_32bit_abs_reloc (unsigned int reloc_type)
   switch (elf_header.e_machine)
     {
     case EM_386:
-    case EM_486:
+    case EM_IAMCU:
       return reloc_type == 1; /* R_386_32.  */
     case EM_68K:
       return reloc_type == 1; /* R_68K_32.  */
@@ -11319,7 +11430,7 @@ is_32bit_pcrel_reloc (unsigned int reloc_type)
   switch (elf_header.e_machine)
     {
     case EM_386:
-    case EM_486:
+    case EM_IAMCU:
       return reloc_type == 2;  /* R_386_PC32.  */
     case EM_68K:
       return reloc_type == 4;  /* R_68K_PC32.  */
@@ -11592,11 +11703,11 @@ is_none_reloc (unsigned int reloc_type)
 
 static void
 apply_relocations (void * file,
-		   Elf_Internal_Shdr * section,
-		   unsigned char * start)
+		   const Elf_Internal_Shdr * section,
+		   unsigned char * start, bfd_size_type size)
 {
   Elf_Internal_Shdr * relsec;
-  unsigned char * end = start + section->sh_size;
+  unsigned char * end = start + size;
 
   if (elf_header.e_type != ET_REL)
     return;
@@ -11888,7 +11999,7 @@ dump_section_as_bytes (Elf_Internal_Shdr * section,
 
   if (relocate)
     {
-      apply_relocations (file, section, start);
+      apply_relocations (file, section, start, section->sh_size);
     }
   else
     {
@@ -11962,42 +12073,26 @@ dump_section_as_bytes (Elf_Internal_Shdr * section,
 /* Uncompresses a section that was compressed using zlib, in place.  */
 
 static int
-uncompress_section_contents (unsigned char **buffer ATTRIBUTE_UNUSED,
-			     dwarf_size_type *size ATTRIBUTE_UNUSED)
+uncompress_section_contents (unsigned char **buffer,
+			     dwarf_size_type uncompressed_size,
+			     dwarf_size_type *size)
 {
-#ifndef HAVE_ZLIB_H
-  return FALSE;
-#else
   dwarf_size_type compressed_size = *size;
   unsigned char * compressed_buffer = *buffer;
-  dwarf_size_type uncompressed_size;
   unsigned char * uncompressed_buffer;
   z_stream strm;
   int rc;
-  dwarf_size_type header_size = 12;
-
-  /* Read the zlib header.  In this case, it should be "ZLIB" followed
-     by the uncompressed section size, 8 bytes in big-endian order.  */
-  if (compressed_size < header_size
-      || ! streq ((char *) compressed_buffer, "ZLIB"))
-    return 0;
-
-  uncompressed_size = compressed_buffer[4]; uncompressed_size <<= 8;
-  uncompressed_size += compressed_buffer[5]; uncompressed_size <<= 8;
-  uncompressed_size += compressed_buffer[6]; uncompressed_size <<= 8;
-  uncompressed_size += compressed_buffer[7]; uncompressed_size <<= 8;
-  uncompressed_size += compressed_buffer[8]; uncompressed_size <<= 8;
-  uncompressed_size += compressed_buffer[9]; uncompressed_size <<= 8;
-  uncompressed_size += compressed_buffer[10]; uncompressed_size <<= 8;
-  uncompressed_size += compressed_buffer[11];
 
   /* It is possible the section consists of several compressed
      buffers concatenated together, so we uncompress in a loop.  */
-  strm.zalloc = NULL;
-  strm.zfree = NULL;
-  strm.opaque = NULL;
-  strm.avail_in = compressed_size - header_size;
-  strm.next_in = (Bytef *) compressed_buffer + header_size;
+  /* PR 18313: The state field in the z_stream structure is supposed
+     to be invisible to the user (ie us), but some compilers will
+     still complain about it being used without initialisation.  So
+     we first zero the entire z_stream structure and then set the fields
+     that we need.  */
+  memset (& strm, 0, sizeof strm);
+  strm.avail_in = compressed_size;
+  strm.next_in = (Bytef *) compressed_buffer;
   strm.avail_out = uncompressed_size;
   uncompressed_buffer = (unsigned char *) xmalloc (uncompressed_size);
 
@@ -12018,7 +12113,6 @@ uncompress_section_contents (unsigned char **buffer ATTRIBUTE_UNUSED,
       || strm.avail_out != 0)
     goto fail;
 
-  free (compressed_buffer);
   *buffer = uncompressed_buffer;
   *size = uncompressed_size;
   return 1;
@@ -12028,12 +12122,11 @@ uncompress_section_contents (unsigned char **buffer ATTRIBUTE_UNUSED,
   /* Indicate decompression failure.  */
   *buffer = NULL;
   return 0;
-#endif  /* HAVE_ZLIB_H */
 }
 
 static int
 load_specific_debug_section (enum dwarf_section_display_enum debug,
-			     Elf_Internal_Shdr * sec, void * file)
+			     const Elf_Internal_Shdr * sec, void * file)
 {
   struct dwarf_section * section = &debug_displays [debug].section;
   char buf [64];
@@ -12052,16 +12145,56 @@ load_specific_debug_section (enum dwarf_section_display_enum debug,
     section->size = 0;
   else
     {
-      section->size = sec->sh_size;
-      if (uncompress_section_contents (&section->start, &section->size))
-	sec->sh_size = section->size;
+      unsigned char *start = section->start;
+      dwarf_size_type size = sec->sh_size;
+      dwarf_size_type uncompressed_size = 0;
+
+      if ((sec->sh_flags & SHF_COMPRESSED) != 0)
+	{
+	  Elf_Internal_Chdr chdr;
+	  unsigned int compression_header_size
+	    = get_compression_header (&chdr, start);
+	  if (chdr.ch_type != ELFCOMPRESS_ZLIB
+	      || chdr.ch_addralign != sec->sh_addralign)
+	    return 0;
+	  uncompressed_size = chdr.ch_size;
+	  start += compression_header_size;
+	  size -= compression_header_size;
+	}
+      else if (size > 12 && streq ((char *) start, "ZLIB"))
+	{
+	  /* Read the zlib header.  In this case, it should be "ZLIB"
+	     followed by the uncompressed section size, 8 bytes in
+	     big-endian order.  */
+	  uncompressed_size = start[4]; uncompressed_size <<= 8;
+	  uncompressed_size += start[5]; uncompressed_size <<= 8;
+	  uncompressed_size += start[6]; uncompressed_size <<= 8;
+	  uncompressed_size += start[7]; uncompressed_size <<= 8;
+	  uncompressed_size += start[8]; uncompressed_size <<= 8;
+	  uncompressed_size += start[9]; uncompressed_size <<= 8;
+	  uncompressed_size += start[10]; uncompressed_size <<= 8;
+	  uncompressed_size += start[11];
+	  start += 12;
+	  size -= 12;
+	}
+
+      if (uncompressed_size
+	  && uncompress_section_contents (&start, uncompressed_size,
+					  &size))
+	{
+	  /* Free the compressed buffer, update the section buffer
+	     and the section size if uncompress is successful.  */
+	  free (section->start);
+	  section->start = start;
+	}
+      section->size = size;
     }
 
   if (section->start == NULL)
     return 0;
 
   if (debug_displays [debug].relocate)
-    apply_relocations ((FILE *) file, sec, section->start);
+    apply_relocations ((FILE *) file, sec, section->start, section->size);
 
   return 1;
 }
@@ -12746,6 +12879,41 @@ display_power_gnu_attribute (unsigned char * p,
        }
       return p;
     }
+
+  return display_tag_value (tag & 1, p, end);
+}
+
+static unsigned char *
+display_s390_gnu_attribute (unsigned char * p,
+			    int tag,
+			    const unsigned char * const end)
+{
+  unsigned int len;
+  int val;
+
+  if (tag == Tag_GNU_S390_ABI_Vector)
+    {
+      val = read_uleb128 (p, &len, end);
+      p += len;
+      printf ("  Tag_GNU_S390_ABI_Vector: ");
+
+      switch (val)
+	{
+	case 0:
+	  printf (_("any\n"));
+	  break;
+	case 1:
+	  printf (_("software\n"));
+	  break;
+	case 2:
+	  printf (_("hardware\n"));
+	  break;
+	default:
+	  printf ("??? (%d)\n", val);
+	  break;
+	}
+      return p;
+   }
 
   return display_tag_value (tag & 1, p, end);
 }
@@ -13518,6 +13686,13 @@ process_power_specific (FILE * file)
 {
   return process_attributes (file, NULL, SHT_GNU_ATTRIBUTES, NULL,
 			     display_power_gnu_attribute);
+}
+
+static int
+process_s390_specific (FILE * file)
+{
+  return process_attributes (file, NULL, SHT_GNU_ATTRIBUTES, NULL,
+			     display_s390_gnu_attribute);
 }
 
 static int
@@ -15514,6 +15689,10 @@ process_arch_specific (FILE * file)
     case EM_PPC:
       return process_power_specific (file);
       break;
+    case EM_S390:
+    case EM_S390_OLD:
+      return process_s390_specific (file);
+      break;
     case EM_SPARC:
     case EM_SPARC32PLUS:
     case EM_SPARCV9:
@@ -16137,6 +16316,11 @@ main (int argc, char ** argv)
 
   if (optind < (argc - 1))
     show_name = 1;
+  else if (optind >= argc)
+    {
+      warn (_("Nothing to do.\n"));
+      usage (stderr);
+    }
 
   err = 0;
   while (optind < argc)

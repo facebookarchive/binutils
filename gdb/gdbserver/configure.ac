@@ -167,13 +167,15 @@ if test "${ERROR_ON_WARNING}" = yes ; then
     WERROR_CFLAGS="-Werror"
 fi
 
-build_warnings="-Wall -Wdeclaration-after-statement -Wpointer-arith \
+build_warnings="-Wall -Wpointer-arith \
 -Wformat-nonliteral -Wno-char-subscripts -Wempty-body"
 
 # Now add in C and C++ specific options, depending on mode.
 if test "$enable_build_with_cxx" = "yes"; then
    build_warnings="$build_warnings -Wno-sign-compare -Wno-write-strings \
 -Wno-narrowing"
+else
+   build_warnings="$build_warnings -Wdeclaration-after-statement"
 fi
 
 # The set of warnings supported by a C++ compiler is not the same as
@@ -223,6 +225,8 @@ LIBS="$old_LIBS"
 libiberty_INIT
 
 AC_CHECK_DECLS([strerror, perror, vasprintf, vsnprintf])
+
+AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
 
 AC_CHECK_TYPES(socklen_t, [], [],
 [#include <sys/types.h>
@@ -339,6 +343,7 @@ if test "$ac_cv_header_sys_procfs_h" = yes; then
   BFD_HAVE_SYS_PROCFS_TYPE(lwpid_t)
   BFD_HAVE_SYS_PROCFS_TYPE(psaddr_t)
   BFD_HAVE_SYS_PROCFS_TYPE(prgregset_t)
+  BFD_HAVE_SYS_PROCFS_TYPE(prfpregset_t)
   BFD_HAVE_SYS_PROCFS_TYPE(elf_fpregset_t)
 fi
 

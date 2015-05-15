@@ -58,9 +58,6 @@ static enum tui_status tui_get_register (struct frame_info *frame,
 					 struct tui_data_element *data,
 					 int regnum, int *changedp);
 
-static void tui_scroll_regs_forward_command (char *, int);
-static void tui_scroll_regs_backward_command (char *, int);
-
 
 
 /*****************************************
@@ -174,7 +171,7 @@ tui_show_registers (struct reggroup *group)
 
 	  data_item_win = &display_info->regs_content[i]
             ->which_element.data_window;
-          win = (struct tui_win_element *) data_item_win->content[0];
+          win = data_item_win->content[0];
           win->which_element.data.highlight = FALSE;
 	}
       display_info->current_group = group;
@@ -277,8 +274,7 @@ tui_show_register_group (struct reggroup *group,
 
 	  data_item_win =
             &display_info->regs_content[pos]->which_element.data_window;
-          data = &((struct tui_win_element *)
-		   data_item_win->content[0])->which_element.data;
+          data = &data_item_win->content[0]->which_element.data;
           if (data)
             {
               if (!refresh_values_only)
@@ -325,8 +321,7 @@ tui_display_registers_from (int start_element_no)
 
           data_item_win
 	    = &display_info->regs_content[i]->which_element.data_window;
-          data = &((struct tui_win_element *)
-                   data_item_win->content[0])->which_element.data;
+          data = &data_item_win->content[0]->which_element.data;
           len = 0;
           p = data->content;
           if (p != 0)
@@ -368,8 +363,7 @@ tui_display_registers_from (int start_element_no)
 	      /* Create the window if necessary.  */
 	      data_item_win = &display_info->regs_content[i]
                 ->which_element.data_window;
-	      data_element_ptr = &((struct tui_win_element *)
-				   data_item_win->content[0])->which_element.data;
+	      data_element_ptr = &data_item_win->content[0]->which_element.data;
               if (data_item_win->handle != (WINDOW*) NULL
                   && (data_item_win->height != 1
                       || data_item_win->width != item_win_width
@@ -511,8 +505,7 @@ tui_check_register_values (struct frame_info *frame)
 
 	      data_item_win_ptr = &display_info->regs_content[i]->
                 which_element.data_window;
-	      data = &((struct tui_win_element *)
-                       data_item_win_ptr->content[0])->which_element.data;
+	      data = &data_item_win_ptr->content[0]->which_element.data;
 	      was_hilighted = data->highlight;
 
               tui_get_register (frame, data,
@@ -637,20 +630,6 @@ _initialize_tui_regs (void)
   add_cmd ("next", class_tui, tui_reg_next_command,
            _("Display next register group."),
            &tuireglist);
-
-  if (xdb_commands)
-    {
-      add_com ("fr", class_tui, tui_reg_float_command,
-	       _("Display only floating point registers\n"));
-      add_com ("gr", class_tui, tui_reg_general_command,
-	       _("Display only general registers\n"));
-      add_com ("sr", class_tui, tui_reg_system_command,
-	       _("Display only special registers\n"));
-      add_com ("+r", class_tui, tui_scroll_regs_forward_command,
-	       _("Scroll the registers window forward\n"));
-      add_com ("-r", class_tui, tui_scroll_regs_backward_command,
-	       _("Scroll the register window backward\n"));
-    }
 }
 
 
@@ -729,17 +708,4 @@ tui_get_register (struct frame_info *frame,
       ret = TUI_SUCCESS;
     }
   return ret;
-}
-
-static void
-tui_scroll_regs_forward_command (char *arg, int from_tty)
-{
-  tui_scroll (FORWARD_SCROLL, TUI_DATA_WIN, 1);
-}
-
-
-static void
-tui_scroll_regs_backward_command (char *arg, int from_tty)
-{
-  tui_scroll (BACKWARD_SCROLL, TUI_DATA_WIN, 1);
 }

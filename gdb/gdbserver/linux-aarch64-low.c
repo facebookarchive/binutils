@@ -990,7 +990,7 @@ aarch64_insert_point (enum raw_bkpt_type type, CORE_ADDR addr,
     ret =
       aarch64_handle_breakpoint (targ_type, addr, len, 1 /* is_insert */);
 
-  if (show_debug_regs > 1)
+  if (show_debug_regs)
     aarch64_show_debug_reg_state (aarch64_get_debug_reg_state (),
 				  "insert_point", addr, len, targ_type);
 
@@ -1027,7 +1027,7 @@ aarch64_remove_point (enum raw_bkpt_type type, CORE_ADDR addr,
     ret =
       aarch64_handle_breakpoint (targ_type, addr, len, 0 /* is_insert */);
 
-  if (show_debug_regs > 1)
+  if (show_debug_regs)
     aarch64_show_debug_reg_state (aarch64_get_debug_reg_state (),
 				  "remove_point", addr, len, targ_type);
 
@@ -1121,8 +1121,8 @@ aarch64_linux_new_process (void)
 
 /* Called when a new thread is detected.  */
 
-static struct arch_lwp_info *
-aarch64_linux_new_thread (void)
+static void
+aarch64_linux_new_thread (struct lwp_info *lwp)
 {
   struct arch_lwp_info *info = xcalloc (1, sizeof (*info));
 
@@ -1132,7 +1132,34 @@ aarch64_linux_new_thread (void)
   DR_MARK_ALL_CHANGED (info->dr_changed_bp, aarch64_num_bp_regs);
   DR_MARK_ALL_CHANGED (info->dr_changed_wp, aarch64_num_wp_regs);
 
-  return info;
+  lwp->arch_private = info;
+}
+
+static void
+aarch64_linux_new_fork (struct process_info *parent,
+			struct process_info *child)
+{
+  /* These are allocated by linux_add_process.  */
+  gdb_assert (parent->priv != NULL
+	      && parent->priv->arch_private != NULL);
+  gdb_assert (child->priv != NULL
+	      && child->priv->arch_private != NULL);
+
+  /* Linux kernel before 2.6.33 commit
+     72f674d203cd230426437cdcf7dd6f681dad8b0d
+     will inherit hardware debug registers from parent
+     on fork/vfork/clone.  Newer Linux kernels create such tasks with
+     zeroed debug registers.
+
+     GDB core assumes the child inherits the watchpoints/hw
+     breakpoints of the parent, and will remove them all from the
+     forked off process.  Copy the debug registers mirrors into the
+     new process so that all breakpoints and watchpoints can be
+     removed together.  The debug registers mirror will become zeroed
+     in the end before detaching the forked off process, thus making
+     this compatible with older Linux kernels too.  */
+
+  *child->priv->arch_private = *parent->priv->arch_private;
 }
 
 /* Called when resuming a thread.
@@ -1299,6 +1326,7 @@ struct linux_target_ops the_low_target =
   NULL,
   aarch64_linux_new_process,
   aarch64_linux_new_thread,
+  aarch64_linux_new_fork,
   aarch64_linux_prepare_to_resume,
 };
 

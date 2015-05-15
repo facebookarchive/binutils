@@ -202,9 +202,12 @@ static bfd_boolean convert_debugging = FALSE;
 /* Whether to compress/decompress DWARF debug sections.  */
 static enum
 {
-  nothing,
-  compress,
-  decompress
+  nothing = 0,
+  compress = 1 << 0,
+  compress_zlib = compress | 1 << 1,
+  compress_gnu_zlib = compress | 1 << 2,
+  compress_gabi_zlib = compress | 1 << 3,
+  decompress = 1 << 4
 } do_debug_sections = nothing;
 
 /* Whether to change the leading character in symbol names.  */
@@ -380,7 +383,7 @@ static struct option copy_options[] =
   {"change-section-vma", required_argument, 0, OPTION_CHANGE_SECTION_VMA},
   {"change-start", required_argument, 0, OPTION_CHANGE_START},
   {"change-warnings", no_argument, 0, OPTION_CHANGE_WARNINGS},
-  {"compress-debug-sections", no_argument, 0, OPTION_COMPRESS_DEBUG_SECTIONS},
+  {"compress-debug-sections", optional_argument, 0, OPTION_COMPRESS_DEBUG_SECTIONS},
   {"debugging", no_argument, 0, OPTION_DEBUGGING},
   {"decompress-debug-sections", no_argument, 0, OPTION_DECOMPRESS_DEBUG_SECTIONS},
   {"disable-deterministic-archives", no_argument, 0, 'U'},
@@ -537,7 +540,7 @@ copy_usage (FILE *stream, int exit_status)
   -w --wildcard                    Permit wildcard in symbol comparison\n\
   -x --discard-all                 Remove all non-global symbols\n\
   -X --discard-locals              Remove any compiler-generated symbols\n\
-  -i --interleave [<number>]       Only copy N out of every <number> bytes\n\
+  -i --interleave[=<number>]       Only copy N out of every <number> bytes\n\
      --interleave-width <number>   Set N for --interleave\n\
   -b --byte <num>                  Select byte <num> in every interleaved block\n\
      --gap-fill <val>              Fill gaps between sections with <val>\n\
@@ -601,7 +604,8 @@ copy_usage (FILE *stream, int exit_status)
                                    <commit>\n\
      --subsystem <name>[:<version>]\n\
                                    Set PE subsystem to <name> [& <version>]\n\
-     --compress-debug-sections     Compress DWARF debug sections using zlib\n\
+     --compress-debug-sections[={none|zlib|zlib-gnu|zlib-gabi}]\n\
+                                   Compress DWARF debug sections using zlib\n\
      --decompress-debug-sections   Decompress DWARF debug sections using zlib\n\
   -v --verbose                     List all object files modified\n\
   @<file>                          Read options from <file>\n\
@@ -1640,7 +1644,12 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
   if (ibfd->xvec->byteorder != obfd->xvec->byteorder
       && ibfd->xvec->byteorder != BFD_ENDIAN_UNKNOWN
       && obfd->xvec->byteorder != BFD_ENDIAN_UNKNOWN)
-    fatal (_("Unable to change endianness of input file(s)"));
+    {
+      /* PR 17636: Call non-fatal so that we return to our parent who
+	 may need to tidy temporary files.  */
+      non_fatal (_("Unable to change endianness of input file(s)"));
+      return FALSE;
+    }
 
   if (!bfd_set_format (obfd, bfd_get_format (ibfd)))
     {
@@ -1651,6 +1660,15 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
   if (ibfd->sections == NULL)
     {
       non_fatal (_("error: the input file '%s' has no sections"),
+		 bfd_get_archive_filename (ibfd));
+      return FALSE;
+    }
+
+  if ((do_debug_sections & compress) != 0
+      && do_debug_sections != compress
+      && ibfd->xvec->flavour != bfd_target_elf_flavour)
+    {
+      non_fatal (_("--compress-debug-sections=[zlib|zlib-gnu|zlib-gabi] is unsupported on `%s'"),
 		 bfd_get_archive_filename (ibfd));
       return FALSE;
     }
@@ -1909,7 +1927,10 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 
 	  pupdate->section = bfd_get_section_by_name (ibfd, pupdate->name);
 	  if (pupdate->section == NULL)
-	    fatal (_("error: %s not found, can't be updated"), pupdate->name);
+	    {
+	      non_fatal (_("error: %s not found, can't be updated"), pupdate->name);
+	      return FALSE;
+	    }
 
 	  osec = pupdate->section->output_section;
 	  if (! bfd_set_section_size (obfd, osec, pupdate->size))
@@ -1965,9 +1986,12 @@ copy_object (bfd *ibfd, bfd *obfd, const bfd_arch_info_type *input_arch)
 	  if (bfd_get_section_contents (ibfd, sec, contents, 0, size))
 	    {
 	      if (fwrite (contents, 1, size, f) != size)
-		fatal (_("error writing section contents to %s (error: %s)"),
-		       pdump->filename,
-		       strerror (errno));
+		{
+		  non_fatal (_("error writing section contents to %s (error: %s)"),
+			     pdump->filename,
+			     strerror (errno));
+		  return FALSE;
+		}
 	    }
 	  else
 	    bfd_nonfatal_message (NULL, ibfd, sec,
@@ -2365,7 +2389,7 @@ copy_archive (bfd *ibfd, bfd *obfd, const char *output_target,
     {
       status = 1;
       bfd_nonfatal_message (NULL, obfd, NULL, NULL);
-      return;
+      goto cleanup_and_exit;
     }
 
   while (!status && this_element != NULL)
@@ -2526,6 +2550,7 @@ copy_archive (bfd *ibfd, bfd *obfd, const char *output_target,
 	  unlink (l->name);
 	}
     }
+
   rmdir (dir);
 }
 
@@ -2576,7 +2601,14 @@ copy_file (const char *input_filename, const char *output_filename,
   switch (do_debug_sections)
     {
     case compress:
+    case compress_zlib:
+    case compress_gnu_zlib:
+    case compress_gabi_zlib:
       ibfd->flags |= BFD_COMPRESS;
+      /* Don't check if input is ELF here since this information is
+	 only available after bfd_check_format_matches is called.  */
+      if (do_debug_sections == compress_gabi_zlib)
+	ibfd->flags |= BFD_COMPRESS_GABI;
       break;
     case decompress:
       ibfd->flags |= BFD_DECOMPRESS;
@@ -2896,6 +2928,9 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
 
   /* Copy merge entity size.  */
   osection->entsize = isection->entsize;
+
+  /* Copy compress status.  */
+  osection->compress_status = isection->compress_status;
 
   /* This used to be mangle_section; we do here to avoid using
      bfd_get_section_by_name since some formats allow multiple
@@ -3986,7 +4021,22 @@ copy_main (int argc, char *argv[])
 	  break;
 
 	case OPTION_COMPRESS_DEBUG_SECTIONS:
-	  do_debug_sections = compress;
+	  if (optarg)
+	    {
+	      if (strcasecmp (optarg, "none") == 0)
+		do_debug_sections = decompress;
+	      else if (strcasecmp (optarg, "zlib") == 0)
+		do_debug_sections = compress_zlib;
+	      else if (strcasecmp (optarg, "zlib-gnu") == 0)
+		do_debug_sections = compress_gnu_zlib;
+	      else if (strcasecmp (optarg, "zlib-gabi") == 0)
+		do_debug_sections = compress_gabi_zlib;
+	      else
+		fatal (_("unrecognized --compress-debug-sections type `%s'"),
+		       optarg);
+	    }
+	  else
+	    do_debug_sections = compress;
 	  break;
 
 	case OPTION_DEBUGGING:

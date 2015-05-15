@@ -263,4 +263,8 @@ extern struct type **get_xmethod_arg_types (struct xmethod_worker *, int *);
 struct so_list;
 extern char *invoke_solib_find_hook (const char *, struct so_list *so);
 
+extern struct type *get_xmethod_result_type (struct xmethod_worker *,
+					     struct value *object,
+					     struct value **args, int nargs);
+
 #endif /* EXTENSION_H */

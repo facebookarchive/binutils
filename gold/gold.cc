@@ -552,6 +552,9 @@ queue_middle_tasks(const General_options& options,
       plugins->layout_deferred_objects();
     }
 
+  // Finalize the .eh_frame section.
+  layout->finalize_eh_frame_section();
+
   /* If plugins have specified a section order, re-arrange input sections
      according to a specified section order.  If --section-ordering-file is
      also specified, do not do anything here.  */

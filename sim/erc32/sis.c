@@ -1,23 +1,17 @@
-/*
- * This file is part of SIS.
- * 
- * SIS, SPARC instruction simulator. Copyright (C) 1995 Jiri Gaisler, European
- * Space Agency
- * 
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 3 of the License, or (at your option)
- * any later version.
- * 
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
- * more details.
- * 
- * You should have received a copy of the GNU General Public License along with
- * this program; if not, see <http://www.gnu.org/licenses/>.
- * 
- */
+/* Copyright (C) 1995-2015 Free Software Foundation, Inc.
+
+   This program is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3 of the License, or
+   (at your option) any later version.
+
+   This program is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
 #include "config.h"
 #include <signal.h>
@@ -30,6 +24,7 @@
 #include "sis.h"
 #include <dis-asm.h>
 #include "sim-config.h"
+#include <inttypes.h>
 
 #define	VAL(x)	strtol(x,(char **)NULL,0)
 
@@ -74,7 +69,7 @@ run_sim(sregs, icount, dis)
     uint64          icount;
     int             dis;
 {
-    int             irq, mexc, deb, asi;
+    int             irq, mexc, deb;
 
     sregs->starttime = get_time();
     init_stdio();
@@ -83,11 +78,7 @@ run_sim(sregs, icount, dis)
     irq = 0;
     while (icount > 0) {
 
-	if (sregs->psr & 0x080)
-	    asi = 9;
-   	else
-	    asi = 8;
-	mexc = memory_read(asi, sregs->pc, &sregs->inst, 2, &sregs->hold);
+	mexc = memory_iread (sregs->pc, &sregs->inst, &sregs->hold);
 	sregs->icnt = 1;
 	if (sregs->annul) {
 	    sregs->annul = 0;
@@ -103,7 +94,7 @@ run_sim(sregs, icount, dis)
 		    if (deb) {
 	    		if ((sregs->bphit = check_bpt(sregs)) != 0) {
             		    restore_stdio();
-	    		    return (BPT_HIT);
+	    		    return BPT_HIT;
 	    		}
 		        if (sregs->histlen) {
 			    sregs->histbuf[sregs->histind].addr = sregs->pc;
@@ -113,7 +104,7 @@ run_sim(sregs, icount, dis)
 			        sregs->histind = 0;
 		        }
 		        if (dis) {
-			    printf(" %8u ", ebase.simtime);
+			    printf(" %8" PRIu64 " ", ebase.simtime);
 			    dis_mem(sregs->pc, 1, &dinfo);
 		        }
 		    }
@@ -139,12 +130,12 @@ run_sim(sregs, icount, dis)
     sregs->tottime += get_time() - sregs->starttime;
     restore_stdio();
     if (sregs->err_mode)
-	return (ERROR);
+	return ERROR;
     if (ctrl_c) {
 	ctrl_c = 0;
-	return (CTRL_C);
+	return CTRL_C;
     }
-    return (TIME_OUT);
+    return TIME_OUT;
 }
 
 int
@@ -172,7 +163,7 @@ main(argc, argv)
     while (stat < argc) {
 	if (argv[stat][0] == '-') {
 	    if (strcmp(argv[stat], "-v") == 0) {
-		sis_verbose = 1;
+		sis_verbose += 1;
 	    } else if (strcmp(argv[stat], "-c") == 0) {
 		if ((stat + 1) < argc) {
 		    copt = 1;
@@ -224,7 +215,11 @@ main(argc, argv)
     sregs.freq = freq;
 
     INIT_DISASSEMBLE_INFO(dinfo, stdout, (fprintf_ftype) fprintf);
+#ifdef HOST_LITTLE_ENDIAN
+    dinfo.endian = BFD_ENDIAN_LITTLE;
+#else
     dinfo.endian = BFD_ENDIAN_BIG;
+#endif
 
     termsave = fcntl(0, F_GETFL, 0);
     using_history();
@@ -271,7 +266,7 @@ main(argc, argv)
 	case CTRL_C:
 	    printf("\b\bInterrupt!\n");
 	case TIME_OUT:
-	    printf(" Stopped at time %d (%.3f ms)\n", ebase.simtime, 
+	    printf(" Stopped at time %" PRIu64 " (%.3f ms)\n", ebase.simtime,
 	      ((double) ebase.simtime / (double) sregs.freq) / 1000.0);
 	    break;
 	case BPT_HIT:
@@ -281,7 +276,7 @@ main(argc, argv)
 	case ERROR:
 	    printf("IU in error mode (%d)\n", sregs.trap);
 	    stat = 0;
-	    printf(" %8d ", ebase.simtime);
+	    printf(" %8" PRIu64 " ", ebase.simtime);
 	    dis_mem(sregs.pc, 1, &dinfo);
 	    break;
 	default:

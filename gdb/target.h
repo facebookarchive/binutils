@@ -204,7 +204,12 @@ enum target_object
   /* Branch trace data, in XML format.  */
   TARGET_OBJECT_BTRACE,
   /* Branch trace configuration, in XML format.  */
-  TARGET_OBJECT_BTRACE_CONF
+  TARGET_OBJECT_BTRACE_CONF,
+  /* The pathname of the executable file that was run to create
+     a specified process.  ANNEX should be a string representation
+     of the process ID of the process in question, in hexadecimal
+     format.  */
+  TARGET_OBJECT_EXEC_FILE,
   /* Possible future objects: TARGET_OBJECT_FILE, ...  */
 };
 
@@ -629,7 +634,7 @@ struct target_ops
       TARGET_DEFAULT_RETURN (0);
     int (*to_is_async_p) (struct target_ops *)
       TARGET_DEFAULT_RETURN (0);
-    void (*to_async) (struct target_ops *, async_callback_ftype *, void *)
+    void (*to_async) (struct target_ops *, int)
       TARGET_DEFAULT_NORETURN (tcomplain ());
     /* This method must be implemented in some situations.  See the
        comment on 'to_can_run'.  */
@@ -825,6 +830,12 @@ struct target_ops
 
     /* Target file operations.  */
 
+    /* Return nonzero if the filesystem accessed by the
+       target_fileio_* methods is the local filesystem,
+       zero otherwise.  */
+    int (*to_filesystem_is_local) (struct target_ops *)
+      TARGET_DEFAULT_RETURN (1);
+
     /* Open FILENAME on the target, using FLAGS and MODE.  Return a
        target file descriptor, or -1 if an error occurs (and set
        *TARGET_ERRNO).  */
@@ -845,6 +856,12 @@ struct target_ops
     int (*to_fileio_pread) (struct target_ops *,
 			    int fd, gdb_byte *read_buf, int len,
 			    ULONGEST offset, int *target_errno);
+
+    /* Get information about the file opened as FD and put it in
+       SB.  Return 0 on success, or -1 if an error occurs (and set
+       *TARGET_ERRNO).  */
+    int (*to_fileio_fstat) (struct target_ops *,
+			    int fd, struct stat *sb, int *target_errno);
 
     /* Close FD on the target.  Return 0, or -1 if an error occurs
        (and set *TARGET_ERRNO).  */
@@ -1686,9 +1703,9 @@ extern int target_async_permitted;
 /* Is the target in asynchronous execution mode?  */
 #define target_is_async_p() (current_target.to_is_async_p (&current_target))
 
-/* Put the target in async mode with the specified callback function.  */
-#define target_async(CALLBACK,CONTEXT) \
-     (current_target.to_async (&current_target, (CALLBACK), (CONTEXT)))
+/* Enables/disabled async target events.  */
+#define target_async(ENABLE) \
+     (current_target.to_async (&current_target, (ENABLE)))
 
 #define target_execution_direction() \
   (current_target.to_execution_direction (&current_target))
@@ -1795,14 +1812,17 @@ extern char *target_thread_name (struct thread_info *);
 /* If the *_hw_beakpoint functions have not been defined
    elsewhere use the definitions in the target vector.  */
 
-/* Returns non-zero if we can set a hardware watchpoint of type TYPE.  TYPE is
-   one of bp_hardware_watchpoint, bp_read_watchpoint, bp_write_watchpoint, or
-   bp_hardware_breakpoint.  CNT is the number of such watchpoints used so far
-   (including this one?).  OTHERTYPE is who knows what...  */
+/* Returns positive if we can set a hardware watchpoint of type TYPE.
+   Returns negative if the target doesn't have enough hardware debug
+   registers available.  Return zero if hardware watchpoint of type
+   TYPE isn't supported.  TYPE is one of bp_hardware_watchpoint,
+   bp_read_watchpoint, bp_write_watchpoint, or bp_hardware_breakpoint.
+   CNT is the number of such watchpoints used so far, including this
+   one.  OTHERTYPE is who knows what...  */
 
 #define target_can_use_hardware_watchpoint(TYPE,CNT,OTHERTYPE) \
  (*current_target.to_can_use_hw_breakpoint) (&current_target,  \
-					     TYPE, CNT, OTHERTYPE);
+					     TYPE, CNT, OTHERTYPE)
 
 /* Returns the number of debug registers needed to watch the given
    memory region, or zero if not supported.  */
@@ -1915,6 +1935,11 @@ extern int target_search_memory (CORE_ADDR start_addr,
 
 /* Target file operations.  */
 
+/* Return nonzero if the filesystem accessed by the target_fileio_*
+   methods is the local filesystem, zero otherwise.  */
+#define target_filesystem_is_local() \
+  current_target.to_filesystem_is_local (&current_target)
+
 /* Open FILENAME on the target, using FLAGS and MODE.  Return a
    target file descriptor, or -1 if an error occurs (and set
    *TARGET_ERRNO).  */
@@ -1932,6 +1957,12 @@ extern int target_fileio_pwrite (int fd, const gdb_byte *write_buf, int len,
    (and set *TARGET_ERRNO).  */
 extern int target_fileio_pread (int fd, gdb_byte *read_buf, int len,
 				ULONGEST offset, int *target_errno);
+
+/* Get information about the file opened as FD on the target
+   and put it in SB.  Return 0 on success, or -1 if an error
+   occurs (and set *TARGET_ERRNO).  */
+extern int target_fileio_fstat (int fd, struct stat *sb,
+				int *target_errno);
 
 /* Close FD on the target.  Return 0, or -1 if an error occurs
    (and set *TARGET_ERRNO).  */
@@ -2236,6 +2267,10 @@ extern int remote_debug;
 
 /* Speed in bits per second, or -1 which means don't mess with the speed.  */
 extern int baud_rate;
+
+/* Parity for serial port  */
+extern int serial_parity;
+
 /* Timeout limit for response from target.  */
 extern int remote_timeout;
 

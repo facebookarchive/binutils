@@ -1696,6 +1696,9 @@ init_page_info (void)
 #endif
     }
 
+  /* We handle SIGWINCH ourselves.  */
+  rl_catch_sigwinch = 0;
+
   set_screen_size ();
   set_width ();
 }
@@ -1793,6 +1796,18 @@ static void
 set_height_command (char *args, int from_tty, struct cmd_list_element *c)
 {
   set_screen_size ();
+}
+
+/* See utils.h.  */
+
+void
+set_screen_width_and_height (int width, int height)
+{
+  lines_per_page = height;
+  chars_per_line = width;
+
+  set_screen_size ();
+  set_width ();
 }
 
 /* Wait, so the user can read what's on the screen.  Prompt the user
@@ -2663,23 +2678,10 @@ subset_compare (char *string_to_compare, char *template_string)
   if (template_string != (char *) NULL && string_to_compare != (char *) NULL
       && strlen (string_to_compare) <= strlen (template_string))
     match =
-      (strncmp
-       (template_string, string_to_compare, strlen (string_to_compare)) == 0);
+      (startswith (template_string, string_to_compare));
   else
     match = 0;
   return match;
-}
-
-static void
-pagination_on_command (char *arg, int from_tty)
-{
-  pagination_enabled = 1;
-}
-
-static void
-pagination_off_command (char *arg, int from_tty)
-{
-  pagination_enabled = 0;
 }
 
 static void
@@ -2713,8 +2715,6 @@ Setting this to \"unlimited\" or zero causes GDB never pause during output."),
 			    show_lines_per_page,
 			    &setlist, &showlist);
 
-  init_page_info ();
-
   add_setshow_boolean_cmd ("pagination", class_support,
 			   &pagination_enabled, _("\
 Set state of GDB output pagination."), _("\
@@ -2725,14 +2725,6 @@ Turning pagination off is an alternative to \"set height unlimited\"."),
 			   NULL,
 			   show_pagination_enabled,
 			   &setlist, &showlist);
-
-  if (xdb_commands)
-    {
-      add_com ("am", class_support, pagination_on_command,
-	       _("Enable pagination"));
-      add_com ("sm", class_support, pagination_off_command,
-	       _("Disable pagination"));
-    }
 
   add_setshow_boolean_cmd ("sevenbit-strings", class_support,
 			   &sevenbit_strings, _("\
@@ -3278,7 +3270,7 @@ producer_is_gcc (const char *producer, int *major, int *minor)
 {
   const char *cs;
 
-  if (producer != NULL && strncmp (producer, "GNU ", strlen ("GNU ")) == 0)
+  if (producer != NULL && startswith (producer, "GNU "))
     {
       int maj, min;
 

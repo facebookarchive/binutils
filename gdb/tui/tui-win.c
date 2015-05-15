@@ -64,7 +64,6 @@ static int new_height_ok (struct tui_win_info *, int);
 static void tui_set_tab_width_command (char *, int);
 static void tui_refresh_all_command (char *, int);
 static void tui_set_win_height_command (char *, int);
-static void tui_xdb_set_win_height_command (char *, int);
 static void tui_all_windows_info (char *, int);
 static void tui_set_focus_command (char *, int);
 static void tui_scroll_forward_command (char *, int);
@@ -380,8 +379,6 @@ _initialize_tui_win (void)
 
   add_com ("refresh", class_tui, tui_refresh_all_command,
            _("Refresh the terminal display.\n"));
-  if (xdb_commands)
-    add_com_alias ("U", "refresh", class_tui, 0);
   add_com ("tabset", class_tui, tui_set_tab_width_command, _("\
 Set the width (in characters) of tab stops.\n\
 Usage: tabset <n>\n"));
@@ -417,10 +414,6 @@ Usage: < [win] [n]\n"));
   add_com (">", class_tui, tui_scroll_right_command, _("\
 Scroll window text to the right.\n\
 Usage: > [win] [n]\n"));
-  if (xdb_commands)
-    add_com ("w", class_xdb, tui_xdb_set_win_height_command, _("\
-XDB compatibility command for setting the height of a command window.\n\
-Usage: w <#lines>\n"));
 
   /* Define the tui control variables.  */
   add_setshow_enum_cmd ("border-kind", no_class, tui_border_kind_enums,
@@ -472,15 +465,20 @@ bold-standout   use extra bright or bold with standout mode"),
 void
 tui_update_gdb_sizes (void)
 {
-  char cmd[50];
+  int width, height;
 
-  /* Set to TUI command window dimension or use readline values.  */
-  xsnprintf (cmd, sizeof (cmd), "set width %d",
-           tui_active ? TUI_CMD_WIN->generic.width : tui_term_width());
-  execute_command (cmd, 0);
-  xsnprintf (cmd, sizeof (cmd), "set height %d",
-           tui_active ? TUI_CMD_WIN->generic.height : tui_term_height());
-  execute_command (cmd, 0);
+  if (tui_active)
+    {
+      width = TUI_CMD_WIN->generic.width;
+      height = TUI_CMD_WIN->generic.height;
+    }
+  else
+    {
+      width = tui_term_width ();
+      height = tui_term_height ();
+    }
+
+  set_screen_width_and_height (width, height);
 }
 
 
@@ -838,12 +836,6 @@ static struct async_signal_handler *tui_sigwinch_token;
 static void
 tui_sigwinch_handler (int signal)
 {
-  /* Set win_resized to TRUE and asynchronously invoke our resize callback.  If
-     the callback is invoked while TUI is active then it ought to successfully
-     resize the screen, resetting win_resized to FALSE.  Of course, if the
-     callback is invoked while TUI is inactive then it will do nothing; in that
-     case, win_resized will remain TRUE until we get a chance to synchronously
-     resize the screen from tui_enable().  */
   mark_async_signal_handler (tui_sigwinch_token);
   tui_set_win_resized_to (TRUE);
 }
@@ -852,14 +844,26 @@ tui_sigwinch_handler (int signal)
 static void
 tui_async_resize_screen (gdb_client_data arg)
 {
-  if (!tui_active)
-    return;
+  rl_resize_terminal ();
 
-  tui_resize_all ();
-  tui_refresh_all_win ();
-  tui_update_gdb_sizes ();
-  tui_set_win_resized_to (FALSE);
-  tui_redisplay_readline ();
+  if (!tui_active)
+    {
+      int screen_height, screen_width;
+
+      rl_get_screen_size (&screen_height, &screen_width);
+      set_screen_width_and_height (screen_width, screen_height);
+
+      /* win_resized is left set so that the next call to tui_enable()
+	 resizes the TUI windows.  */
+    }
+  else
+    {
+      tui_set_win_resized_to (FALSE);
+      tui_resize_all ();
+      tui_refresh_all_win ();
+      tui_update_gdb_sizes ();
+      tui_redisplay_readline ();
+    }
 }
 #endif
 
@@ -1166,45 +1170,6 @@ tui_set_win_height_command (char *arg, int from_tty)
   tui_enable ();
   tui_set_win_height (arg, from_tty);
 }
-
-
-/* XDB Compatibility command for setting the window height.  This will
-   increase or decrease the command window by the specified
-   amount.  */
-static void
-tui_xdb_set_win_height (char *arg, int from_tty)
-{
-  /* Make sure the curses mode is enabled.  */
-  tui_enable ();
-  if (arg != (char *) NULL)
-    {
-      int input_no = atoi (arg);
-
-      if (input_no > 0)
-	{			/* Add 1 for the locator.  */
-	  int new_height = tui_term_height () - (input_no + 1);
-
-	  if (!new_height_ok (tui_win_list[CMD_WIN], new_height)
-	      || tui_adjust_win_heights (tui_win_list[CMD_WIN],
-					 new_height) == TUI_FAILURE)
-	    warning (_("Invalid window height specified.\n%s"),
-		     XDBWIN_HEIGHT_USAGE);
-	}
-      else
-	warning (_("Invalid window height specified.\n%s"),
-		 XDBWIN_HEIGHT_USAGE);
-    }
-  else
-    warning (_("Invalid window height specified.\n%s"), XDBWIN_HEIGHT_USAGE);
-}
-
-/* Set the height of the specified window, with va_list.  */
-static void
-tui_xdb_set_win_height_command (char *arg, int from_tty)
-{
-  tui_xdb_set_win_height (arg, from_tty);
-}
-
 
 /* Function to adjust all window heights around the primary.   */
 static enum tui_status

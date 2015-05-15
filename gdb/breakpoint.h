@@ -825,6 +825,20 @@ struct watchpoint
   CORE_ADDR hw_wp_mask;
 };
 
+/* Given a function FUNC (struct breakpoint *B, void *DATA) and
+   USER_DATA, call FUNC for every known breakpoint passing USER_DATA
+   as argument.
+
+   If FUNC returns 1, the loop stops and the current
+   'struct breakpoint' being processed is returned.  If FUNC returns
+   zero, the loop continues.
+
+   This function returns either a 'struct breakpoint' pointer or NULL.
+   It was based on BFD's bfd_sections_find_if function.  */
+
+extern struct breakpoint *breakpoint_find_if
+  (int (*func) (struct breakpoint *b, void *d), void *user_data);
+
 /* Return true if BPT is either a software breakpoint or a hardware
    breakpoint.  */
 
@@ -1511,7 +1525,7 @@ extern int breakpoints_should_be_inserted_now (void);
 extern void breakpoint_retire_moribund (void);
 
 /* Set break condition of breakpoint B to EXP.  */
-extern void set_breakpoint_condition (struct breakpoint *b, char *exp,
+extern void set_breakpoint_condition (struct breakpoint *b, const char *exp,
 				      int from_tty);
 
 /* Checks if we are catching syscalls or not.

@@ -348,6 +348,11 @@ extern enum ext_lang_rc gdbpy_get_xmethod_arg_types
    struct xmethod_worker *worker,
    int *nargs,
    struct type ***arg_types);
+extern enum ext_lang_rc gdbpy_get_xmethod_result_type
+  (const struct extension_language_defn *extlang,
+   struct xmethod_worker *worker,
+   struct value *object, struct value **args, int nargs,
+   struct type **result_type);
 extern struct value *gdbpy_invoke_xmethod
   (const struct extension_language_defn *extlang,
    struct xmethod_worker *worker,
@@ -391,12 +396,14 @@ PyObject *pspace_to_pspace_object (struct program_space *)
     CPYCHECKER_RETURNS_BORROWED_REF;
 PyObject *pspy_get_printers (PyObject *, void *);
 PyObject *pspy_get_frame_filters (PyObject *, void *);
+PyObject *pspy_get_frame_unwinders (PyObject *, void *);
 PyObject *pspy_get_xmethods (PyObject *, void *);
 
 PyObject *objfile_to_objfile_object (struct objfile *)
     CPYCHECKER_RETURNS_BORROWED_REF;
 PyObject *objfpy_get_printers (PyObject *, void *);
 PyObject *objfpy_get_frame_filters (PyObject *, void *);
+PyObject *objfpy_get_frame_unwinders (PyObject *, void *);
 PyObject *objfpy_get_xmethods (PyObject *, void *);
 PyObject *gdbpy_lookup_objfile (PyObject *self, PyObject *args, PyObject *kw);
 
@@ -493,6 +500,8 @@ int gdbpy_initialize_arch (void)
   CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION;
 int gdbpy_initialize_xmethods (void)
   CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION;
+int gdbpy_initialize_unwind (void)
+  CPYCHECKER_NEGATIVE_RESULT_SETS_EXCEPTION;
 
 struct cleanup *make_cleanup_py_decref (PyObject *py);
 struct cleanup *make_cleanup_py_xdecref (PyObject *py);
@@ -525,6 +534,7 @@ extern const struct language_defn *python_language;
 	}								\
     } while (0)
 
+int gdbpy_print_python_errors_p (void);
 void gdbpy_print_stack (void);
 
 PyObject *python_string_to_unicode (PyObject *obj);

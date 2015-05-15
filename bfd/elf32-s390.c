@@ -3980,9 +3980,18 @@ elf_s390_plt_sym_val (bfd_vma i, const asection *plt,
   return plt->vma + PLT_FIRST_ENTRY_SIZE + i * PLT_ENTRY_SIZE;
 }
 
+/* Merge backend specific data from an object file to the output
+   object file when linking.  */
+
 static bfd_boolean
 elf32_s390_merge_private_bfd_data (bfd *ibfd, bfd *obfd)
 {
+  if (!is_s390_elf (ibfd) || !is_s390_elf (obfd))
+    return TRUE;
+
+  if (!elf_s390_merge_obj_attributes (ibfd, obfd))
+    return FALSE;
+
   elf_elfheader (obfd)->e_flags |= elf_elfheader (ibfd)->e_flags;
   return TRUE;
 }
@@ -4028,6 +4037,7 @@ elf32_s390_merge_private_bfd_data (bfd *ibfd, bfd *obfd)
 #define elf_backend_grok_prstatus	      elf_s390_grok_prstatus
 #define elf_backend_plt_sym_val		      elf_s390_plt_sym_val
 #define elf_backend_add_symbol_hook           elf_s390_add_symbol_hook
+#define elf_backend_sort_relocs_p             elf_s390_elf_sort_relocs_p
 
 #define bfd_elf32_mkobject		elf_s390_mkobject
 #define elf_backend_object_p		elf_s390_object_p

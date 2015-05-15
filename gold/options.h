@@ -695,17 +695,10 @@ class General_options
 	      N_("Check segment addresses for overlaps (default)"),
 	      N_("Do not check segment addresses for overlaps"));
 
-#ifdef HAVE_ZLIB_H
   DEFINE_enum(compress_debug_sections, options::TWO_DASHES, '\0', "none",
 	      N_("Compress .debug_* sections in the output file"),
 	      ("[none,zlib]"),
 	      {"none", "zlib"});
-#else
-  DEFINE_enum(compress_debug_sections, options::TWO_DASHES, '\0', "none",
-	      N_("Compress .debug_* sections in the output file"),
-	      N_("[none]"),
-	      {"none"});
-#endif
 
   DEFINE_bool(copy_dt_needed_entries, options::TWO_DASHES, '\0', false,
 	      N_("Not supported"),
@@ -808,6 +801,11 @@ class General_options
   DEFINE_bool(fix_cortex_a8, options::TWO_DASHES, '\0', false,
 	      N_("(ARM only) Fix binaries for Cortex-A8 erratum."),
 	      N_("(ARM only) Do not fix binaries for Cortex-A8 erratum."));
+
+  DEFINE_bool(fix_cortex_a53_843419, options::TWO_DASHES, '\0', false,
+	      N_("(AArch64 only) Scan binaries for Cortex-A53 errata 843419."),
+	      N_("(AArch64 only) Do not scan binaries for Cortex-A53 "
+		 "errata 843419."));
 
   DEFINE_bool(fix_arm1176, options::TWO_DASHES, '\0', true,
 	      N_("(ARM only) Fix binaries for ARM1176 erratum."),
@@ -1222,6 +1220,9 @@ class General_options
 		    options::TWO_DASHES, '\0',
 		    N_("Report unresolved symbols as errors"),
 		    NULL, true);
+  DEFINE_bool(weak_unresolved_symbols, options::TWO_DASHES, '\0', false,
+	      N_("Convert unresolved symbols to weak references"),
+	      NULL);
 
   DEFINE_bool(wchar_size_warning, options::TWO_DASHES, '\0', true, NULL,
 	      N_("(ARM only) Do not warn about objects with incompatible "

@@ -663,6 +663,7 @@ extern const bfd_target i386_msdos_vec;
 extern const bfd_target i386_nlm32_vec;
 extern const bfd_target i386_pe_vec;
 extern const bfd_target i386_pei_vec;
+extern const bfd_target iamcu_elf32_vec;
 extern const bfd_target i860_coff_vec;
 extern const bfd_target i860_elf32_vec;
 extern const bfd_target i860_elf32_le_vec;
@@ -885,6 +886,7 @@ extern const bfd_target x86_64_coff_vec;
 extern const bfd_target x86_64_elf32_vec;
 extern const bfd_target x86_64_elf32_nacl_vec;
 extern const bfd_target x86_64_elf64_vec;
+extern const bfd_target x86_64_elf64_cloudabi_vec;
 extern const bfd_target x86_64_elf64_fbsd_vec;
 extern const bfd_target x86_64_elf64_nacl_vec;
 extern const bfd_target x86_64_elf64_sol2_vec;
@@ -1092,6 +1094,8 @@ static const bfd_target * const _bfd_target_vector[] =
 	&i386_nlm32_vec,
 	&i386_pe_vec,
 	&i386_pei_vec,
+
+	&iamcu_elf32_vec,
 
 	&i860_coff_vec,
 	&i860_elf32_vec,
@@ -1402,6 +1406,7 @@ static const bfd_target * const _bfd_target_vector[] =
 	&x86_64_elf32_vec,
 	&x86_64_elf32_nacl_vec,
 	&x86_64_elf64_vec,
+	&x86_64_elf64_cloudabi_vec,
 	&x86_64_elf64_fbsd_vec,
 	&x86_64_elf64_nacl_vec,
 	&x86_64_elf64_sol2_vec,

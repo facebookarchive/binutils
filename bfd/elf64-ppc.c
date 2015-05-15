@@ -138,6 +138,8 @@ static bfd_vma opd_entry_value
 
 /* TOC base pointers offset from start of TOC.  */
 #define TOC_BASE_OFF	0x8000
+/* TOC base alignment.  */
+#define TOC_BASE_ALIGN	256
 
 /* Offset of tp and dtp pointers from start of TLS block.  */
 #define TP_OFFSET	0x7000
@@ -3146,7 +3148,8 @@ section_covers_vma (bfd *abfd ATTRIBUTE_UNUSED, asection *section, void *ptr)
 }
 
 /* Create synthetic symbols, effectively restoring "dot-symbol" function
-   entry syms.  Also generate @plt symbols for the glink branch table.  */
+   entry syms.  Also generate @plt symbols for the glink branch table.
+   Returns count of synthetic symbols in RET or -1 on error.  */
 
 static long
 ppc64_elf_get_synthetic_symtab (bfd *abfd,
@@ -3289,6 +3292,8 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 	    }
 	}
 
+      if (size == 0)
+	goto done;
       s = *ret = bfd_malloc (size);
       if (s == NULL)
 	{
@@ -3349,10 +3354,11 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 
       if (opd != NULL && !bfd_malloc_and_get_section (abfd, opd, &contents))
 	{
+	free_contents_and_exit_err:
+	  count = -1;
 	free_contents_and_exit:
 	  if (contents)
 	    free (contents);
-	  count = -1;
 	  goto done;
 	}
 
@@ -3383,7 +3389,7 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 	  void (*swap_dyn_in) (bfd *, const void *, Elf_Internal_Dyn *);
 
 	  if (!bfd_malloc_and_get_section (abfd, dynamic, &dynbuf))
-	    goto free_contents_and_exit;
+	    goto free_contents_and_exit_err;
 
 	  extdynsize = get_elf_backend_data (abfd)->s->sizeof_dyn;
 	  swap_dyn_in = get_elf_backend_data (abfd)->s->swap_dyn_in;
@@ -3445,7 +3451,7 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 	    {
 	      slurp_relocs = get_elf_backend_data (abfd)->s->slurp_reloc_table;
 	      if (! (*slurp_relocs) (abfd, relplt, dyn_syms, TRUE))
-		goto free_contents_and_exit;
+		goto free_contents_and_exit_err;
 
 	      plt_count = relplt->size / sizeof (Elf64_External_Rela);
 	      size += plt_count * sizeof (asymbol);
@@ -3460,9 +3466,11 @@ ppc64_elf_get_synthetic_symtab (bfd *abfd,
 	    }
 	}
 
+      if (size == 0)
+	goto free_contents_and_exit;
       s = *ret = bfd_malloc (size);
       if (s == NULL)
-	goto free_contents_and_exit;
+	goto free_contents_and_exit_err;
 
       names = (char *) (s + count + plt_count + (resolv_vma != 0));
 
@@ -11251,6 +11259,7 @@ ppc64_elf_next_toc_section (struct bfd_link_info *info, asection *isec)
 	  addr = (htab->toc_first_sec->output_offset
 		  + htab->toc_first_sec->output_section->vma);
 	  htab->toc_curr = addr;
+	  htab->toc_curr &= -TOC_BASE_ALIGN;
 	}
 
       /* toc_curr is the base address of this toc group.  Set elf_gp
@@ -12529,7 +12538,7 @@ bfd_vma
 ppc64_elf_set_toc (struct bfd_link_info *info, bfd *obfd)
 {
   asection *s;
-  bfd_vma TOCstart;
+  bfd_vma TOCstart, adjust;
 
   /* The TOC consists of sections .got, .toc, .tocbss, .plt in that
      order.  The TOC starts where the first of these sections starts.  */
@@ -12577,6 +12586,9 @@ ppc64_elf_set_toc (struct bfd_link_info *info, bfd *obfd)
   if (s != NULL)
     TOCstart = s->output_section->vma + s->output_offset;
 
+  /* Force alignment.  */
+  adjust = TOCstart & (TOC_BASE_ALIGN - 1);
+  TOCstart -= adjust;
   _bfd_set_gp_value (obfd, TOCstart);
 
   if (info != NULL && s != NULL)
@@ -12587,7 +12599,7 @@ ppc64_elf_set_toc (struct bfd_link_info *info, bfd *obfd)
 	{
 	  if (htab->elf.hgot != NULL)
 	    {
-	      htab->elf.hgot->root.u.def.value = TOC_BASE_OFF;
+	      htab->elf.hgot->root.u.def.value = TOC_BASE_OFF - adjust;
 	      htab->elf.hgot->root.u.def.section = s;
 	    }
 	}
@@ -12595,8 +12607,8 @@ ppc64_elf_set_toc (struct bfd_link_info *info, bfd *obfd)
 	{
 	  struct bfd_link_hash_entry *bh = NULL;
 	  _bfd_generic_link_add_one_symbol (info, obfd, ".TOC.", BSF_GLOBAL,
-					    s, TOC_BASE_OFF, NULL, FALSE,
-					    FALSE, &bh);
+					    s, TOC_BASE_OFF - adjust,
+					    NULL, FALSE, FALSE, &bh);
 	}
     }
   return TOCstart;
@@ -14831,26 +14843,21 @@ ppc64_elf_relocate_section (bfd *output_bfd,
 
 	  if (r == bfd_reloc_overflow)
 	    {
-	      if (warned)
-		continue;
-	      if (h != NULL
-		  && h->elf.root.type == bfd_link_hash_undefweak
-		  && howto->pc_relative)
+	      /* On code like "if (foo) foo();" don't report overflow
+		 on a branch to zero when foo is undefined.  */
+	      if (!warned
+		  && (reloc_dest == DEST_STUB
+		      || !(h != NULL
+			   && (h->elf.root.type == bfd_link_hash_undefweak
+			       || h->elf.root.type == bfd_link_hash_undefined)
+			   && is_branch_reloc (r_type))))
 		{
-		  /* Assume this is a call protected by other code that
-		     detects the symbol is undefined.  If this is the case,
-		     we can safely ignore the overflow.  If not, the
-		     program is hosed anyway, and a little warning isn't
-		     going to help.  */
-
-		  continue;
+		  if (!((*info->callbacks->reloc_overflow)
+			(info, &h->elf.root, sym_name,
+			 reloc_name, orig_rel.r_addend,
+			 input_bfd, input_section, rel->r_offset)))
+		    return FALSE;
 		}
-
-	      if (!((*info->callbacks->reloc_overflow)
-		    (info, &h->elf.root, sym_name,
-		     reloc_name, orig_rel.r_addend,
-		     input_bfd, input_section, rel->r_offset)))
-		return FALSE;
 	    }
 	  else
 	    {

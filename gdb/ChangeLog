@@ -1,3 +1,2254 @@
+2015-05-14  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-command.c: Remove include of <ctype.h>.
+	(tui_dispatch_ctrl_char): Remove workaround for xterm terminals.
+
+2015-05-13  Martin Galvan  <martin.galvan@tallertechnologies.com>
+
+	* dwarf2read.c (die_needs_namespace): Return 1 for
+	DW_TAG_inlined_subroutine.
+
+2015-05-13  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* regcache.c (regcache_cpy_no_passthrough): New declaration.
+	(regcache_cpy_no_passthrough): Make it static, add function comment.
+	* regcache.h (regcache_dup, regcache_cpy): Reduce/update their comment.
+	(regcache_cpy_no_passthrough): Remove declaration.
+
+2015-05-13  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdbthread.h (struct thread_control_state): Update comment for
+	proceed_to_finish.
+	* infcall.c (run_inferior_call): Update comment about
+	proceed_to_finish.
+	* infcmd.c (get_return_value): Update comment about stop_registers.
+	(finish_forward): Update comment about proceed_to_finish.
+	* infrun.c (stop_registers): Remove.
+	(clear_proceed_status, normal_stop): Remove stop_registers handling.
+	* infrun.h (stop_registers): Remove.
+
+2015-05-13  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* infcall.c (struct dummy_frame_context_saver)
+	(dummy_frame_context_saver_data_free, dummy_frame_context_saver_dtor)
+	(dummy_frame_context_saver_drop, dummy_frame_context_saver_cleanup)
+	(dummy_frame_context_saver_get_regs, dummy_frame_context_saver_setup):
+	New.
+	(call_function_by_hand_dummy): Move discard_cleanups of
+	inf_status_cleanup before dummy_frame_push.  Call
+	dummy_frame_context_saver_setup and prepare context_saver_cleanup.
+	Use dummy_frame_context_saver_get_regs instead of stop_registers.
+	* infcall.h (struct dummy_frame_context_saver)
+	(dummy_frame_context_saver_drop, dummy_frame_context_saver_cleanup)
+	(dummy_frame_context_saver_get_regs, dummy_frame_context_saver_setup):
+	New declarations.
+	* infcmd.c: Include infcall.h.
+	(get_return_value): Add parameter ctx_saver, use it instead of
+	stop_registers.
+	(print_return_value): Add parameter ctx_saver, pass it.
+	(struct finish_command_continuation_args): Add field ctx_saver.
+	(finish_command_continuation): Update print_return_value caller.
+	(finish_command_continuation_free_arg): Free also ctx_saver.
+	(finish_forward): Call dummy_frame_context_saver_setup.
+	* inferior.h (struct dummy_frame_context_saver): New declaration.
+	(get_return_value): Add parameter ctx_saver.
+	* python/py-finishbreakpoint.c (bpfinishpy_pre_stop_hook): Update
+	get_return_value caller.
+
+2015-05-13  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* dummy-frame.c (struct dummy_frame_dtor_list): New.
+	(struct dummy_frame): Replace dtor and dtor_data by dtor_list.
+	(remove_dummy_frame): Process dtor_list.
+	(pop_dummy_frame): Process dtor_list.
+	(register_dummy_frame_dtor): Maintain dtor_list.
+	(find_dummy_frame_dtor): Handle dtor_list.
+	* dummy-frame.h (register_dummy_frame_dtor, find_dummy_frame_dtor):
+	Update comments.
+
+2015-05-13  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* compile/compile-object-run.c (do_module_cleanup): Add parameter
+	registers_valid.
+	(compile_object_run): Update do_module_cleanup caller.
+	* dummy-frame.c: Include infcall.h.
+	(struct dummy_frame): Update dtor comment.
+	(remove_dummy_frame): Call dtor.
+	(pop_dummy_frame): Update dtor caller.
+	* dummy-frame.h (dummy_frame_dtor_ftype): Add parameter
+	registers_valid.
+
+2015-05-13  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 7.9.1 released.
+
+2015-05-13  Joel Brobecker  <brobecker@adacore.com>
+
+	* NEWS: Create "Changes in GDB 7.9.1" section.  Move news about
+	Xmethods now being able to specify a result type to that new
+	sectioin.
+
+2015-05-13  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-win.c (tui_async_resize_screen): Clear win_resized
+	first before resizing the window.
+	* tui/tui.c (tui_enable): Likewise.
+
+2015-05-13  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* dummy-frame.c (struct dummy_frame): Use proper typedef for dtor.
+	* dummy-frame.h (dummy_frame_dtor_ftype): Add its comment.
+	* infcall.c (call_function_by_hand_dummy): Use proper typedef for
+	dummy_dtor parameter.
+	* infcall.h: Include dummy-frame.h.
+	(call_function_by_hand_dummy_dtor_ftype): Remove.
+	(call_function_by_hand_dummy): Use proper typedef for dummy_dtor
+	parameter.
+
+2015-05-13  Patrick Palka  <patrick@parcs.ath.cx>
+
+	PR gdb/17820
+	* top.c (history_size_setshow_var): Change type to signed.
+	Initialize to -2.  Update documentation.
+	(set_readline_history_size): Define.
+	(set_history_size_command): Use it.  Remove logic for handling
+	out-of-range sizes.
+	(init_history): Use set_readline_history_size().  Test for a
+	value of -2 instead of 0 when determining whether to set a
+	default history size.
+	(init_main): Decode the argument of the "size" command as a
+	zuinteger_unlimited.
+
+2015-05-12  Doug Evans  <dje@google.com>
+
+	* dwarf2read.c (struct file_entry): Tweak comments.
+	(get_debug_line_section): Tweak comments.
+
+2015-05-12  Don Breazeal  <donb@codesourcery.com>
+
+	* NEWS: Announce fork support in the RSP and support
+	for fork debugging in extended mode.
+
+2015-05-12  Don Breazeal  <donb@codesourcery.com>
+
+	* remote.c (remote_insert_fork_catchpoint): New function.
+	(remote_remove_fork_catchpoint): New function.
+	(remote_insert_vfork_catchpoint): New function.
+	(remote_remove_vfork_catchpoint): New function.
+	(pending_fork_parent_callback): New function.
+	(remove_new_fork_child): New function.
+	(remote_update_thread_list): Call remote_notif_get_pending_events
+	and remove_new_fork_child.
+	(extended_remote_kill): Kill fork child when killing the
+	parent before follow_fork completes.
+	(init_extended_remote_ops): Initialize target vector with
+	new fork catchpoint functions.
+
+2015-05-12  Don Breazeal  <donb@codesourcery.com>
+
+	* remote.c (remove_vfork_event_p): New function.
+	(remote_follow_fork): Add vfork event type to event checking.
+	(remote_parse_stop_reply): New stop reasons "vfork" and
+	"vforkdone" for RSP 'T' Stop Reply Packet.
+
+2015-05-12  Don Breazeal  <donb@codesourcery.com>
+
+	* linux-nat.c (linux_nat_ptrace_options): New function.
+	(linux_init_ptrace, wait_lwp, linux_nat_filter_event):
+	Call linux_nat_ptrace_options and use different argument to
+	linux_enable_event_reporting.
+	(_initialize_linux_nat): Delete call to
+	linux_ptrace_set_additional_flags.
+	* nat/linux-ptrace.c (current_ptrace_options): Rename to 
+	supported_ptrace_options.
+	(additional_flags): Delete variable.
+	(linux_check_ptrace_features): Use supported_ptrace_options.
+	(linux_test_for_tracesysgood, linux_test_for_tracefork):
+	Likewise, and remove additional_flags check.
+	(linux_enable_event_reporting): Change 'attached' argument to
+	'options'.  Use supported_ptrace_options.
+	(ptrace_supports_feature): Change comment.  Use 
+	supported_ptrace_options.
+	(linux_ptrace_set_additional_flags): Delete function.
+	* nat/linux-ptrace.h (linux_ptrace_set_additional_flags):
+	Delete function prototype.
+	* remote.c (remote_fork_event_p): New function.
+	(remote_detach_pid): New function.
+	(remote_detach_1): Call remote_detach_pid, don't mourn inferior
+	if doing detach-on-fork.
+	(remote_follow_fork): New function.
+	(remote_parse_stop_reply): Handle new "T" stop reason "fork".
+	(remote_pid_to_str): Print "process" strings for pid/0/0 ptids.
+	(init_extended_remote_ops): Initialize to_follow_fork.
+
+2015-05-12  Don Breazeal  <donb@codesourcery.com>
+
+	* nat/linux-ptrace.c (linux_check_ptrace_features): Change
+	from static to extern.
+	* nat/linux-ptrace.h (linux_check_ptrace_features): Declare.
+	* remote.c (anonymous enum): <PACKET_fork_event_feature,
+	* PACKET_vfork_event_feature>: New enumeration constants.
+	(remote_protocol_features): Add table entries for new packets.
+	(remote_query_supported): Add new feature queries to qSupported
+	packet.
+
+2015-05-12  Gary Benson <gbenson@redhat.com>
+
+	* remote.c (remote_add_inferior): Call exec_file_locate_attach
+	for fake PIDs as well as real ones.
+	(remote_pid_to_exec_file): Send empty annex if PID is fake.
+
+2015-05-09  Siva Chandra Reddy  <sivachandra@google.com>
+
+	* NEWS (Python Scripting): Mention the new gdb.Value methods.
+	* python/py-value.c (valpy_reference_value): New function.
+	(valpy_const_value): Likewise.
+	(value_object_methods): Add new methods.
+	* value.c (make_cv_value): New function.
+	* value.h (make_cv_value): Declare.
+
+2015-05-08  Yao Qi  <yao@codesourcery.com>
+	    Sandra Loosemore  <sandra@codesourcery.com>
+
+	* dwarf2read.c (setup_type_unit_groups): Do NULL pointer check
+	to 'lh->include_dirs' before accessing to it.
+	(psymtab_include_file_name): Likewise.
+	(dwarf_decode_lines_1): Likewise.
+	(dwarf_decode_lines): Likewise.
+	(file_file_name): Likewise.
+
+2015-05-08  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* nios2-linux-tdep.c (NIOS2_SIGRETURN_TRAMP_ADDR): Define.
+	(NIOS2_SIGRETURN_REGSAVE_OFFSET): Define.
+	(nios2_linux_rt_sigreturn_init): Adjust base address of
+	register save area.
+
+2015-05-08  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* nios2-tdep.c (nios2_breakpoint_from_pc): Revert to using
+	"trap 31" as the breakpoint instruction on all targets.
+
+2015-05-08  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* infcmd.c (print_return_value): Remove unused declaration.
+
+2015-05-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* dwarf2read.c (attr_to_dynamic_prop)
+	<DW_AT_data_member_location>: Use read_type_die isntead of
+	get_die_type.
+
+2015-05-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_convert_actual): Add handling of formals
+	passed inside an aligner type.
+
+2015-05-08  Joel Brobecker  <brobecker@adacore.com>
+
+	* copyright.py (NOT_FSF_LIST): Remove sim/erc32 entries.
+
+2015-05-08  Siva Chandra Reddy  <sivachandra@google.com>
+
+	PR python/18291
+	* python/lib/gdb/command/xmethods.py (print_xm_info): Fix typo.
+	Print xmethod matcher status.
+
+2015-05-08  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* s390-linux-nat.c (fill_gregset): Avoid relying on the PSWA
+	register in the regcache when treating the PSWM register, and vice
+	versa.
+
+2015-05-07  Gary Benson <gbenson@redhat.com>
+
+	* linux-thread-db.c (struct thread_db_info)
+	<td_ta_map_id2thr_p>: Remove field.
+	(try_thread_db_load_1): Remove initialization for the above.
+
+2015-05-07  Gary Benson <gbenson@redhat.com>
+
+	* linux-thread-db.c (struct thread_db_info)
+	<td_thr_validate_p>: Remove field.
+	(try_thread_db_load_1): Remove initialization for the above.
+
+2015-05-06  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* compile/compile-object-load.c (compile_object_load): Support
+	mst_text_gnu_ifunc.
+
+2015-05-06  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* compile/compile.c (compile_to_object): Make the cmd_string parameter
+	const.  Use new variables for the const compatibility.
+	(eval_compile_command): Make the cmd_string parameter const.
+	* compile/compile.h (eval_compile_command): Make the cmd_string
+	parameter const.
+
+2015-05-06  Joel Brobecker  <brobecker@adacore.com>
+
+	* defs.h (deprecated_init_ui_hook): Delete.  Remove associated
+	comment.
+	* top.c (deprecated_init_ui_hook): Delete.
+	(gdb_init): Remove handling of deprecated_init_ui_hook.
+	* interps.c (clear_interpreter_hooks): Remove handling of
+	deprecated_init_ui_hook.
+	* main.c (captured_main): Update comment.
+
+2015-05-06  Joel Brobecker  <brobecker@adacore.com>
+
+	* solib.c (_initialize_solib): Add "info dll" alias creation.
+	* windows-nat.c (set_windows_aliases): Delete.
+	(_initialize_windows_nat): Remove deprecated_init_ui_hook
+	assignment.
+	* NEWS: Add news entry about "info dll" now being available
+	on all platforms.
+
+2015-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (value_assign_to_component): Reformat and improve
+	documentation. Remove all trailing spaces.
+
+2015-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* inline-frame.c (inline_frame_sniffer, skip_inline_frames):
+	Stop counting inlined frames as soon as an out-of-line function
+	is found.
+
+2014-05-05  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* dwarf2read.c (inherit_abstract_dies): Skip
+	DW_TAG_GNU_call_site dies while inheriting children of an
+	abstract DIE into a scope.
+	(read_lexical_block_scope): Inherit abstract DIE's for
+	lexical scopes.
+
+2015-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-valprint.c (val_print_packed_array_elements): Delete
+	variable "len".  Add a type-length check when comparing two
+	consecutive elements of the array.  Use the element's actual
+	length in call to value_contents_eq.
+	* ada-lang.c (ada_value_primitive_packed_val): Always return
+	a value whose type has been resolved.
+
+2015-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_value_primitive_packed_val): Recompute
+	BIT_SIZE and LEN if the size of the resolved type is smaller
+	than BIT_SIZE * HOST_CHAR_BIT.
+
+2015-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_value_primitive_packed_val): Use a more
+	correct address in call to value_at.  Adjust call to
+	value_address accordingly.
+
+2015-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-valprint.c (ada_val_print_1): Resolve TYPE before trying
+	to print it.
+
+2015-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* dwarf2loc.h (struct property_addr_info): Add "valaddr" field.
+	* dwarf2loc.c (dwarf2_evaluate_property): Add handling of
+	pinfo->valaddr.
+	* gdbtypes.h (resolve_dynamic_type): Add "valaddr" parameter.
+	* gdbtypes.c (resolve_dynamic_struct): Set pinfo.valaddr.
+	(resolve_dynamic_type_internal): Set pinfo.valaddr.
+	Add handling of addr_stack->valaddr.
+	(resolve_dynamic_type): Add "valaddr" parameter.
+	Set pinfo.valaddr field.
+	* ada-lang.c (ada_discrete_type_high_bound): Update call to
+	resolve_dynamic_type.
+	(ada_discrete_type_low_bound): Likewise.
+	* findvar.c (default_read_var_value): Likewise.
+	* value.c (value_from_contents_and_address): Likewise.
+
+2015-05-05  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdbtypes.c (resolve_dynamic_array): Use
+	create_array_type_with_stride instead of create_array_type.
+
+2015-04-30  DJ Delorie  <dj@redhat.com>
+
+	* rl78-tdep.c (rl78_analyze_prologue): Pass RL78_ISA_DEFAULT to
+	rl78_decode_opcode
+
+2015-04-29  Doug Evans  <dje@google.com>
+
+	PR python/18285
+	* NEWS: Document new gdb.XMethodWorker.get_result_type method.
+	* eval.c (evaluate_subexp_standard) <OP_FUNCALL>: Handle
+	EVAL_AVOID_SIDE_EFFECTS for xmethods.
+	* extension-priv.h (struct extension_language_ops)
+	<get_xmethod_result_type>: New member.
+	* extension.c (get_xmethod_result_type): New function.
+	* extension.h (get_xmethod_result_type): Declare.
+	* python/py-xmethods.c (get_result_type_method_name): New static
+	global.
+	(py_get_result_type_method_name): Ditto.
+	(gdbpy_get_xmethod_result_type): New function.
+	(gdbpy_initialize_xmethods): Initialize py_get_result_type_method_name.
+	* python/python-internal.h (gdbpy_get_xmethod_result_type): Declare.
+	* python/python.c (python_extension_ops): Add
+	gdbpy_get_xmethod_result_type.
+	* python/lib/gdb/xmethod.py (XMethodWorker): Add get_result_type.
+	* valarith.c (value_x_binop): Handle EVAL_AVOID_SIDE_EFFECTS for
+	xmethods.
+	(value_x_unop): Ditto.
+	* value.c (result_type_of_xmethod): New function.
+	* value.h (result_type_of_xmethod): Declare.
+
+2015-04-29  Gary Benson <gbenson@redhat.com>
+
+	* solib.c (solib_find_1): Allow fd argument to be NULL.
+	(exec_file_find): Update comment.
+	(solib_find): Likewise.
+	* exec.c (exec_file_locate_attach): Use NULL as fd
+	argument to exec_file_find to avoid having to close
+	the opened file.
+	* infrun.c (follow_exec): Likewise.
+
+2015-04-28  Doug Evans  <dje@google.com>
+
+	PR python/18299
+	* python/lib/gdb/printing.py (register_pretty_printer): Handle
+	name or __name__ attributes.  Handle gdb module as first argument.
+
+2015-04-28  Doug Evans  <dje@google.com>
+
+	PR python/18089
+	* python/py-prettyprint.c (print_children): Verify result of children
+	iterator.  Provide better error message.
+	* python/python-internal..h (gdbpy_print_python_errors_p): Declare.
+	* python/python.c (gdbpy_print_python_errors_p): New function.
+
+2015-04-28  Doug Evans  <dje@google.com>
+
+	* gdbtypes.h (struct cplus_struct_type) <n_baseclasses>: Fix comment.
+
+2015-04-28  Sasha Smundak  <asmundak@google.com>
+
+	* NEWS: Mention gdb.Type.optimized_out method.
+	* python/py-type.c (typy_optimized_out):  New function.
+
+2015-04-28  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c: Include "gdb_wait.h" instead of <sys/wait.h>.
+
+2015-04-28  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* utils.c (init_page_info): Set rl_catch_sigwinch to zero.
+	(initialize_utils): Move call of init_page_info() to ...
+	* top.c (gdb_init): ... here.
+
+2015-04-28  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-win.c (tui_sigwinch_handler): Remove now-stale comment.
+	(tui_sigwinch_handler): Still update our idea of
+	the terminal's width and height even when TUI is not active.
+
+2015-04-28  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* utils.h (set_screen_width_and_height): Declare.
+	* utils.c (set_screen_width_and_height): Define.
+	* tui/tui-win.c (tui_update_gdb_sizes): Use it.
+
+2015-04-28  Gary Benson <gbenson@redhat.com>
+
+	* infrun.c (solist.h): New include.
+	(follow_exec): Use exec_file_find to prefix execd_pathname
+	with gdb_sysroot.
+
+2015-04-28  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-source.c (tui_set_source_content): Avoid calling
+	strcpy() when offset is 0.
+
+2015-04-28  Patrick Palka  <patrick@parcs.ath.cx>
+
+	PR gdb/18155
+	* tui/tui-data.c (tui_free_window): Don't free the locator
+	window when passed an SRC_WIN or a DISASSEM_WIN.
+
+2015-04-28  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-data.h (struct tui_win_element): Forward-declare.
+	(tui_win_content): Move declaration.
+	(struct tui_gen_win_info): Give 'content' field the
+	type tui_win_content.
+	* tui/tui-data.c (init_content_element): Remove redundant and
+	erroneous casts.
+	(tui_add_content_elements): Remove erroneous cast.
+	* tui/tui-disasm.c (tui_set_disassem_content): Remove redundant
+	casts.
+	(tui_get_begin_asm_address): Likewise.
+	* tui/tui-regs.c (tui_show_registers): Likewise.
+	(tui_show_register_group): Likewise.
+	(tui_display_registers_from): Likewise.
+	(tui_check_register_values): Likewise.
+	* tui/tui-source.c (tui_set_source_content): Likewise.
+	(tui_set_source_content_nil): Likewise.
+	(tui_source_is_displayed): Likewise.
+	* tui/tui-stack.c (tui_show_locator_content): Likewise.
+	(tui_set_locator_fullname): Likewise.
+	(tui_set_locator_info): Likewise.
+	(tui_show_frame_info): Likewise.
+	* tui/tui-winsource.c (tui_clear_source_content): Likewise.
+	(tui_show_source_line): Likewise.
+	(tui_horizontal_source_scroll): Likewise.
+	(tui_update_breakpoint_info): Likewise.
+	(tui_set_exec_info_content): Likewise.
+	(tui_show_exec_info_content): Likewise.
+	(tui_alloc_source_buffer): Likewise.
+	(tui_line_is_displayed): Likewise.
+	(tui_addr_is_displayed): Likewise.
+
+2015-04-27  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c: (fbsd_wait) [PL_FLAG_EXEC]: Report TARGET_WAITKIND_EXECD
+	event if PL_FLAG_EXEC is set.
+	[PL_FLAG_EXEC] (fbsd_insert_exec_catchpoint): New function.
+	[PL_FLAG_EXEC] (fbsd_remove_exec_catchpoint): New function.
+	(fbsd_nat_add_target) [PL_FLAG_EXEC]: Set
+	"to_insert_exec_catchpoint" to "fbsd_insert_exec_catchpoint".
+	Set "to_remove_exec_catchpoint" to "fbsd_remove_exec_catchpoint".
+
+2015-04-27  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c: [PT_LWPINFO] New variable super_wait.
+	[TDP_RFPPWAIT] New variable fbsd_pending_children.
+	[TDP_RFPPWAIT] (fbsd_remember_child): New function.
+	[TDP_RFPPWAIT] (fbsd_is_child_pending): New function.
+	[TDP_RFPPWAIT] (fbsd_fetch_kinfo_proc): New function.
+	[PT_LWPINFO] (fbsd_wait): New function.
+	[TDP_RFPPWAIT] (fbsd_follow_fork): New function.
+	[TDP_RFPPWAIT] (fbsd_insert_fork_catchpoint): New function.
+	[TDP_RFPPWAIT] (fbsd_remove_fork_catchpoint): New function.
+	[TDP_RFPPWAIT] (fbsd_insert_vfork_catchpoint): New function.
+	[TDP_RFPPWAIT] (fbsd_remove_vfork_catchpoint): New function.
+	[TDP_RFPPWAIT] (fbsd_enable_follow_fork): New function.
+	[TDP_RFPPWAIT] (fbsd_post_startup_inferior): New function.
+	[TDP_RFPPWAIT] (fbsd_post_attach): New function.
+	(fbsd_nat_add_target) [PT_LWPINFO] Set "to_wait" to
+	"fbsd_wait".
+	[TDP_RFPPWAIT] Set "to_follow_fork" to "fbsd_follow_fork".
+	Set "to_insert_fork_catchpoint" to "fbsd_insert_fork_catchpoint".
+	Set "to_remove_fork_catchpoint" to "fbsd_remove_fork_catchpoint".
+	Set "to_insert_vfork_catchpoint" to "fbsd_insert_vfork_catchpoint".
+	Set "to_remove_vfork_catchpoint" to "fbsd_remove_vfork_catchpoint".
+	Set "to_post_startup_inferior" to "fbsd_post_startup_inferior".
+	Set "to_post_attach" to "fbsd_post_attach".
+
+2015-04-27  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-nat.c (fbsd_pid_to_exec_file): Mark static.
+	(fbsd_find_memory_regions): Mark static.
+	(fbsd_nat_add_target): New function.
+	* fbsd-nat.h: Export fbsd_nat_add_target and remove prototypes for
+	fbsd_pid_to_exec_file and fbsd_find_memory_regions.
+	* amd64fbsd-nat.c (_initialize_amd64fbsd_nat): Use fbsd_nat_add_target.
+	* i386fbsd-nat.c (_initialize_i386fbsd_nat): Likewise.
+	* ppcfbsd-nat.c (_initialize_ppcfbsd_nat): Likewise.
+	* sparc64fbsd-nat.c (_initialize_sparc64fbsd_nat): Likewise.
+
+2015-04-27  Gary Benson <gbenson@redhat.com>
+
+	* objfiles.c (allocate_objfile): Do not attempt to expand name
+	if name is a "target:" filename.
+	* auto-load.c (load_auto_scripts_for_objfile): Do not attempt
+	to load auto-load scripts for objfiles with "target:" filenames.
+
+2015-04-27  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c: Include "elf/s390.h" and "elf-bfd.h".
+	(enum s390_vector_abi_kind): New enum.
+	(struct gdbarch_tdep)<vector_abi>: New field.
+	(s390_effective_inner_type): Add parameter min_size.  Stop
+	unwrapping if the inner type is smaller than min_size.
+	(s390_function_arg_float): Adjust call to
+	s390_effective_inner_type.
+	(s390_function_arg_vector): New function.
+	(s390_function_arg_integer): Adjust comment.
+	(struct s390_arg_state)<vr>: New field.
+	(s390_handle_arg): Add parameter 'is_unnamed'.  Pass vector
+	arguments according to vector ABI when appropriate.
+	(s390_push_dummy_call): Initialize the argument state's field
+	'vr'.  Adjust calls to s390_handle_arg.
+	(s390_register_return_value): Handle vector return values.
+	(s390_return_value): Apply the "register" return value convention
+	to a vector when appropriate.
+	(s390_gdbarch_init): Initialize tdep->vector_abi.
+	* NEWS: Announce S390 vector ABI support.
+
+2015-04-27  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (s390_return_value_convention): Remove
+	function.  Inline its logic...
+	(s390_return_value): ...here.  Instead, move the handling of the
+	"register" return value convention...
+	(s390_register_return_value): ...here.  New function.
+
+2015-04-27  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c
+	(is_float_singleton): Remove function.  Move the "singleton" part
+	of the logic...
+	(s390_effective_inner_type): ...here.  New function.
+	(is_float_like): Remove function.  Inline its logic...
+	(s390_function_arg_float): ...here.
+	(is_pointer_like, is_integer_like, is_struct_like): Remove
+	functions.  Inline their logic...
+	(s390_function_arg_integer): ...here.
+	(s390_function_arg_pass_by_reference): Remove function.
+	(extend_simple_arg): Remove function.
+	(alignment_of): Remove function.
+	(struct s390_arg_state): New structure.
+	(s390_handle_arg): New function.
+	(s390_push_dummy_call): Move parameter placement logic to the new
+	function s390_handle_arg.  Call it for calculating the stack area
+	sizes first, and again for actually writing the parameters.
+
+2015-04-27  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (is_power_of_two): Add comment.  Return
+	  false if the argument is zero.
+
+2015-04-27  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* ada-lang.c (template_to_static_fixed_type): Return input type
+	when it is already fixed.  Cache the input type itself when not
+	creating a static fixed copy.  Make it explicit that we never
+	molestate the input type.
+	* gdbtypes.c (resolve_dynamic_struct): Reset the
+	TYPE_TARGET_TYPE field for resolved copies.
+
+2015-04-27  Joel Brobecker  <brobecker@adacore.com>
+
+	* ada-lang.c (ada_is_tagged_type): Add call to ada_check_typedef.
+	(ada_lookup_struct_elt_type): Remove calls to ada_check_typedef.
+	(template_to_static_fixed_type): Call ada_check_typedef only
+	when necessary.
+
+2015-04-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* cli/cli-dump.c (srec_dump_command): Add internationalization
+	mark ups.
+	(ihex_dump_command): Likewise.
+	(tekhex_dump_command): Likewise.
+	(binary_dump_command): Likewise.
+	(binary_append_command): Likewise.
+
+2015-04-24  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* cli/cli-dump.c (verilog_cmdlist): New variable.
+	(dump_verilog_memory): New function.
+	(dump_verilog_value): New function.
+	(verilog_dump_command): New function.
+	(_initialize_cli_dump): Add new commands to support verilog dump
+	format.
+	* NEWS: Add entry for "dump verilog".
+
+2015-04-24  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gdbtypes.c (print_gnat_stuff): Do not recurse on the
+	descriptive type when there is none.
+
+2015-04-23  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-win.c (tui_async_resize_screen): Call
+	rl_resize_terminal().
+
+2015-04-22  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* windows-nat.c (handle_output_debug_string): Don't change
+	current_event.dwThreadId.
+	(get_windows_debug_event): Use thread_id, rather than relying on
+	current_event.dwThreadId being changed.
+
+2015-04-22  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* windows-nat.c (windows_continue): Report an error if
+	ContinueDebugEvent() fails.
+
+2015-04-16  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* windows-nat.c (windows_resume): Fix misspelling in debug output.
+
+2015-04-16  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* windows-nat.c (get_windows_debug_event): Replace retval with
+	thread_id throughout.  Update stale comment.
+
+2015-04-16  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* windows-nat.c (get_windows_debug_event): Don't use ternary
+	conditional operator.
+
+2015-04-21  Pierre Muller  <muller@sourceware.org>
+
+	PR pascal/17815
+	p-exp.y (yylex): Reorganize code to return the matched pattern
+	for a field of this.
+
+2015-04-21  Gary Benson <gbenson@redhat.com>
+
+	* common/fileio.h (fileio_to_host_openflags): New declaration.
+	* common/fileio.c (fcntl.h): New include.
+	(fileio_to_host_openflags): New function, factored out from...
+	* inf-child.c (inf_child_fileio_open_flags_to_host): ...here.
+	Single use updated.
+
+2015-04-21  Kevin Buettner  <kevinb@redhat.com>
+
+	* rl78-tdep.c (RL78_SP_ADDR): Define.
+	(opc_reg_to_gdb_regnum): New static function.
+	(rl78_analyze_prologue): Recognize instructions forming slightly
+	more interesting prologues.
+
+2015-04-20  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	Revert:
+	2015-04-03  Pierre-Marie de Rodat  <derodat@adacore.com>
+	* gdbtypes.c (is_dynamic_type_internal): Remove special handling of
+	TYPE_CODE_REF types so that they are not considered as dynamic
+	depending on the referenced type.
+	(resolve_dynamic_type_internal): Likewise.
+
+2015-04-20  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	Revert:
+	2015-04-03  Pierre-Marie de Rodat  <derodat@adacore.com>
+	* gdbtypes.c (is_dynamic_type_internal): Remove the unused
+	"top_level" parameter.
+	(resolve_dynamic_type_internal): Remove the unused "top_level"
+	parameter.  Update call to is_dynamic_type_internal.
+	(is_dynamic_type): Update call to is_dynamic_type_internal.
+	(resolve_dynamic_range): Update call to
+	resolve_dynamic_type_internal.
+	(resolve_dynamic_union): Likewise.
+	(resolve_dynamic_struct): Likewise.
+	(resolve_dynamic_type): Likewise.
+
+2015-04-19  Gabriel Krisman Bertazi  <gabriel@krisman.be>
+
+	* breakpoint.c (update_dprintf_command_list): Remove duplicated
+	xmalloc.
+
+2015-04-20  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* reply_mig_hack.awk: Robustify parsing.
+
+	* reply_mig_hack.awk: Don't bother to declare an intermediate
+	function pointer variable.
+
+2015-04-17  Doug Evans  <dje@google.com>
+
+	* solib-svr4.c (svr4_exec_displacement): Rename outer "displacement"
+	to "exec_displacement" to avoid confusion with inner use of the name.
+
+2015-04-17  Pedro Alves  <palves@redhat.com>
+
+	* arm-linux-nat.c (arm_linux_can_use_hw_breakpoint): Return zero
+	if HW point of TYPE isn't supported.
+
+2015-04-17  Yao Qi  <yao.qi@linaro.org>
+	    Pedro Alves  <palves@redhat.com>
+
+	* target.h (target_can_use_hardware_watchpoint): Update comments.
+	Remove trailing ";".
+
+2015-04-17  Gary Benson <gbenson@redhat.com>
+
+	* remote.c (remote_add_inferior): New argument try_open_exec.
+	If nonzero, attempt to open the inferior's executable file as
+	the main executable if no main executable is open already.
+	All callers updated.
+	* NEWS: Mention that GDB now supports automatic location and
+	retrieval of executable + files from remote targets.
+
+2015-04-17  Gary Benson <gbenson@redhat.com>
+
+	* target.h (TARGET_OBJECT_EXEC_FILE): New enum value.
+	* remote.c (PACKET_qXfer_exec_file): Likewise.
+	(remote_protocol_features): Register the
+	"qXfer:exec-file:read" feature.
+	(remote_xfer_partial): Handle TARGET_OBJECT_EXEC_FILE.
+	(remote_pid_to_exec_file): New function.
+	(init_remote_ops): Initialize to_pid_to_exec_file.
+	(_initialize_remote): Register new "set/show remote
+	pid-to-exec-file-packet" command.
+	* NEWS: Announce new qXfer:exec-file:read packet.
+
+2015-04-17  Gary Benson <gbenson@redhat.com>
+
+	* nat/linux-procfs.h (linux_proc_pid_to_exec_file):
+	New declaration.
+	* nat/linux-procfs.c (linux_proc_pid_to_exec_file):
+	New function, factored out from...
+	* linux-nat.c (linux_child_pid_to_exec_file): ...here.
+
+2015-04-17  Gary Benson <gbenson@redhat.com>
+
+	* exec.c (solist.h): New include.
+	(exec_file_locate_attach): Prefix absolute executable
+	paths with gdb_sysroot if set.
+	* NEWS: Mention that executable paths may be prepended
+	with sysroot.
+
+2015-04-17  Gary Benson <gbenson@redhat.com>
+
+	* solist.h (exec_file_find): New declaration.
+	* solib.c (solib_find_1): New function, factored out from...
+	(solib_find): ...here.
+	(exec_file_find): New function.
+
+2015-04-17  Gary Benson <gbenson@redhat.com>
+
+	* gdbcore.h (exec_file_locate_attach): New declaration.
+	* exec.c (exec_file_locate_attach): New function, factored
+	out from...
+	* infcmd.c (attach_command_post_wait): ...here.
+
+2015-04-17  Mike Frysinger  <vapier@gentoo.org>
+
+	* MAINTAINERS: Add myself for Blackfin/write-after-approval.
+
+2015-04-16  Yao Qi  <yao.qi@linaro.org>
+
+	* infrun.c (maybe_software_singlestep): Declare.
+	(displaced_step_fixup): Call maybe_software_singlestep.
+
+2015-04-15  Doug Evans  <dje@google.com>
+
+	* psymtab.c (psym_expand_symtabs_matching): Add QUIT call.
+
+2015-04-15  Doug Evans  <dje@google.com>
+
+	* dwarf2read.c (dw2_expand_symtabs_matching): Add some QUIT calls.
+
+2015-04-15  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* python/lib/gdb/command/unwinders.py: Add parentheses.
+
+2015-04-15  Yao Qi  <yao.qi@linaro.org>
+
+	* arm-linux-tdep.c (arm_linux_copy_svc): Update debug message.
+
+2015-04-15  Yao Qi  <yao.qi@linaro.org>
+
+	* arm-linux-tdep.c (arm_linux_copy_svc): Fix indentation.
+
+2015-04-15  Yao Qi  <yao.qi@linaro.org>
+
+	* arm-linux-tdep.c (arm_linux_cleanup_svc): Use
+	dsc->insn_size instead of 4.
+
+2015-04-14  Gary Benson <gbenson@redhat.com>
+
+	* jit.c (mem_bfd_iovec_stat): Zero supplied buffer.
+	* minidebug.c (lzma_stat): Likewise.
+	* solib-spu.c (spu_bfd_iovec_stat): Likewise.
+	* spu-linux-nat.c (spu_bfd_iovec_stat): Likewise.
+
+2015-04-13  Stan Shebs  <stanshebs@google.com>
+
+	* MAINTAINERS: Update my email address.
+
+2015-04-13  John Baldwin  <jhb@FreeBSD.org>
+
+	* amd64-tdep.c (amd64_target_description): New function.
+	* amd64-tdep.h: Export amd64_target_description and tdesc_amd64.
+	* amd64bsd-nat.c [PT_GETXSTATE_INFO]: New variable amd64bsd_xsave_len.
+	(amd64bsd_fetch_inferior_registers) [PT_GETXSTATE_INFO]: Handle
+	x86 extended save area.
+	(amd64bsd_store_inferior_registers) [PT_GETXSTATE_INFO]: Likewise.
+	* amd64bsd-nat.h: Export amd64bsd_xsave_len.
+	* amd64fbsd-nat.c (amd64fbsd_read_description): New function.
+	(_initialize_amd64fbsd_nat): Set "to_read_description" to
+	"amd64fbsd_read_description".
+	* amd64fbsd-tdep.c (amd64fbsd_core_read_description): New function.
+	(amd64fbsd_supply_xstateregset): New function.
+	(amd64fbsd_collect_xstateregset): New function.
+	Add "amd64fbsd_xstateregset".
+	(amd64fbsd_iterate_over_regset_sections): New function.
+	(amd64fbsd_init_abi): Set "xsave_xcr0_offset" to
+	"I386_FBSD_XSAVE_XCR0_OFFSET".
+	Add "iterate_over_regset_sections" gdbarch method.
+	Add "core_read_description" gdbarch method.
+	* i386-tdep.c (i386_target_description): New function.
+	* i386-tdep.h: Export i386_target_description and tdesc_i386.
+	* i386bsd-nat.c [PT_GETXSTATE_INFO]: New variable i386bsd_xsave_len.
+	(i386bsd_fetch_inferior_registers) [PT_GETXSTATE_INFO]: Handle
+	x86 extended save area.
+	(i386bsd_store_inferior_registers) [PT_GETXSTATE_INFO]: Likewise.
+	* i386bsd-nat.h: Export i386bsd_xsave_len.
+	* i386fbsd-nat.c (i386fbsd_read_description): New function.
+	(_initialize_i386fbsd_nat): Set "to_read_description" to
+	"i386fbsd_read_description".
+	* i386fbsd-tdep.c (i386fbsd_core_read_xcr0): New function.
+	(i386fbsd_core_read_description): New function.
+	(i386fbsd_supply_xstateregset): New function.
+	(i386fbsd_collect_xstateregset): New function.
+	Add "i386fbsd_xstateregset".
+	(i386fbsd_iterate_over_regset_sections): New function.
+	(i386fbsd4_init_abi): Set "xsave_xcr0_offset" to
+	"I386_FBSD_XSAVE_XCR0_OFFSET".
+	Add "iterate_over_regset_sections" gdbarch method.
+	Add "core_read_description" gdbarch method.
+	* i386fbsd-tdep.h: New file.
+
+2015-04-11  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* NEWS (Changes since GDB 7.9): Add removed -xdb.
+	* breakpoint.c (command_line_is_silent): Remove xdb_commands
+	conditional.
+	(_initialize_breakpoint): Remove xdb_commands for bc, ab, sb, db, ba
+	and lb.
+	* cli/cli-cmds.c (_initialize_cli_cmds): Remove xdb_commands for v and
+	va.
+	* cli/cli-decode.c (find_command_name_length): Remove xdb_commands
+	conditional.
+	* defs.h (xdb_commands): Remove declaration.
+	* f-valprint.c (_initialize_f_valprint): Remove xdb_commands for lc.
+	* guile/scm-cmd.c (command_classes): Remove xdb from comment.
+	* infcmd.c (run_no_args_command, go_command): Remove.
+	(_initialize_infcmd): Remove xdb_commands for S, go, g, R and lr.
+	* infrun.c (xdb_handle_command): Remove.
+	(_initialize_infrun): Remove xdb_commands for lz and z.
+	* main.c (xdb_commands): Remove variable.
+	(captured_main): Remove "xdb" from long_options.
+	(print_gdb_help): Remove --xdb from help.
+	* python/py-cmd.c (gdbpy_initialize_commands): Remove xdb from comment.
+	* source.c (_initialize_source): Remove xdb_commands for D, ld, / and ?.
+	* stack.c (backtrace_full_command, args_plus_locals_info)
+	(current_frame_command): Remove.
+	(_initialize_stack): Remove xdb_commands for t, T and l.
+	* symtab.c (_initialize_symtab): Remove xdb_commands for lf and lg.
+	* thread.c (_initialize_thread): Remove xdb_commands condition.
+	* tui/tui-layout.c (tui_toggle_layout_command)
+	(tui_toggle_split_layout_command, tui_handle_xdb_layout): Remove.
+	(_initialize_tui_layout): Remove xdb_commands for td and ts.
+	* tui/tui-regs.c (tui_scroll_regs_forward_command)
+	(tui_scroll_regs_backward_command): Remove.
+	(_initialize_tui_regs): Remove xdb_commands for fr, gr, sr, +r and -r.
+	* tui/tui-win.c (tui_xdb_set_win_height_command): Remove.
+	(_initialize_tui_win): Remove xdb_commands for U and w.
+	* utils.c (pagination_on_command, pagination_off_command): Remove.
+	(initialize_utils): Remove xdb_commands for am and sm.
+
+2015-04-10  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (displaced_step_fixup): Switch to the event ptid
+	earlier.  If the thread stopped for a watchpoint and the
+	target/arch has non-continuable watchpoints, cancel the displaced
+	step.
+	(resume): Don't start a displaced step if in-line step-over info
+	is valid.
+
+2015-04-10  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (displaced_step_in_progress): New function.
+	(do_target_resume): Advise target to report all signals if
+	displaced stepping.
+
+2015-04-10  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/18216
+	* infrun.c (process_event_stop_test): Don't assume a step-resume
+	is set if tp->stepped_breakpoint is true.
+
+2015-04-10  Yao Qi  <yao.qi@linaro.org>
+
+	* arm-tdep.c (install_alu_reg): Update comment.
+	(thumb_copy_alu_reg): Remove local variable rn.  Update
+	debugging message.  Use r2 instead of r1 in the modified
+	instruction.
+
+2015-04-10  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/13858
+	* amd64-linux-tdep.c (amd64_linux_init_abi_common): Install
+	linux_displaced_step_location as gdbarch_displaced_step_location
+	hook.
+	* arm-linux-tdep.c (arm_linux_init_abi): Likewise.
+	* i386-linux-tdep.c (i386_linux_init_abi): Likewise.
+	* linux-tdep.c (linux_displaced_step_location): New function,
+	based on ppc_linux_displaced_step_location.
+	* linux-tdep.h (linux_displaced_step_location): New declaration.
+	* ppc-linux-tdep.c (ppc_linux_entry_point_addr): Delete.
+	(ppc_linux_inferior_created, ppc_linux_displaced_step_location):
+	Delete.
+	(ppc_linux_init_abi): Install linux_displaced_step_location as
+	gdbarch_displaced_step_location hook, even without Cell/B.E..
+	(_initialize_ppc_linux_tdep): Don't install
+	ppc_linux_inferior_created as inferior_created observer.
+	* s390-linux-tdep.c (s390_gdbarch_init): Install
+	linux_displaced_step_location as gdbarch_displaced_step_location
+	hook.
+
+2015-04-09  Gary Benson <gbenson@redhat.com>
+
+	* common/common-remote-fileio.h: Rename to...
+	* common/fileio.h: ...this.  Update all references.
+	(remote_fileio_to_fio_error): Rename to...
+	(host_to_fileio_error): ...this.
+	(remote_fileio_to_be): Rename to...
+	(host_to_bigendian): ...this.  Update all callers.
+	(remote_fileio_to_fio_uint): Rename to...
+	(host_to_fileio_uint): ...this.  Update all callers.
+	(remote_fileio_to_fio_time): Rename to...
+	(host_to_fileio_time): ...this.  Update all callers.
+	(remote_fileio_to_fio_stat): Rename to...
+	(host_to_fileio_stat): ...this.
+	Update all references.
+	* common/common-remote-fileio.c: Rename to...
+	* common/fileio.c: ...this.  Update all references.
+	(remote_fileio_to_fio_error): Rename to...
+	(host_to_fileio_error): ...this.  Update all callers.
+	(remote_fileio_mode_to_target): Rename to...
+	(fileio_mode_pack): ...this.  Update all callers.
+	(remote_fileio_to_fio_mode): Rename to...
+	(host_to_fileio_mode): ...this.  Update all callers.
+	(remote_fileio_to_fio_ulong): Rename to...
+	(host_to_fileio_ulong): ...this.  Update all callers.
+	(remote_fileio_to_fio_stat): Rename to...
+	(host_to_fileio_stat): ...this.  Update all callers.
+
+2015-04-09  Andy Wingo  <wingo@igalia.com>
+
+	* guile/scm-frame.c (gdbscm_frame_read_register): New function.
+	(frame_functions): Bind gdbscm_frame_read_register to
+	frame-read-register.
+	* guile/lib/gdb.scm (frame-read-register): Export.
+
+2015-04-09  Gary Benson <gbenson@redhat.com>
+
+	* common/common-remote-fileio.h (remote_fileio_to_fio_error):
+	New declaration.
+	* common/common-remote-fileio.c (remote_fileio_to_fio_error):
+	New function, factored out the named functions below.
+	* inf-child.c (gdb/fileio.h): Remove include.
+	(common-remote-fileio.h): New include.
+	(inf_child_errno_to_fileio_error): Remove function.  Update
+	all callers to use remote_fileio_to_fio_error.
+	* remote-fileio.c (remote_fileio_errno_to_target): Likewise.
+
+2015-04-09  Andy Wingo  <wingo@igalia.com>
+
+	* MAINTAINERS (Write After Approval): Add Andy Wingo.
+
+2015-04-09  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* acinclude.m4: (GDB_AC_CHECK_BFD): Set ZLIBDIR with $zlibdir.
+	Replace $zlibdir with $ZLIBDIR in LDFLAGS.
+	* configure: Regenerated.
+
+2015-04-09  Pedro Alves  <palves@redhat.com>
+
+	* gnulib/update-gnulib.sh (IMPORTED_GNULIB_MODULES): Add strtok_r.
+	* gnulib/Makefile.in (aclocal_m4_deps): Add import/m4/strtok_r.m4.
+	* gnulib/configure, gnulib/config.in, gnulib/aclocal.m4: Regenerate.
+	* gnulib/import/Makefile.am: Update.
+	* gnulib/import/Makefile.in: Update.
+	* gnulib/import/m4/gnulib-cache.m4: Update.
+	* gnulib/import/m4/gnulib-comp.m4: Update.
+	* gnulib/import/m4/strtok_r.m4: New file.
+	* gnulib/import/strtok_r.c: New file.
+
+2015-04-09  Pedro Alves  <palves@redhat.com>
+
+	* gnulib/update-gnulib.sh (aclocal version check): Filter out
+	"called too early to check prototype".
+
+2015-04-08  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	PR python/16699
+	* python/py-cmd.c (cmdpy_completer_helper): Adjust function to not
+	use a caching mechanism.  Adjust comments and code to reflect
+	that.  Replace 'sizeof' by 'strlen' when fetching 'wordobj'.
+	(cmdpy_completer_handle_brkchars): Adjust call to
+	cmdpy_completer_helper.  Call Py_XDECREF for 'resultobj'.
+	(cmdpy_completer): Likewise.
+
+2015-04-08  Yao Qi  <yao.qi@linaro.org>
+
+	* spu-tdep.c (spu_gdbarch_init): Don't call
+	set_gdbarch_cannot_step_breakpoint.
+
+2015-04-07  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* linux-tdep.c (decode_vmflags): Initialize 'saveptr'.
+
+2015-04-07  Pedro Alves  <palves@redhat.com>
+
+	* gdbthread.h (ALL_NON_EXITED_THREADS_SAFE): Rename to ...
+	(ALL_THREADS_SAFE): ... this, and don't skip exited threads.
+	(delete_exited_threads): New declaration.
+	* infrun.c (follow_exec): Use ALL_THREADS_SAFE.
+	* linux-nat.c (linux_nat_update_thread_list): New function.
+	(linux_nat_add_target): Install it.
+	* remote.c (remote_update_thread_list): Use ALL_THREADS_SAFE.
+	* thread.c (prune_threads): Use ALL_THREADS_SAFE.
+	(delete_exited_threads): New function.
+
+2015-04-07  Pedro Alves  <pedro@codesourcery.com>
+
+	* infrun.c (resume) <displaced stepping debug output>: Get the
+	leader thread's regcache, not resume_ptid's.
+
+2015-04-06  Doug Evans  <xdje42@gmail.com>
+
+	* symtab.c (hash_symbol_entry): Hash STRUCT_DOMAIN symbols as
+	VAR_DOMAIN.
+	(symbol_cache_lookup): Clarify use of bsc_ptr, slot_ptr parameters.
+	Include symbol domain in debugging output.
+
+2015-04-06  Pedro Alves  <palves@redhat.com>
+	    Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* configure.ac: Remove the mingw32-specific stub-termcap.o
+	fallback, and instead fallback to the stub termcap on all hosts.
+	* configure: Regenerate.
+	* stub-termcap.c [!__MINGW32__] (PC, BC, UP): Define as weak
+	symbols.
+
+2015-04-03  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gdbtypes.c (is_dynamic_type_internal): Remove the unused
+	"top_level" parameter.
+	(resolve_dynamic_type_internal): Remove the unused "top_level"
+	parameter.  Update call to is_dynamic_type_internal.
+	(is_dynamic_type): Update call to is_dynamic_type_internal.
+	(resolve_dynamic_range): Update call to
+	resolve_dynamic_type_internal.
+	(resolve_dynamic_union): Likewise.
+	(resolve_dynamic_struct): Likewise.
+	(resolve_dynamic_type): Likewise.
+
+2015-04-03  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gdbtypes.c (is_dynamic_type_internal): Remove special handling of
+	TYPE_CODE_REF types so that they are not considered as dynamic
+	depending on the referenced type.
+	(resolve_dynamic_type_internal): Likewise.
+
+2015-04-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.in (top_srcdir): New.
+	* configure: Regenerated.
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* NEWS: Announce the new default sysroot of "target:".
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* main.c (captured_main): Set gdb_sysroot to "target:"
+	if not otherwise set.
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* exec.c (exec_file_attach): Support "target:" filenames.
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* solib.c (solib_find): Strip "target:" prefix from sysroot
+	if accessing local files.
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* symfile.c (symfile_bfd_open): Reorder to remove duplicated
+	checks and error messages.
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* remote.h (REMOTE_SYSROOT_PREFIX): Remove definition.
+	(remote_filename_p): Remove declaration.
+	(remote_bfd_open): Likewise.
+	* remote.c (remote_bfd_iovec_open): Remove function.
+	(remote_bfd_iovec_close): Likewise.
+	(remote_bfd_iovec_pread): Likewise.
+	(remote_bfd_iovec_stat): Likewise.
+	(remote_filename_p): Likewise.
+	(remote_bfd_open): Likewise.
+	* symfile.h (gdb_bfd_open_maybe_remote): Remove declaration.
+	* symfile.c (separate_debug_file_exists): Use gdb_bfd_open.
+	(gdb_bfd_open_maybe_remote): Remove function.
+	(symfile_bfd_open):  Replace remote filename check with
+	target filename check.
+	(reread_symbols): Use gdb_bfd_open.
+	* build-id.c (gdbcore.h): New include.
+	(build_id_to_debug_bfd): Use gdb_bfd_open.
+	* infcmd.c (attach_command_post_wait): Remove remote filename
+	check.
+	* solib.c (solib_find): Replace remote-specific handling with
+	target-specific handling.  Update comments where necessary.
+	(solib_bfd_open): Replace remote-specific handling with
+	target-specific handling.
+	(gdb_sysroot_changed): New function.
+	(_initialize_solib): Call the above when gdb_sysroot changes.
+	* windows-tdep.c (gdbcore.h): New include.
+	(windows_xfer_shared_library): Use gdb_bfd_open.
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* gdb/gdb_bfd.h (TARGET_SYSROOT_PREFIX): New definition.
+	(is_target_filename): New declaration.
+	(gdb_bfd_has_target_filename): Likewise.
+	(gdb_bfd_open): Update documentation comment.
+	* gdb_bfd.c (target.h): New include.
+	(gdb/fileio.h): Likewise.
+	(is_target_filename): New function.
+	(gdb_bfd_has_target_filename): Likewise.
+	(fileio_errno_to_host): Likewise.
+	(gdb_bfd_iovec_fileio_open): Likewise.
+	(gdb_bfd_iovec_fileio_pread): Likewise.
+	(gdb_bfd_iovec_fileio_close): Likewise.
+	(gdb_bfd_iovec_fileio_fstat): Likewise.
+	(gdb_bfd_open): Use target fileio to access paths prefixed
+	with "target:" where necessary.
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* target.h (struct target_ops) <to_filesystem_is_local>:
+	New field.
+	(target_filesystem_is_local): New macro.
+	* target-delegates.c: Regenerate.
+	* remote.c (remote_filesystem_is_local): New function.
+	(init_remote_ops): Initialize to_filesystem_is_local.
+
+2015-04-02  Gary Benson <gbenson@redhat.com>
+
+	* target.h (struct target_ops) <to_fileio_fstat>: New field.
+	(target_fileio_fstat): New declaration.
+	* target.c (target_fileio_fstat): New function.
+	* inf-child.c (inf_child_fileio_fstat): Likewise.
+	(inf_child_target): Initialize to_fileio_fstat.
+	* remote.c (init_remote_ops): Likewise.
+
+2015-04-01  Sasha Smundak  <asmundak@google.com>
+
+	* Makefile.in (SUBDIR_PYTHON_OBJS): Add py-unwind.o.
+	(SUBDIR_PYTHON_SRCS): Add py-unwind.c.
+	(py-unwind.o): New recipe.
+	* NEWS: mention Python frame unwinding.
+	* data-directory/Makefile.in (PYTHON_FILE_LIST): Add
+	gdb/unwinder.py and gdb/command/unwinder.py
+	* python/lib/gdb/__init__.py (packages): Add frame_unwinders
+	list.
+	(execute_unwinders): New function.
+	* python/lib/gdb/command/unwinders.py: New file.
+	* python/lib/gdb/unwinder.py: New file.
+	* python/py-objfile.c (objfile_object): Add frame_unwinders field.
+	(objfpy_dealloc): Decrement frame_unwinders reference count.
+	(objfpy_initialize): Create frame_unwinders list.
+	(objfpy_get_frame_unwinders): New function.
+	(objfpy_set_frame_unwinders): Ditto.
+	(objfile_getset): Add frame_unwinders attribute to Objfile.
+	* python/py-progspace.c (pspace_object): Add frame_unwinders field.
+	(pspy_dealloc): Decrement frame_unwinders reference count.
+	(pspy_initialize): Create frame_unwinders list.
+	(pspy_get_frame_unwinders): New function.
+	(pspy_set_frame_unwinders): Ditto.
+	(pspy_getset): Add frame_unwinders attribute to gdb.Progspace.
+	* python/py-unwind.c: New file.
+	* python/python-internal.h (pspy_get_name_unwinders): New prototype.
+	(objpy_get_frame_unwinders): New prototype.
+	(gdbpy_initialize_unwind): New prototype.
+	* python/python.c (gdbpy_apply_type_printers): Call
+	gdbpy_initialize_unwind.
+
+2015-04-01  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (resume): Check currently_stepping after clearing
+	stepped_breakpoint, not before.
+
+2015-04-01  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (print_target_wait_results): Print all the ptid
+	elements.
+
+2015-04-01  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (keep_going): Also discard cleanups if inserting
+	breakpoints fails.
+
+2015-04-01  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (wait_for_inferior): Install the
+	finish_thread_state_cleanup cleanup across the whole function, not
+	just around handle_inferior_event.
+
+2015-04-01  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (resume) <step past permanent breakpoint>: Use
+	do_target_resume.
+
+2015-04-01  Pedro Alves  <palves@redhat.com>
+
+	* linux-nat.c (linux_handle_extended_wait): Always call set_running.
+
+2015-04-01  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* MAINTAINERS (Write After Approval): Add "Pierre-Marie de Rodat".
+
+2015-04-01  Pedro Alves  <palves@redhat.com>
+
+	* linux-thread-db.c (record_thread): Readd the thread to gdb's
+	list if it was marked exited.
+
+2015-04-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2015-03-31  Sergio Durigan Junior  <sergiodj@redhat.com>
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Oleg Nesterov  <oleg@redhat.com>
+
+	PR corefiles/16092
+	* linux-tdep.c: Include 'gdbcmd.h' and 'gdb_regex.h'.
+	New enum identifying the various options of the coredump_filter
+	file.
+	(struct smaps_vmflags): New struct.
+	(use_coredump_filter): New variable.
+	(decode_vmflags): New function.
+	(mapping_is_anonymous_p): Likewise.
+	(dump_mapping_p): Likewise.
+	(linux_find_memory_regions_full): New variables
+	'coredumpfilter_name', 'coredumpfilterdata', 'pid', 'filterflags'.
+	Removed variable 'modified'.  Read /proc/<PID>/smaps file; improve
+	parsing of its information.  Implement memory mapping filtering
+	based on its contents.
+	(show_use_coredump_filter): New function.
+	(_initialize_linux_tdep): New command 'set use-coredump-filter'.
+	* NEWS: Mention the possibility of using the
+	'/proc/PID/coredump_filter' file when generating a corefile.
+	Mention new command 'set use-coredump-filter'.
+
+2015-03-31  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* solib-svr4.c (solib_svr4_r_ldsomap): Catch possible exception by
+	read_memory_unsigned_integer.
+
+2015-03-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.in (ZLIB): New.
+	(ZLIBINC): Likewise.
+	(INTERNAL_CFLAGS_BASE): Add $(ZLIBINC).
+	(CLIBS): Add $(ZLIB).
+	* acinclude.m4: (GDB_AC_CHECK_BFD): Add $zlibdir to LDFLAGS.
+	Add -lz to LIBS.
+	* gdb_bfd.c: Don't check HAVE_ZLIB_H to include <zlib.h>.
+	* top.c (print_gdb_configuration): Remove --with-zlib and
+	--without-zlib.
+	* config.in: Regenerated.
+	* configure: Likewise.
+
+2015-03-31  Antoine Tremblay  <antoine.tremblay@ericsson.com>
+
+	* NEWS: Mention info os cpus support.
+	* gdb/nat/linux-osdata.c (linux_xfer_osdata_cpus): New function.
+	(struct osdata_type): Add cpus entry, reorder the entries in
+	alphabetical order.
+
+2015-03-31  Matthias Klose  <doko@ubuntu.com>
+
+	* compile/compile.c (compile_to_object): Allow triplets with or
+	without vendor set.
+
+2015-03-30  Doug Evans  <dje@google.com>
+
+	PR c++/18141
+	* cp-namespace.c (cp_search_static_and_baseclasses): Always look for
+	klass in VAR_DOMAIN.
+
+2015-03-30  Gary Benson <gbenson@redhat.com>
+
+	* remote.c (remote_mourn_1): Remove function.  Update all callers
+	to use remote_mourn.
+	(extended_remote_mourn_1): Remove function.  Update all callers
+	to use extended_remote_mourn.
+	(extended_remote_attach_1): Remove function.  Update all callers
+	to use extended_remote_attach.
+
+2015-03-28  James Bowman  <james.bowman@ftdichip.com>
+
+	* Makefile.in (ALL_TARGET_OBS): Add ft32-tdep.o.
+	(HFILES_NO_SRCDIR): Add ft32-tdep.h.
+	(ALLDEPFILES): Add ft32-tdep.c.
+	* configure.tgt: Add FT32 entry.
+	* ft32-tdep.c: New file, FT32 target-dependent code.
+	* ft32-tdep.h: New file, FT32 target-dependent code.
+
+2015-03-27  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Revert:
+	2015-03-26  Jan Kratochvil  <jan.kratochvil@redhat.com>
+	Code cleanup.
+	* printcmd.c (print_command_1): Move expr variable scope.
+
+2015-03-27  Joel Brobecker  <brobecker@adacore.com>
+
+	* dtrace-probe.c (dtrace_process_dof_probe): Initialize expr to NULL.
+
+2015-03-27  Andrzej Kaczmarek  <andrzej.kaczmarek@tieto.com>
+
+	* gdb_bfd.c (gdb_bfd_section_index): Fix off-by-one for special
+	sections.
+
+2015-03-26  Joel Brobecker  <brobecker@adacore.com>
+
+	* dtrace-probe.c (dtrace_process_dof_probe): Contain any
+	exception raised while parsing the probe arguments.
+	Force parsing to be done using the C language parser.
+	* expression.h (parse_expression_with_language): Declare.
+	* parse.c (parse_expression_with_language): New function.
+
+2015-03-26  Jon Turney  <jon.turney@dronecode.org.uk>
+
+	* MAINTAINERS (Write After Approval): Add "Jon Turney".
+
+2015-03-26  Andy Wingo  <wingo@igalia.com>
+
+	PR symtab/18148
+	* dwarf2read.c (struct partial_die_info): Add has_const_value
+	member.
+	(add_partial_symbol): Don't punt on symbols that have const_value
+	attributes.
+	(read_partial_die): Detect DW_AT_const_value.
+
+2015-03-26  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Code cleanup.
+	* printcmd.c (print_command_1): Move expr variable scope.
+
+2015-03-26  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Code cleanup.
+	* printcmd.c (validate_format): Make the parameter cmdname const.
+
+2015-03-26  Don Breazeal  <donb@codesourcery.com>
+
+	* remote.c (_initialize_remote): Update comment.
+
+2015-03-26  Pedro Alves  <palves@redhat.com>
+	    Jon TURNEY  <jon.turney@dronecode.org.uk>
+
+	* coffread.c (coff_symfile_read): When constructing the name of an
+	import stub symbol from import symbol for amd64, only skip the
+	char after _imp_ if the target is underscored (like i386) and the
+	char is indeed the target's leading char.
+
+2015-03-25  Pedro Alves  <palves@redhat.com>
+
+	* target.h <to_async>: Replace 'callback' and 'context' parameters
+	with boolean 'enable' parameter.
+	(target_async): Replace CALLBACK and CONTEXT parameters with
+	boolean ENABLE parameter.
+	* inf-loop.c (inferior_event_handler): Adjust.
+	* linux-nat.c (linux_nat_attach, linux_nat_resume)
+	(linux_nat_resume): Adjust.
+	(async_client_callback, async_client_context): Delete.
+	(handle_target_event): Call inferior_event_handler directly.
+	(linux_nat_async): Replace 'callback' and 'context' parameters
+	with boolean 'enable' parameter.  Adjust.  Remove references to
+	async_client_callback and async_client_context.
+	(linux_nat_close): Adjust.
+	* record-btrace.c (record_btrace_async): Replace 'callback' and
+	'context' parameters with boolean 'enable' parameter.  Adjust.
+	(record_btrace_resume): Adjust.
+	* record-full.c (record_full_async): Replace 'callback' and
+	'context' parameters with boolean 'enable' parameter.  Adjust.
+	(record_full_resume, record_full_core_resume): Adjust.
+	* remote.c (struct remote_state) <async_client_callback,
+	async_client_context>: Delete fields.
+	(remote_start_remote, extended_remote_attach_1, remote_resume)
+	(extended_remote_create_inferior): Adjust.
+	(remote_async_serial_handler): Call inferior_event_handler
+	directly.
+	(remote_async): Replace 'callback' and 'context' parameters with
+	boolean 'enable' parameter.  Adjust.
+	* top.c (gdb_readline_wrapper_cleanup, gdb_readline_wrapper):
+	Adjust.
+	* target-delegates.c: Regenerate.
+
+2015-03-25  Gary Benson <gbenson@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* target.c (fileio_ft_t): New typedef, define object vector.
+	(fileio_fhandles): New static variable.
+	(is_closed_fileio_fh): New macro.
+	(lowest_closed_fd): New static variable.
+	(acquire_fileio_fd): New function.
+	(release_fileio_fd): Likewise.
+	(fileio_fd_to_fh): New macro.
+	(target_fileio_open): Wrap the file descriptor on success.
+	(target_fileio_pwrite): Updated to use wrapped file descriptor.
+	(target_fileio_pread): Likewise.
+	(target_fileio_close): Likewise.
+
+2015-03-24  Pedro Alves  <palves@redhat.com>
+
+	* thread.c (thread_apply_all_command): Take exited threads into
+	account.
+
+2015-03-24  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (resume, proceed): Mention
+	switch_back_to_stepped_thread, not switch_back_to_stepping.
+
+2015-03-24  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (user_visible_resume_ptid): Rewrite going from
+	most-locked to unlocked instead of the opposite.  Move comment ...
+	* infrun.h (user_visible_resume_ptid): ... here.
+
+2015-03-24  Pedro Alves  <palves@redhat.com>
+
+	* linux-nat.c (linux_nat_resume): Output debug logs before trying
+	to resume the event lwp.  Use the lwp's ptid instead of the passed
+	in (maybe wildcard) ptid.
+	(stop_wait_callback): Tweak debug log output.
+	(check_stopped_by_breakpoint): Tweak debug log output.  Also dump
+	TRAP_TRACE.
+	(linux_nat_filter_event): In debug output, distinguish a
+	resume_stop SIGSTOP from a delayed SIGSTOP.  Output debug logs
+	before trying to resume the lwp.
+
+2015-03-24  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdbtypes.h (struct dynamic_prop_list) <prop>: Remove
+	pointer indirection.
+	* gdbtypes.c (get_dyn_prop): Adjust, following change above.
+	(add_dyn_prop, copy_dynamic_prop_list): Likewise.
+
+2015-03-24  Joel Brobecker  <brobecker@adacore.com>
+
+	* gdbtypes.h (enum dynamic_prop_node_kind) <DYN_PROP_DATA_LOCATION>:
+	Renames DYN_ATTR_DATA_LOCATION.
+	(TYPE_DATA_LOCATION): Use DYN_PROP_DATA_LOCATION instead of
+	DYN_ATTR_DATA_LOCATION.
+	* dwarf2read.c (set_die_type): Use DYN_PROP_DATA_LOCATION
+	instead of DYN_ATTR_DATA_LOCATION.
+
+2015-03-24  Pedro Alves  <palves@redhat.com>
+
+	* breakpoint.c (until_break_command): Adjust call to proceed.
+	* gdbthread.h (struct thread_control_state) <stepping_command>:
+	New field.
+	* infcall.c (run_inferior_call): Adjust call to proceed.
+	* infcmd.c (run_command_1, proceed_thread_callback, continue_1):
+	Adjust calls to proceed.
+	(set_step_frame): Set the current thread's step_start_function
+	here.
+	(step_once): Adjust calls to proceed.
+	(jump_command, signal_command, until_next_command)
+	(finish_backward, finish_forward, proceed_after_attach_callback)
+	(attach_command_post_wait): Adjust calls to proceed.
+	* infrun.c (proceed_after_vfork_done): Adjust call to proceed.
+	(do_target_resume): New function, factored out from ...
+	(resume): ... here.  Remove 'step' parameter.  Instead, check
+	currently_stepping to determine whether the thread should be
+	single-stepped.
+	(proceed): Remove 'step' parameter and don't set the thread's
+	step_start_function here.  Adjust call to 'resume'.
+	(handle_inferior_event): Adjust calls to 'resume'.
+	(switch_back_to_stepped_thread): Use do_target_resume instead of
+	'resume'.
+	(keep_going): Adjust calls to 'resume'.
+	* infrun.h (proceed): Remove 'step' parameter.
+	(resume): Likewise.
+	* windows-nat.c (do_initial_windows_stuff): Adjust call to
+	'resume'.
+	* mi/mi-main.c (proceed_thread): Adjust call to 'proceed'.
+
+2015-03-24  Pedro Alves  <palves@redhat.com>
+
+	* gdbthread.h (struct thread_control_state) <stepping_command>:
+	New field.
+	* infcmd.c (step_once): Pass step=1 to clear_proceed_status.  Set
+	the thread's stepping_command field.
+	* infrun.c (resume): Check the thread's stepping_command flag to
+	determine which threads should be resumed.  Rename 'entry_step'
+	local to user_step.
+	(clear_proceed_status_thread): Clear 'stepping_command'.
+	(schedlock_applies): Change parameter type to struct thread_info
+	pointer.  Adjust.
+	(find_thread_needs_step_over): Remove 'step' parameter.  Adjust.
+	(switch_back_to_stepped_thread): Adjust calls to
+	'schedlock_applies'.
+	(_initialize_infrun): Adjust "set scheduler-locking step" help.
+
+2015-03-24  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (step_start_function): Delete and ...
+	* gdbthread.h (struct thread_control_state) <step_start_function>:
+	... now a field here.
+	* infrun.c (clear_proceed_status_thread): Clear the thread's
+	step_start_function.
+	(proceed, process_event_stop_test, print_stop_event): Adjust.
+
+2015-03-24  Pedro Alves  <palves@redhat.com>
+
+	* infrun.c (proceed): No longer handle negative step.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* nat/x86-linux.h (x86_linux_new_thread): New declaration.
+	(x86_linux_prepare_to_resume): Likewise.
+	* x86-linux-nat.c (x86_linux_new_thread):
+	Moved to nat/x86-linux.c.
+	(x86_linux_prepare_to_resume): Likewise.
+	* nat/x86-linux.c (x86_linux_new_thread): New function.
+	(x86_linux_prepare_to_resume): Likewise.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* nat/x86-linux-dregs.h: New file.
+	* nat/x86-linux-dregs.c: Likewise.
+	* Makefile.in (HFILES_NO_SRCDIR): Add nat/x86-linux-dregs.h.
+	(x86-linux-dregs.o): New rule.
+	* config/i386/linux.mh (NATDEPFILES): Add x86-linux-dregs.o.
+	* config/i386/linux64.mh (NATDEPFILES): Likewise.
+	* x86-linux-nat.c: Include nat/x86-linux-dregs.h.
+	(u_debugreg_offset): Moved to nat/x86-linux-dregs.c.
+	(x86_linux_dr_get): Likewise.
+	(x86_linux_dr_set): Likewise.
+	(x86_linux_dr_get_addr): Likewise.
+	(x86_linux_dr_get_control): Likewise.
+	(x86_linux_dr_get_status): Likewise.
+	(update_debug_registers_callback): Likewise.
+	(x86_linux_dr_set_control): Likewise.
+	(x86_linux_dr_set_addr): Likewise.
+	(x86_linux_update_debug_registers): Likewise.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* x86-linux-nat.c (x86_linux_update_debug_registers):
+	New function, factored out from...
+	(x86_linux_prepare_to_resume): ...this.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* x86-linux-nat.c (x86_linux_dr_get): Update comments.
+	(x86_linux_dr_set): Likewise.
+	(x86_linux_dr_get_addr): Likewise.
+	(x86_linux_dr_get_control): Likewise.
+	(x86_linux_dr_get_status): Likewise.
+	(update_debug_registers_callback): Likewise.
+	(x86_linux_dr_set_control): Likewise.
+	(x86_linux_dr_set_addr): Likewise.
+	(x86_linux_prepare_to_resume): Likewise.
+	(x86_linux_new_thread): Likewise.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* x86-linux-nat.c (x86_linux_dr_set_addr): Update assertion.
+	(x86_linux_new_thread): Rename argument.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* nat/x86-linux.h: New file.
+	* nat/x86-linux.c: Likewise.
+	* Makefile.in (HFILES_NO_SRCDIR): Add nat/x86-linux.h.
+	(x86-linux.o): New rule.
+	* config/i386/linux.mh (NATDEPFILES): Add x86-linux.o.
+	* config/i386/linux64.mh (NATDEPFILES): Likewise.
+	* nat/linux-nat.h (struct arch_lwp_info): New forward declaration.
+	(lwp_set_arch_private_info): New declaration.
+	(lwp_arch_private_info): Likewise.
+	* linux-nat.c (lwp_set_arch_private_info): New function.
+	(lwp_arch_private_info): Likewise.
+	* x86-linux-nat.c: Include nat/x86-linux.h.
+	(arch_lwp_info): Removed structure.
+	(update_debug_registers_callback):
+	Use lwp_set_debug_registers_changed.
+	(x86_linux_prepare_to_resume): Use lwp_debug_registers_changed
+	and lwp_set_debug_registers_changed.
+	(x86_linux_new_thread): Use lwp_set_debug_registers_changed.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* nat/linux-nat.h (ptid_of_lwp): New declaration.
+	(lwp_is_stopped): Likewise.
+	(lwp_stop_reason): Likewise.
+	* linux-nat.c (ptid_of_lwp): New function.
+	(lwp_is_stopped): Likewise.
+	(lwp_is_stopped_by_watchpoint): Likewise.
+	* x86-linux-nat.c (update_debug_registers_callback):
+	Use lwp_is_stopped.
+	(x86_linux_prepare_to_resume): Use ptid_of_lwp and
+	lwp_stop_reason.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* linux-nat.h (linux_stop_lwp): Move declaration to...
+	* nat/linux-nat.h (linux_stop_lwp): New declaration.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* linux-nat.h: Include nat/linux-nat.h.
+	(iterate_over_lwps): Move declaration to nat/linux-nat.h.
+	* nat/linux-nat.h (struct lwp_info): New forward declaration.
+	(iterate_over_lwps_ftype): New typedef.
+	(iterate_over_lwps): New declaration.
+	* linux-nat.h (iterate_over_lwps): Update comment.  Use
+	iterate_over_lwps_ftype.  Update callback return value check.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* x86-nat.h (x86_debug_reg_state): Move declaration to...
+	* nat/x86-dregs.h (x86_debug_reg_state): New declaration.
+
+2015-03-24  Gary Benson  <gbenson@redhat.com>
+
+	* nat/linux-nat.h (current_lwp_ptid): New declaration.
+	* linux-nat.c (current_lwp_ptid): New function.
+	* x86-linux-nat.c: Include nat/linux-nat.h.
+	(x86_linux_dr_get_addr): Use current_lwp_ptid.
+	(x86_linux_dr_get_control): Likewise.
+	(x86_linux_dr_get_status): Likewise.
+	(x86_linux_dr_set_control): Likewise.
+	(x86_linux_dr_set_addr): Likewise.
+
+2015-03-24  Antoine Tremblay  <antoine.tremblay@ericsson.com>
+
+	PR breakpoints/16466
+	* breakpoint.c (create_breakpoint): Set thread on breakpoint struct.
+
+2015-03-23  Joel Brobecker  <brobecker@adacore.com>
+
+	* ser-mingw.c (ser_windows_setparity): Fix indentation.
+	* ser-unix.c (hardwire_setparity): Likewise.
+
+2015-03-23  Yurij Grechishhev  <yurij.grechishhev@gmail.com>
+
+	* NEWS: Mention set/show serial parity command.
+	* monitor.c (monitor_open): Call serial_setparity.
+	* remote.c (remote_open_1): Likewise.
+	* ser-base.c (ser_base_serparity): New function.
+	* ser-base.h (ser_base_setparity): Add  declaration.
+	* ser-go32.c (dos_ops): Set "setparity" field.
+	* ser-mingw.c (ser_windows_raw): Do not set state.fParity and
+	state.Parity.
+	(ser_windows_setparity): New function.
+	(hardwire_ops): Add ser_windows_setparity.
+	(tty_ops): Add NULL for setparity field.
+	(pipe_ops): Add ser_base_setparity.
+	(tcp_ops): Likewise.
+	* ser-pipe.c (pipe_ops): Likewise.
+	* ser-tcp.c (tcp_ops): Likewise.
+	* ser-unix.c (hardwire_setparity): Add declaration.
+	(hardwire_raw): Don't reset PARENB flag.
+	(hardwire_setparity): New function.
+	(hardwire_ops): Add hardwire_setparity.
+	* serial.c (serial_setparity): New function.
+	(serial_parity): New global.
+	(parity_none, parity_odd, parity_even, parity_enums, parity):
+	New static globals.
+	(set_parity): New function.
+	(_initialize_serial): Add set/show serial parity commands.
+	* serial.h (GDBPARITY_NONE): Define.
+	(GDBPARITY_ODD): Define.
+	(GDBPARITY_EVEN): Define.
+	(serial_setparity) Add declaration.
+	(struct serial_ops): Add setparity field.
+	* target.h (serial_parity): Add declaration.
+
+2015-03-23  Keith Seitz  <keiths@redhat.com>
+
+	* linespec.c (linespec_lexer_lex_keyword): Update comment.
+
+2015-03-23  Keith Seitz  <keiths@redhat.com>
+
+	* breakpoint.c (parse_breakpoint_sals): Use
+	linespec_lexer_lex_keyword to ascertain if the user specified
+	a NULL location.
+	* linespec.c [IF_KEYWORD_INDEX]: Define.
+	(linespec_lexer_lex_keyword): Export.
+	(struct ls_parser) <keyword_ok>: Remove.
+	A keyword is only a keyword if not followed by another keyword.
+	(linespec_lexer_lex_one): Remove keyword_ok handling.
+	Add comment explaining why the parsing stream is not advanced
+	when a keyword is seen.
+	(parse_linespec): Remove parser->keyword_ok.
+	* linespec.h (linespec_lexer_lex_keyword): Add declaration.
+
+2015-03-23  Keith Seitz  <keiths@redhat.com>
+
+	PR gdb/18021
+	* dwarf2read.c (dwarf2_add_member_fn): Issue a complaint
+	if we find a static method with DW_AT_vtable_elem_location.
+
+2015-03-21  Eli Zaretskii  <eliz@gnu.org>
+
+	* tui/tui-io.c (tui_expand_tabs): Reinitialize the column counter
+	before the second loop, to avoid undefined behavior.  Reported by
+	Anton Blanchard <anton@samba.org>.
+
+2015-03-20  Keven Boell  <keven.boell@intel.com>
+
+	* gdbtypes.c (resolve_dynamic_type_internal): Adapt
+	data_location usage to linked list.
+	(resolve_dynamic_type_internal): Adapt data_location to
+	linked list.
+	(get_dyn_prop, add_dyn_prop, copy_dynamic_prop_list): New function.
+	(copy_type_recursive, copy_type): Add copy of linked list.
+	* gdbtypes.h (enum dynamic_prop_node_kind): New enum.
+	(struct dynamic_prop_list): New struct.
+	* dwarf2read.c (set_die_type): Set data_location data.
+
+2015-03-20  Pedro Alves  <palves@redhat.com>
+
+	* i386-sol2-tdep.c (i386_sol2_static_transform_name): Move "p" to
+	inner block and make it const.
+	* machoread.c (get_archive_prefix_len): Make "lparen" const.
+
+2015-03-20  Pedro Alves  <palves@redhat.com>
+
+	* breakpoint.c (set_breakpoint_condition): Make argument "exp" const.
+	* breakpoint.h (set_breakpoint_condition): Update declaration.
+
+2015-03-20  Pedro Alves  <palves@redhat.com>
+
+	* tui/tui-io.c (tui_expand_tabs): Make "s1" const.
+
+2015-03-20  Pedro Alves  <palves@redhat.com>
+
+	* xcoffread.c (scan_xcoff_symtab): Make "p" and "q" const.
+
+2015-03-20  Pedro Alves  <palves@redhat.com>
+
+	* remote-m32r-sdi.c (m32r_open): Make "port_str" const.
+
+2015-03-20  Pedro Alves  <palves@redhat.com>
+
+	* nto-tdep.c (nto_find_and_open_solib): Make "endian" const.
+	(nto_init_solib_absolute_prefix): Likewise.
+
+2015-03-20  Pedro Alves  <palves@redhat.com>
+
+	* sparc-sol2-tdep.c (sparc_sol2_static_transform_name): Make "p" const.
+	* spu-tdep.c (spu_gdbarch_init): Make "name" const.
+
+2015-03-20  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* config/djgpp/README: Remove gdb.hp.
+
+2015-03-20  Yao Qi  <yao.qi@linaro.org>
+
+	* aarch64-tdep.c (aarch64_gdbarch_init): Don't call
+	set_gdbarch_cannot_step_breakpoint.
+
+2015-03-19  Pedro Alves  <palves@redhat.com>
+
+	* linux-nat.c (linux_resume_one_lwp): Rename to ...
+	(linux_resume_one_lwp_throw): ... this.  Don't handle ESRCH here,
+	instead call perror_with_name.
+	(check_ptrace_stopped_lwp_gone): New function.
+	(linux_resume_one_lwp): Reimplement as wrapper around
+	linux_resume_one_lwp_throw that swallows errors if the LWP is
+	gone.
+	(resume_stopped_resumed_lwps): Try register reads in TRY/CATCH and
+	swallows errors if the LWP is gone.  Use
+	linux_resume_one_lwp_throw instead of linux_resume_one_lwp.
+
+2015-03-19  Pedro Alves  <palves@redhat.com>
+
+	* linux-nat.c (status_callback): Return early if the LWP has no
+	status pending.
+
+2015-03-19  Pedro Alves  <palves@redhat.com>
+
+	* linux-nat.c (select_event_lwp_callback): Update comment to no
+	longer mention SIGTRAP.
+
+2015-03-18  Tristan Gingold  <gingold@adacore.com>
+
+        * amd64-windows-tdep.c (amd64_windows_find_unwind_info): Move
+        redirection code to ...
+        (amd64_windows_frame_decode_insns): ... Here.  Fix in prologue
+        checks.  Fix SAVE_NONVOL operations.  Add debug code and comments.
+
+2015-03-18  Gary Benson <gbenson@redhat.com>
+
+	(remote_protocol_features): Remove the "vFile:fstat" feature.
+	(remote_hostio_fstat): Probe for "vFile:fstat" support.
+
+2015-03-11  Yao Qi  <yao.qi@linaro.org>
+
+	PR tdep/18107
+	* aarch64-linux-tdep.c: Include xml-syscall.h
+	(aarch64_linux_get_syscall_number): New function.
+	(aarch64_linux_init_abi): Call
+	set_gdbarch_get_syscall_number.
+	* syscalls/aarch64-linux.xml: New file.
+
+2015-03-17  Yurij Grechishhev  <yurij.grechishhev@gmail.com>
+
+	* ser-base.h (ser_base_setstopbits): Change second argument name
+	from "rate" to "num".
+
+2015-03-17  Gary Benson <gbenson@redhat.com>
+	    Luke Allardyce <lukeallardyce@gmail.com>
+
+	PR gdb/18131
+	* common/common-remote-fileio.h (sys/stat.h): New include.
+	(stuct stat): Remove forward declaration.
+
+2015-03-16  John Baldwin  <jhb@FreeBSD.org>
+
+	* fbsd-tdep.c (fbsd_make_corefile_notes): Fetch all target registers
+	before writing core register notes.
+
+2015-03-16  Yuanhui Zhang  <asmwarrior@gmail.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* gdb_curses.h (tgetnum): Mark with EXTERN_C.
+	* stub-termcap.c (tgetent, tgetnum, tgetflag, tgetstr, tputs)
+	(tgoto): Wrap with extern "C".
+
+2015-03-16  Pedro Alves  <palves@redhat.com>
+	    Yuanhui Zhang  <asmwarrior@gmail.com>
+
+	* stub-termcap.c (tputs): Change prototype.
+
+2015-03-16  Yuanhui Zhang  <asmwarrior@gmail.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* windows-nat.c (struct thread_info_struct): Rename to ...
+	(struct windows_thread_info_struct): ... this.
+	(thread_info): Rename to ...
+	(windows_thread_info): ... this.
+	All users updated.
+
+2015-03-14  Jan Kratochvil  <jan.kratochvil@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
+
+	* NEWS: New Removed targets and native configurations.
+
+2015-03-13  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Remove HPUX.
+	* Makefile.in (ALL_64_TARGET_OBS): Remove ia64-hpux-tdep.o.
+	(ALL_TARGET_OBS): Remove hppa-hpux-tdep.o, solib-som.o and solib-pa64.o.
+	(HFILES_NO_SRCDIR): Remove solib-som.h, inf-ttrace.h, solib-pa64.h and
+	ia64-hpux-tdep.h, solib-ia64-hpux.h.
+	(ALLDEPFILES): Remove hppa-hpux-tdep.c, hppa-hpux-nat.c,
+	ia64-hpux-nat.c, ia64-hpux-tdep.c, somread.c and solib-som.c.
+	* config/djgpp/fnchange.lst: Remove hppa-hpux-nat.c and
+	hppa-hpux-tdep.c.
+	* config/ia64/hpux.mh: Remove file.
+	* config/pa/hpux.mh: Remove file.
+	* configure: Rebuilt.
+	* configure.ac (dlgetmodinfo, somread.o): Remove.
+	* configure.host (hppa*-*-hpux*, ia64-*-hpux*): Make them obsolete.
+	(ia64-*-hpux*): Remove its float format exception.
+	* configure.tgt (hppa*-*-hpux*, ia64-*-hpux*): Make them obsolete.
+	* hppa-hpux-nat.c: Remove file.
+	* hppa-hpux-tdep.c: Remove file.
+	* hppa-tdep.c (struct hppa_unwind_info, struct hppa_objfile_private):
+	Move them here from hppa-tdep.h
+	(hppa_objfile_priv_data, hppa_init_objfile_priv_data): Make it static.
+	(hppa_frame_prev_register_helper): Remove HPPA_FLAGS_REGNUM exception.
+	* hppa-tdep.h (struct hppa_unwind_info, struct hppa_objfile_private):
+	Move them to hppa-tdep.c.
+	(hppa_objfile_priv_data, hppa_init_objfile_priv_data): Remove
+	declarations.
+	* ia64-hpux-nat.c: Remove file.
+	* ia64-hpux-tdep.c: Remove file.
+	* ia64-hpux-tdep.h: Remove file.
+	* inf-ttrace.c: Remove file.
+	* inf-ttrace.h: Remove file.
+	* solib-ia64-hpux.c: Remove file.
+	* solib-ia64-hpux.h: Remove file.
+	* solib-pa64.c: Remove file.
+	* solib-pa64.h: Remove file.
+	* solib-som.c: Remove file.
+	* solib-som.h: Remove file.
+	* somread.c: Remove file.
+
+2015-03-13  John Baldwin  <jhb@FreeBSD.org>
+
+	* configure.ac: AC_SEARCH_LIBS(kinfo_getvmmap, util).
+	* config.in: Regenerate.
+	* configure: Regenerate.
+	* fbsd-nat.c [!HAVE_KINFO_GETVMMAP] (fbsd_read_mapping): Don't
+        define.
+	(fbsd_find_memory_regions): Use kinfo_getvmmap to
+	enumerate memory regions if present.
+
+2015-03-13  John Baldwin  <jhb@FreeBSD.org>
+
+	* amd64fbsd-tdep.c (amd64fbsd_sigtramp_p): Style fixes.
+	* i386fbsd-tdep.c: Fix style in various gdb_static_assert
+	expressions.
+	(i386fbsd_sigtramp_p): Likewise.
+
+2015-03-12  John Baldwin  <jhb@FreeBSD.org>
+
+	* MAINTAINERS (Write After Approval): Add John Baldwin.
+
+2015-03-12  Gary Benson <gbenson@redhat.com>
+
+	* solib.c (_initialize_solib): Make "set/show sysroot" use
+	add_setshow_optional_filename_cmd so it can be restored to
+	empty after being set.
+
+2015-03-11  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* Makefile.in (SFILES): New source break-catch-syscall.c.
+	(COMMON_OBS): New object break-catch-syscall.o.
+	* break-catch-syscall.c: New file.
+	* breakpoint.c: Remove inclusion of "xml-syscall.h".
+	(syscall_catchpoint_p): Move declaration to break-catch-syscall.c
+	(struct syscall_catchpoint): Likewise.
+	(dtor_catch_syscall): Likewise.
+	(catch_syscall_inferior_data): Likewise.
+	(struct catch_syscall_inferior_data): Likewise.
+	(get_catch_syscall_inferior_data): Likewise.
+	(catch_syscall_inferior_data_cleanup): Likewise.
+	(insert_catch_syscall): Likewise.
+	(remove_catch_syscall): Likewise.
+	(breakpoint_hit_catch_syscall): Likewise.
+	(print_it_catch_syscall): Likewise.
+	(print_one_catch_syscall): Likewise.
+	(print_mention_catch_syscall): Likewise.
+	(print_recreate_catch_syscall): Likewise.
+	(catch_syscall_breakpoint_ops): Likewise.
+	(syscall_catchpoint_p): Likewise.
+	(create_syscall_event_catchpoint): Likewise.
+	(catch_syscall_split_args): Likewise.
+	(catch_syscall_command_1): Likewise.
+	(is_syscall_catchpoint_enabled): Likewise.
+	(catch_syscall_enabled): Likewise.
+	(catching_syscall_number): Likewise.
+	(catch_syscall_completer): Likewise.
+	(clear_syscall_counts): Likewise.
+	(initialize_breakpoint_ops): Move initialization of syscall
+	catchpoints to break-catch-syscall.c.
+	(_initialize_breakpoint): Move code related to syscall catchpoints
+	to break-catch-syscall.c.
+
+2015-03-11  Sergio Durigan Junior  <sergiodj@redhat.com>
+
+	* breakpoint.c (breakpoint_find_if): New function.
+	* breakpoint.h (breakpoint_find_if): New prototype.
+
+2015-03-11  Gary Benson <gbenson@redhat.com>
+
+	* remote-fileio.h (remote_fileio_to_host_stat): New declaration.
+	* remote-fileio.c (remote_fileio_to_host_uint): New function.
+	(remote_fileio_to_host_ulong): Likewise.
+	(remote_fileio_to_host_mode): Likewise.
+	(remote_fileio_to_host_time): Likewise.
+	(remote_fileio_to_host_stat): Likewise.
+	* remote.c (PACKET_vFile_fstat): New enum value.
+	(remote_protocol_features): Register the "vFile:fstat" feature.
+	(remote_hostio_fstat): New function.
+	(remote_bfd_iovec_stat): Use the above.
+	(_initialize_remote): Register new "set/show remote
+	hostio-fstat-packet" command.
+	* symfile.c (separate_debug_file_exists): Update comment.
+	* NEWS: Announce new vFile:fstat packet.
+
+2015-03-11  Gary Benson <gbenson@redhat.com>
+
+	* common/common-remote-fileio.h: New file.
+	* common/common-remote-fileio.c: Likewise.
+	* Makefile.in (SFILES): Add common/common-remote-fileio.c.
+	(HFILES_NO_SRCDIR): Add common/common-remote-fileio.h.
+	(COMMON_OBS): Add common-remote-fileio.o.
+	(common-remote-fileio.o): New rule.
+	* remote-fileio.h (common-remote-fileio.h): New include.
+	* remote-fileio.c (gdb/fileio.h): Do not include.
+	(remote_fileio_to_be): Moved to common-remote-fileio.h.
+	(remote_fileio_to_fio_uint): Likewise.
+	(remote_fileio_to_fio_time): Likewise.
+	(remote_fileio_mode_to_target): Moved to common-remote-fileio.c.
+	(remote_fileio_to_fio_mode): Likewise.
+	(remote_fileio_to_fio_ulong): Likewise.
+	(remote_fileio_to_fio_stat): Likewise.
+
+2015-03-11  Andy Wingo  <wingo@igalia.com>
+
+	* guile/scm-value.c (gdbscm_value_dynamic_type): Fix typo in which
+	we were checking the cached type, not the cached dynamic type.
+
+2015-03-11  Andy Wingo  <wingo@igalia.com>
+
+	* guile/scm-cmd.c (cmdscm_destroyer): Don't xfree the name and
+	other strings, as these are on the GC'd heap, and will be
+	collected along with the smob.
+
+2015-03-11  Andy Wingo  <wingo@igalia.com>
+
+	* guile/scm-objfile.c (gdbscm_objfile_progspace): New function.
+	(objfile_functions): Bind gdbscm_objfile_progspace to
+	objfile-progspace.
+	* guile/lib/gdb.scm: Add objfile-progspace to exports.
+
+2015-03-11  Andy Wingo  <wingo@igalia.com>
+
+	* guile/guile.c (_initialize_guile): Disable automatic
+	finalization, if Guile offers us that possibility.
+	* guile/guile.c (call_initialize_gdb_module):
+	* guile/scm-safe-call.c (gdbscm_with_catch): Arrange to run
+	finalizers in appropriate places.
+	* configure.ac (AC_TRY_LIBGUILE): Add a check for
+	scm_set_automatic_finalization_enabled.
+	* configure: Regenerated.
+
+2015-03-11  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* s390-linux-tdep.c (s390_skip_prologue): Skip the prologue using
+	SAL, if possible.
+
+2015-03-11  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* s390-linux-nat.c (struct arch_lwp_info): New.
+	(s390_fix_watch_points): Rename to...
+	(s390_prepare_to_resume): ...this.  Skip the PER info update
+	unless the watch points have changed.
+	(s390_refresh_per_info, s390_new_thread): New functions.
+	(s390_insert_watchpoint): Call s390_refresh_per_info instead of
+	s390_fix_watch_points.
+	(s390_remove_watchpoint): Likewise.
+	(_initialize_s390_nat): Reflect renaming of s390_fix_watch_points.
+	Register s390_prepare_to_resume.
+
+2015-03-09  Pedro Alves  <palves@redhat.com>
+
+	Revert:
+	2015-03-07  Pedro Alves  <palves@redhat.com>
+	* common/gdb_socket.h: New file.
+	* ser-tcp.c: Include gdb_socket.h.  Don't include netinet/in.h nor
+	sys/socket.h.
+	(net_open): Use union gdb_sockaddr_u.
+
+2015-03-07  Pedro Alves  <palves@redhat.com>
+
+	* configure.ac (build_warnings): Move -Wmissing-prototypes
+	-Wdeclaration-after-statement -Wmissing-parameter-type
+	-Wold-style-declaration -Wold-style-definition to the C-specific
+	set.
+	* configure: Regenerate.
+
+2015-03-07  Pedro Alves  <palves@redhat.com>
+
+	* common/gdb_socket.h: New file.
+	* ser-tcp.c: Include gdb_socket.h.  Don't include netinet/in.h nor
+	sys/socket.h.
+	(net_open): Use union gdb_sockaddr_u.
+
+2015-03-07  Pedro Alves  <palves@redhat.com>
+
+	* common/common-exceptions.c [!__cplusplus] (enum catcher_state)
+	(exceptions_state_mc_action_iter)
+	(exceptions_state_mc_action_iter_1, exceptions_state_mc_catch):
+	Don't define.
+	[__cplusplus] (try_scope_depth): New global.
+	[__cplusplus] (exception_try_scope_entry)
+	(exception_try_scope_exit, gdb_exception_sliced_copy)
+	(exception_rethrow): New functions.
+	(throw_exception): In C++ mode, throw
+	gdb_exception_RETURN_MASK_QUIT for RETURN_QUIT and
+	gdb_exception_RETURN_MASK_ERROR for RETURN_ERROR.
+	(throw_it): In C++ mode, use try_scope_depth.
+	* common/common-exceptions.h [!__cplusplus]
+	(exceptions_state_mc_action_iter)
+	(exceptions_state_mc_action_iter_1, exceptions_state_mc_catch):
+	Don't declare.
+	[__cplusplus] (exception_try_scope_entry)
+	(exception_try_scope_exit, exception_rethrow): Declare.
+	[__cplusplus] (struct exception_try_scope): New struct.
+	[__cplusplus] (TRY, CATCH, END_CATCH): Reimplement on top of real
+	C++ exceptions.
+	(struct gdb_exception_RETURN_MASK_ALL)
+	(struct gdb_exception_RETURN_MASK_ERROR)
+	(struct gdb_exception_RETURN_MASK_QUIT): New types.
+
+2015-03-07  Pedro Alves  <palves@redhat.com>
+
+	* main.c (handle_command_errors): Remove volatile qualifier from
+	parameter.
+
+2015-03-07  Pedro Alves  <palves@redhat.com>
+
+	* breakpoint.c (save_breakpoints): Adjust to avoid code between
+	TRY and CATCH.
+	* gdbtypes.c (safe_parse_type): Remove empty line.
+	(types_deeply_equal):
+	* guile/scm-frame.c (gdbscm_frame_name):
+	* linux-thread-db.c (find_new_threads_once):
+	* python/py-breakpoint.c (bppy_get_commands):
+	* record-btrace.c (record_btrace_insert_breakpoint)
+	(record_btrace_remove_breakpoint, record_btrace_start_replaying)
+	(record_btrace_start_replaying): Adjust to avoid code between TRY
+	and CATCH.
+
+2015-03-07  Pedro Alves  <palves@redhat.com>
+
+	* common/common-exceptions.c (struct catcher) <exception>: No
+	longer a pointer to volatile exception.  Now an exception value.
+	<mask>: Delete field.
+	(exceptions_state_mc_init): Remove all parameters.  Adjust.
+	(exceptions_state_mc): No longer pop the catcher here.
+	(exceptions_state_mc_catch): New function.
+	(throw_exception): Adjust.
+	* common/common-exceptions.h (exceptions_state_mc_init): Remove
+	all parameters.
+	(exceptions_state_mc_catch): Declare.
+	(TRY_CATCH): Rename to ...
+	(TRY): ... this.  Remove EXCEPTION and MASK parameters.
+	(CATCH, END_CATCH): New.
+	All callers adjusted.
+
+2015-03-07  Tom Tromey  <tromey@redhat.com>
+
+	* top.c (quit_force): Inline and delete DO_TRY, DO_PRINT_EX.
+
+2015-03-07  Pedro Alves  <palves@redhat.com>
+
+	* amd64-tdep.c (amd64_frame_cache, amd64_sigtramp_frame_cache)
+	(amd64_epilogue_frame_cache): Normal exception handling code.
+	* break-catch-throw.c (check_status_exception_catchpoint)
+	(re_set_exception_catchpoint): Ditto.
+	* cli/cli-interp.c (safe_execute_command):
+	* cli/cli-script.c (script_from_file): Ditto.
+	* compile/compile-c-symbols.c (generate_c_for_for_one_variable):
+	Ditto.
+	* compile/compile-object-run.c (compile_object_run): Ditto.
+	* cp-abi.c (baseclass_offset): Ditto.
+	* cp-valprint.c (cp_print_value): Ditto.
+	* exceptions.c (catch_exceptions_with_msg):
+	* frame-unwind.c (frame_unwind_try_unwinder): Ditto.
+	* frame.c (get_frame_address_in_block_if_available): Ditto.
+	* i386-tdep.c (i386_frame_cache, i386_epilogue_frame_cache)
+	(i386_sigtramp_frame_cache): Ditto.
+	* infcmd.c (post_create_inferior): Ditto.
+	* linespec.c (parse_linespec, find_linespec_symbols):
+	* p-valprint.c (pascal_object_print_value): Ditto.
+	* parse.c (parse_expression_for_completion): Ditto.
+	* python/py-finishbreakpoint.c (bpfinishpy_init): Ditto.
+	* remote.c (remote_get_noisy_reply): Ditto.
+	* s390-linux-tdep.c (s390_frame_unwind_cache): Ditto.
+	* solib-svr4.c (solib_svr4_r_map): Ditto.
+
+2015-03-06  Gary Benson  <gbenson@redhat.com>
+
+	* common/common-utils.h (startswith): New inline function.
+	All places where this logic was used updated to use the above.
+
+2015-03-05  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/18002
+	* mem-break.c (default_memory_insert_breakpoint): Set shadow_len
+	after reading the breakpoint's shadow memory.
+
 2015-03-05  Mark Kettenis  <kettenis@gnu.org>
 
 	* hppabsd-nat.c: Remove file.

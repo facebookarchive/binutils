@@ -22,6 +22,9 @@
 #include "gdbcore.h"
 #include "osabi.h"
 #include "regcache.h"
+#include "regset.h"
+#include "i386fbsd-tdep.h"
+#include "x86-xstate.h"
 
 #include "i386-tdep.h"
 #include "i387-tdep.h"
@@ -105,24 +108,24 @@ static const gdb_byte i386fbsd_osigtramp_end[] =
 };
 
 /* The three different trampolines are all the same size.  */
-gdb_static_assert (sizeof i386fbsd_sigtramp_start ==
-		   sizeof i386fbsd_freebsd4_sigtramp_start);
-gdb_static_assert (sizeof i386fbsd_sigtramp_start ==
-		   sizeof i386fbsd_osigtramp_start);
-gdb_static_assert (sizeof i386fbsd_sigtramp_middle ==
-		   sizeof i386fbsd_freebsd4_sigtramp_middle);
-gdb_static_assert (sizeof i386fbsd_sigtramp_middle ==
-		   sizeof i386fbsd_osigtramp_middle);
-gdb_static_assert (sizeof i386fbsd_sigtramp_end ==
-		   sizeof i386fbsd_freebsd4_sigtramp_end);
-gdb_static_assert (sizeof i386fbsd_sigtramp_end ==
-		   sizeof i386fbsd_osigtramp_end);
+gdb_static_assert (sizeof i386fbsd_sigtramp_start
+		   == sizeof i386fbsd_freebsd4_sigtramp_start);
+gdb_static_assert (sizeof i386fbsd_sigtramp_start
+		   == sizeof i386fbsd_osigtramp_start);
+gdb_static_assert (sizeof i386fbsd_sigtramp_middle
+		   == sizeof i386fbsd_freebsd4_sigtramp_middle);
+gdb_static_assert (sizeof i386fbsd_sigtramp_middle
+		   == sizeof i386fbsd_osigtramp_middle);
+gdb_static_assert (sizeof i386fbsd_sigtramp_end
+		   == sizeof i386fbsd_freebsd4_sigtramp_end);
+gdb_static_assert (sizeof i386fbsd_sigtramp_end
+		   == sizeof i386fbsd_osigtramp_end);
 
 /* We assume that the middle is the largest chunk below.  */
-gdb_static_assert (sizeof i386fbsd_sigtramp_middle >
-		   sizeof i386fbsd_sigtramp_start);
-gdb_static_assert (sizeof i386fbsd_sigtramp_middle >
-		   sizeof i386fbsd_sigtramp_end);
+gdb_static_assert (sizeof i386fbsd_sigtramp_middle
+		   > sizeof i386fbsd_sigtramp_start);
+gdb_static_assert (sizeof i386fbsd_sigtramp_middle
+		   > sizeof i386fbsd_sigtramp_end);
 
 static int
 i386fbsd_sigtramp_p (struct frame_info *this_frame)
@@ -135,19 +138,25 @@ i386fbsd_sigtramp_p (struct frame_info *this_frame)
   if (!safe_frame_unwind_memory (this_frame, pc, buf,
 				 sizeof i386fbsd_sigtramp_start))
     return 0;
-  if (memcmp (buf, i386fbsd_sigtramp_start, sizeof i386fbsd_sigtramp_start) ==
-      0) {
-    middle = i386fbsd_sigtramp_middle;
-    end = i386fbsd_sigtramp_end;
-  } else if (memcmp (buf, i386fbsd_freebsd4_sigtramp_start,
-		     sizeof i386fbsd_freebsd4_sigtramp_start) == 0) {
-    middle = i386fbsd_freebsd4_sigtramp_middle;
-    end = i386fbsd_freebsd4_sigtramp_end;
-  } else if (memcmp (buf, i386fbsd_osigtramp_start,
-		     sizeof i386fbsd_osigtramp_start) == 0) {
-    middle = i386fbsd_osigtramp_middle;
-    end = i386fbsd_osigtramp_end;
-  } else
+  if (memcmp (buf, i386fbsd_sigtramp_start, sizeof i386fbsd_sigtramp_start)
+      == 0)
+    {
+      middle = i386fbsd_sigtramp_middle;
+      end = i386fbsd_sigtramp_end;
+    }
+  else if (memcmp (buf, i386fbsd_freebsd4_sigtramp_start,
+		   sizeof i386fbsd_freebsd4_sigtramp_start) == 0)
+    {
+      middle = i386fbsd_freebsd4_sigtramp_middle;
+      end = i386fbsd_freebsd4_sigtramp_end;
+    }
+  else if (memcmp (buf, i386fbsd_osigtramp_start,
+		   sizeof i386fbsd_osigtramp_start) == 0)
+    {
+      middle = i386fbsd_osigtramp_middle;
+      end = i386fbsd_osigtramp_end;
+    }
+  else
     return 0;
 
   /* Since the end is shorter than the middle, check for a matching end
@@ -228,6 +237,100 @@ static int i386fbsd_jmp_buf_reg_offset[] =
   5 * 4,			/* %edi */
   0 * 4				/* %eip */
 };
+
+/* Get XSAVE extended state xcr0 from core dump.  */
+
+uint64_t
+i386fbsd_core_read_xcr0 (bfd *abfd)
+{
+  asection *xstate = bfd_get_section_by_name (abfd, ".reg-xstate");
+  uint64_t xcr0;
+
+  if (xstate)
+    {
+      size_t size = bfd_section_size (abfd, xstate);
+
+      /* Check extended state size.  */
+      if (size < X86_XSTATE_AVX_SIZE)
+	xcr0 = X86_XSTATE_SSE_MASK;
+      else
+	{
+	  char contents[8];
+
+	  if (! bfd_get_section_contents (abfd, xstate, contents,
+					  I386_FBSD_XSAVE_XCR0_OFFSET,
+					  8))
+	    {
+	      warning (_("Couldn't read `xcr0' bytes from "
+			 "`.reg-xstate' section in core file."));
+	      return 0;
+	    }
+
+	  xcr0 = bfd_get_64 (abfd, contents);
+	}
+    }
+  else
+    xcr0 = 0;
+
+  return xcr0;
+}
+
+/* Implement the core_read_description gdbarch method.  */
+
+static const struct target_desc *
+i386fbsd_core_read_description (struct gdbarch *gdbarch,
+				struct target_ops *target,
+				bfd *abfd)
+{
+  return i386_target_description (i386fbsd_core_read_xcr0 (abfd));
+}
+
+/* Similar to i386_supply_fpregset, but use XSAVE extended state.  */
+
+static void
+i386fbsd_supply_xstateregset (const struct regset *regset,
+			      struct regcache *regcache, int regnum,
+			      const void *xstateregs, size_t len)
+{
+  i387_supply_xsave (regcache, regnum, xstateregs);
+}
+
+/* Similar to i386_collect_fpregset, but use XSAVE extended state.  */
+
+static void
+i386fbsd_collect_xstateregset (const struct regset *regset,
+			       const struct regcache *regcache,
+			       int regnum, void *xstateregs, size_t len)
+{
+  i387_collect_xsave (regcache, regnum, xstateregs, 1);
+}
+
+/* Register set definitions.  */
+
+static const struct regset i386fbsd_xstateregset =
+  {
+    NULL,
+    i386fbsd_supply_xstateregset,
+    i386fbsd_collect_xstateregset
+  };
+
+/* Iterate over core file register note sections.  */
+
+static void
+i386fbsd_iterate_over_regset_sections (struct gdbarch *gdbarch,
+				       iterate_over_regset_sections_cb *cb,
+				       void *cb_data,
+				       const struct regcache *regcache)
+{
+  struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
+
+  cb (".reg", tdep->sizeof_gregset, &i386_gregset, NULL, cb_data);
+  cb (".reg2", tdep->sizeof_fpregset, &i386_fpregset, NULL, cb_data);
+
+  if (tdep->xcr0 & X86_XSTATE_AVX)
+    cb (".reg-xstate", X86_XSTATE_SIZE(tdep->xcr0),
+	&i386fbsd_xstateregset, "XSAVE extended state", cb_data);
+}
 
 static void
 i386fbsd_supply_uthread (struct regcache *regcache,
@@ -370,6 +473,15 @@ i386fbsd4_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   /* FreeBSD 4.0 introduced a new `struct sigcontext'.  */
   tdep->sc_reg_offset = i386fbsd4_sc_reg_offset;
   tdep->sc_num_regs = ARRAY_SIZE (i386fbsd4_sc_reg_offset);
+
+  tdep->xsave_xcr0_offset = I386_FBSD_XSAVE_XCR0_OFFSET;
+
+  /* Iterate over core file register note sections.  */
+  set_gdbarch_iterate_over_regset_sections
+    (gdbarch, i386fbsd_iterate_over_regset_sections);
+
+  set_gdbarch_core_read_description (gdbarch,
+				     i386fbsd_core_read_description);
 }
 
 

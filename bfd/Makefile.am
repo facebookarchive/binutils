@@ -43,9 +43,15 @@ noinst_LTLIBRARIES = libbfd.la
 libbfd_la_LDFLAGS += -rpath $(rpath_bfdlibdir)
 endif
 
+# This is where we get zlib from.  zlibdir is -L../zlib and zlibinc is
+# -I../zlib, unless we were configured with --with-system-zlib, in which
+# case both are empty.
+ZLIB = @zlibdir@ -lz
+ZLIBINC = @zlibinc@
+
 WARN_CFLAGS = @WARN_CFLAGS@
 NO_WERROR = @NO_WERROR@
-AM_CFLAGS = $(WARN_CFLAGS)
+AM_CFLAGS = $(WARN_CFLAGS) $(ZLIBINC)
 AM_CPPFLAGS = -DBINDIR='"$(bindir)"'
 if PLUGINS
 bfdinclude_HEADERS += $(INCDIR)/plugin-api.h
@@ -105,6 +111,7 @@ ALL_MACHINES = \
 	cpu-hppa.lo \
 	cpu-i370.lo \
 	cpu-i386.lo \
+	cpu-iamcu.lo \
 	cpu-l1om.lo \
 	cpu-k1om.lo \
 	cpu-i860.lo \
@@ -191,6 +198,7 @@ ALL_MACHINES_CFILES = \
 	cpu-hppa.c \
 	cpu-i370.c \
 	cpu-i386.c \
+	cpu-iamcu.c \
 	cpu-l1om.c \
 	cpu-k1om.c \
 	cpu-i860.c \
@@ -840,7 +848,7 @@ ofiles: stamp-ofiles ; @true
 libbfd_la_SOURCES = $(BFD32_LIBS_CFILES)
 EXTRA_libbfd_la_SOURCES = $(CFILES)
 libbfd_la_DEPENDENCIES = $(OFILES) ofiles
-libbfd_la_LIBADD = `cat ofiles` @SHARED_LIBADD@ $(LIBDL)
+libbfd_la_LIBADD = `cat ofiles` @SHARED_LIBADD@ $(LIBDL) $(ZLIB)
 libbfd_la_LDFLAGS += -release `cat libtool-soversion` @SHARED_LDFLAGS@
 
 # libtool will build .libs/libbfd.a.  We create libbfd.a in the build

@@ -126,6 +126,7 @@ mem_bfd_iovec_stat (struct bfd *abfd, void *stream, struct stat *sb)
 {
   struct target_buffer *buffer = (struct target_buffer*) stream;
 
+  memset (sb, 0, sizeof (struct stat));
   sb->st_size = buffer->size;
   return 0;
 }
@@ -816,7 +817,6 @@ jit_reader_try_read_symtab (struct jit_code_entry *code_entry,
   int status;
   jit_dbg_reader_data priv_data;
   struct gdb_reader_funcs *funcs;
-  volatile struct gdb_exception e;
   struct gdb_symbol_callbacks callbacks =
     {
       jit_object_open_impl,
@@ -839,12 +839,17 @@ jit_reader_try_read_symtab (struct jit_code_entry *code_entry,
   gdb_mem = xmalloc (code_entry->symfile_size);
 
   status = 1;
-  TRY_CATCH (e, RETURN_MASK_ALL)
-    if (target_read_memory (code_entry->symfile_addr, gdb_mem,
-                            code_entry->symfile_size))
+  TRY
+    {
+      if (target_read_memory (code_entry->symfile_addr, gdb_mem,
+			      code_entry->symfile_size))
+	status = 0;
+    }
+  CATCH (e, RETURN_MASK_ALL)
+    {
       status = 0;
-  if (e.reason < 0)
-    status = 0;
+    }
+  END_CATCH
 
   if (status)
     {

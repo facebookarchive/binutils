@@ -1898,9 +1898,9 @@ resolve_dynamic_array (struct type *type,
   else
     elt_type = TYPE_TARGET_TYPE (type);
 
-  return create_array_type (copy_type (type),
-			    elt_type,
-			    range_type);
+  return create_array_type_with_stride (copy_type (type),
+					elt_type, range_type,
+					TYPE_FIELD_BITSIZE (type, 0));
 }
 
 /* Resolve dynamic bounds of members of the union TYPE to static
@@ -1984,6 +1984,7 @@ resolve_dynamic_struct (struct type *type,
 		 " (invalid location kind)"));
 
       pinfo.type = check_typedef (TYPE_FIELD_TYPE (type, i));
+      pinfo.valaddr = addr_stack->valaddr;
       pinfo.addr = addr_stack->addr;
       pinfo.next = addr_stack;
 
@@ -2013,6 +2014,10 @@ resolve_dynamic_struct (struct type *type,
   TYPE_LENGTH (resolved_type)
     = (resolved_type_bit_length + TARGET_CHAR_BIT - 1) / TARGET_CHAR_BIT;
 
+  /* The Ada language uses this field as a cache for static fixed types: reset
+     it as RESOLVED_TYPE must have its own static fixed type.  */
+  TYPE_TARGET_TYPE (resolved_type) = NULL;
+
   return resolved_type;
 }
 
@@ -2025,7 +2030,7 @@ resolve_dynamic_type_internal (struct type *type,
 {
   struct type *real_type = check_typedef (type);
   struct type *resolved_type = type;
-  const struct dynamic_prop *prop;
+  struct dynamic_prop *prop;
   CORE_ADDR value;
 
   if (!is_dynamic_type_internal (real_type, top_level))
@@ -2050,7 +2055,11 @@ resolve_dynamic_type_internal (struct type *type,
 	    struct property_addr_info pinfo;
 
 	    pinfo.type = check_typedef (TYPE_TARGET_TYPE (type));
-	    pinfo.addr = read_memory_typed_address (addr_stack->addr, type);
+	    pinfo.valaddr = NULL;
+	    if (addr_stack->valaddr != NULL)
+	      pinfo.addr = extract_typed_address (addr_stack->valaddr, type);
+	    else
+	      pinfo.addr = read_memory_typed_address (addr_stack->addr, type);
 	    pinfo.next = addr_stack;
 
 	    resolved_type = copy_type (type);
@@ -2080,13 +2089,11 @@ resolve_dynamic_type_internal (struct type *type,
 
   /* Resolve data_location attribute.  */
   prop = TYPE_DATA_LOCATION (resolved_type);
-  if (dwarf2_evaluate_property (prop, addr_stack, &value))
+  if (prop != NULL && dwarf2_evaluate_property (prop, addr_stack, &value))
     {
-      TYPE_DATA_LOCATION_ADDR (resolved_type) = value;
-      TYPE_DATA_LOCATION_KIND (resolved_type) = PROP_CONST;
+      TYPE_DYN_PROP_ADDR (prop) = value;
+      TYPE_DYN_PROP_KIND (prop) = PROP_CONST;
     }
-  else
-    TYPE_DATA_LOCATION (resolved_type) = NULL;
 
   return resolved_type;
 }
@@ -2094,12 +2101,50 @@ resolve_dynamic_type_internal (struct type *type,
 /* See gdbtypes.h  */
 
 struct type *
-resolve_dynamic_type (struct type *type, CORE_ADDR addr)
+resolve_dynamic_type (struct type *type, const gdb_byte *valaddr,
+		      CORE_ADDR addr)
 {
-  struct property_addr_info pinfo = {check_typedef (type), addr, NULL};
+  struct property_addr_info pinfo
+    = {check_typedef (type), valaddr, addr, NULL};
 
   return resolve_dynamic_type_internal (type, &pinfo, 1);
 }
+
+/* See gdbtypes.h  */
+
+struct dynamic_prop *
+get_dyn_prop (enum dynamic_prop_node_kind prop_kind, const struct type *type)
+{
+  struct dynamic_prop_list *node = TYPE_DYN_PROP_LIST (type);
+
+  while (node != NULL)
+    {
+      if (node->prop_kind == prop_kind)
+        return &node->prop;
+      node = node->next;
+    }
+  return NULL;
+}
+
+/* See gdbtypes.h  */
+
+void
+add_dyn_prop (enum dynamic_prop_node_kind prop_kind, struct dynamic_prop prop,
+              struct type *type, struct objfile *objfile)
+{
+  struct dynamic_prop_list *temp;
+
+  gdb_assert (TYPE_OBJFILE_OWNED (type));
+
+  temp = obstack_alloc (&objfile->objfile_obstack,
+			sizeof (struct dynamic_prop_list));
+  temp->prop_kind = prop_kind;
+  temp->prop = prop;
+  temp->next = TYPE_DYN_PROP_LIST (type);
+
+  TYPE_DYN_PROP_LIST (type) = temp;
+}
+
 
 /* Find the real type of TYPE.  This function returns the real type,
    after removing all layers of typedefs, and completing opaque or stub
@@ -2299,20 +2344,21 @@ safe_parse_type (struct gdbarch *gdbarch, char *p, int length)
 {
   struct ui_file *saved_gdb_stderr;
   struct type *type = NULL; /* Initialize to keep gcc happy.  */
-  volatile struct gdb_exception except;
 
   /* Suppress error messages.  */
   saved_gdb_stderr = gdb_stderr;
   gdb_stderr = ui_file_new ();
 
   /* Call parse_and_eval_type() without fear of longjmp()s.  */
-  TRY_CATCH (except, RETURN_MASK_ERROR)
+  TRY
     {
       type = parse_and_eval_type (p, length);
     }
-
-  if (except.reason < 0)
-    type = builtin_type (gdbarch)->builtin_void;
+  CATCH (except, RETURN_MASK_ERROR)
+    {
+      type = builtin_type (gdbarch)->builtin_void;
+    }
+  END_CATCH
 
   /* Stop suppressing error messages.  */
   ui_file_delete (gdb_stderr);
@@ -2376,7 +2422,7 @@ check_stub_method (struct type *type, int method_id, int signature_id)
     }
 
   /* If we read one argument and it was ``void'', don't count it.  */
-  if (strncmp (argtypetext, "(void)", 6) == 0)
+  if (startswith (argtypetext, "(void)"))
     argcount -= 1;
 
   /* We need one extra slot, for the THIS pointer.  */
@@ -2471,7 +2517,7 @@ check_stub_method_group (struct type *type, int method_id)
 
      Therefore the only thing we need to handle here are v2 operator
      names.  */
-  if (found_stub && strncmp (TYPE_FN_FIELD_PHYSNAME (f, 0), "_Z", 2) != 0)
+  if (found_stub && !startswith (TYPE_FN_FIELD_PHYSNAME (f, 0), "_Z"))
     {
       int ret;
       char dem_opname[256];
@@ -3235,7 +3281,7 @@ check_types_worklist (VEC (type_equality_entry_d) **worklist,
 int
 types_deeply_equal (struct type *type1, struct type *type2)
 {
-  volatile struct gdb_exception except;
+  struct gdb_exception except = exception_none;
   int result = 0;
   struct bcache *cache;
   VEC (type_equality_entry_d) *worklist = NULL;
@@ -3253,16 +3299,23 @@ types_deeply_equal (struct type *type1, struct type *type2)
   entry.type2 = type2;
   VEC_safe_push (type_equality_entry_d, worklist, &entry);
 
-  TRY_CATCH (except, RETURN_MASK_ALL)
+  /* check_types_worklist calls several nested helper functions, some
+     of which can raise a GDB exception, so we just check and rethrow
+     here.  If there is a GDB exception, a comparison is not capable
+     (or trusted), so exit.  */
+  TRY
     {
       result = check_types_worklist (&worklist, cache);
     }
-  /* check_types_worklist calls several nested helper functions,
-     some of which can raise a GDB Exception, so we just check
-     and rethrow here.  If there is a GDB exception, a comparison
-     is not capable (or trusted), so exit.  */
+  CATCH (ex, RETURN_MASK_ALL)
+    {
+      except = ex;
+    }
+  END_CATCH
+
   bcache_xfree (cache);
   VEC_free (type_equality_entry_d, worklist);
+
   /* Rethrow if there was a problem.  */
   if (except.reason < 0)
     throw_exception (except);
@@ -3846,7 +3899,13 @@ print_gnat_stuff (struct type *type, int spaces)
 {
   struct type *descriptive_type = TYPE_DESCRIPTIVE_TYPE (type);
 
-  recursive_dump_type (descriptive_type, spaces + 2);
+  if (descriptive_type == NULL)
+    printfi_filtered (spaces + 2, "no descriptive type\n");
+  else
+    {
+      printfi_filtered (spaces + 2, "descriptive type\n");
+      recursive_dump_type (descriptive_type, spaces + 4);
+    }
 }
 
 static struct obstack dont_print_type_obstack;
@@ -4222,6 +4281,30 @@ create_copied_types_hash (struct objfile *objfile)
 			       dummy_obstack_deallocate);
 }
 
+/* Recursively copy (deep copy) a dynamic attribute list of a type.  */
+
+static struct dynamic_prop_list *
+copy_dynamic_prop_list (struct obstack *objfile_obstack,
+			struct dynamic_prop_list *list)
+{
+  struct dynamic_prop_list *copy = list;
+  struct dynamic_prop_list **node_ptr = &copy;
+
+  while (*node_ptr != NULL)
+    {
+      struct dynamic_prop_list *node_copy;
+
+      node_copy = obstack_copy (objfile_obstack, *node_ptr,
+				sizeof (struct dynamic_prop_list));
+      node_copy->prop = (*node_ptr)->prop;
+      *node_ptr = node_copy;
+
+      node_ptr = &node_copy->next;
+    }
+
+  return copy;
+}
+
 /* Recursively copy (deep copy) TYPE, if it is associated with
    OBJFILE.  Return a new type allocated using malloc, a saved type if
    we have already visited TYPE (using COPIED_TYPES), or TYPE if it is
@@ -4325,14 +4408,11 @@ copy_type_recursive (struct objfile *objfile,
       *TYPE_RANGE_DATA (new_type) = *TYPE_RANGE_DATA (type);
     }
 
-  /* Copy the data location information.  */
-  if (TYPE_DATA_LOCATION (type) != NULL)
-    {
-      TYPE_DATA_LOCATION (new_type)
-	= TYPE_ALLOC (new_type, sizeof (struct dynamic_prop));
-      memcpy (TYPE_DATA_LOCATION (new_type), TYPE_DATA_LOCATION (type),
-	      sizeof (struct dynamic_prop));
-    }
+  if (TYPE_DYN_PROP_LIST (type) != NULL)
+    TYPE_DYN_PROP_LIST (new_type)
+      = copy_dynamic_prop_list (&objfile->objfile_obstack,
+				TYPE_DYN_PROP_LIST (type));
+
 
   /* Copy pointers to other types.  */
   if (TYPE_TARGET_TYPE (type))
@@ -4396,13 +4476,10 @@ copy_type (const struct type *type)
   TYPE_LENGTH (new_type) = TYPE_LENGTH (type);
   memcpy (TYPE_MAIN_TYPE (new_type), TYPE_MAIN_TYPE (type),
 	  sizeof (struct main_type));
-  if (TYPE_DATA_LOCATION (type) != NULL)
-    {
-      TYPE_DATA_LOCATION (new_type)
-	= TYPE_ALLOC (new_type, sizeof (struct dynamic_prop));
-      memcpy (TYPE_DATA_LOCATION (new_type), TYPE_DATA_LOCATION (type),
-	      sizeof (struct dynamic_prop));
-    }
+  if (TYPE_DYN_PROP_LIST (type) != NULL)
+    TYPE_DYN_PROP_LIST (new_type)
+      = copy_dynamic_prop_list (&TYPE_OBJFILE (type) -> objfile_obstack,
+				TYPE_DYN_PROP_LIST (type));
 
   return new_type;
 }

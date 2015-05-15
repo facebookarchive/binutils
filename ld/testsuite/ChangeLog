@@ -1,3 +1,388 @@
+2015-05-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-i386/i386.exp: Run pltgot-1 for Linux targets.
+	* ld-x86-64/x86-64.exp: Likewise.
+	* ld-i386/pltgot-1.d: New file.
+	* ld-i386/pltgot-1.s: Likewise.
+	* ld-x86-64/pltgot-1.d: Likewise.
+	* ld-x86-64/pltgot-1.s: Likewise.
+
+2015-05-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-i386/i386.exp (iamcu_tests): Run iamcu-4.
+	* ld-i386/iamcu-4.d: New file.
+
+2015-05-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-i386/abs-iamcu.d: New file.
+	* ld-i386/dummy.s: Likewise.
+	* ld-i386/foo.s: Likewise.
+	* ld-i386/iamcu-1.d: Likewise.
+	* ld-i386/iamcu-2.d: Likewise.
+	* ld-i386/iamcu-3.d: Likewise.
+	* ld-i386/start.s: Likewise.
+	* ld-i386/i386.exp (iamcu_tests): New.
+	Run iamcu_tests.
+
+2015-05-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutis/18386
+	* ld-x86-64/tlsgdesc.dd: Updated.
+	* ld-x86-64/tlspic.dd: Likewise.
+
+2015-04-29  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/18354
+	* ld-elf/compress.exp (run_tests): Link the last zlibnormal,
+	gnunormal and gabinormal against libfoozlib.so.
+
+2015-04-27  Renlin Li  <renlin.li@arm.com>
+
+	* ld-arm/ifunc-10.dd: Adjust expected output.
+	* ld-arm/ifunc-2.dd: Likewise.
+
+2015-04-27  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* ld-s390/gotreloc_31-1.dd: Use instruction mnemonics.
+
+2015-04-24  Alan Modra  <amodra@gmail.com>
+
+	* ld-powerpc/tocnovar.d: Revert last change.
+
+2015-04-24  Richard Earnshaw  <rearnsha@arm.com>
+
+	* ld-arm/armthumb-lib.d: Regenerate expected output.
+	* ld-arm/armthumb-lib.d: Likewise.
+	* ld-arm/armthumb-lib.sym: Likewise.
+	* ld-arm/cortex-a8-fix-b-rel-arm.d: Likewise.
+	* ld-arm/cortex-a8-fix-b-rel-thumb.d: Likewise.
+	* ld-arm/cortex-a8-fix-b.d: Likewise.
+	* ld-arm/cortex-a8-fix-bcc-rel-thumb.d: Likewise.
+	* ld-arm/cortex-a8-fix-bcc.d: Likewise.
+	* ld-arm/cortex-a8-fix-bl-rel-arm.d: Likewise.
+	* ld-arm/cortex-a8-fix-bl-rel-plt.d: Likewise.
+	* ld-arm/cortex-a8-fix-bl-rel-thumb.d: Likewise.
+	* ld-arm/cortex-a8-fix-bl.d: Likewise.
+	* ld-arm/cortex-a8-fix-blx-bcond.d: Likewise.
+	* ld-arm/cortex-a8-fix-blx-rel-arm.d: Likewise.
+	* ld-arm/cortex-a8-fix-blx-rel-thumb.d: Likewise.
+	* ld-arm/cortex-a8-fix-blx.d: Likewise.
+	* ld-arm/cortex-a8-fix-hdr.d: Likewise.
+	* ld-arm/farcall-mixed-app-v5.d: Likewise.
+	* ld-arm/farcall-mixed-app.d: Likewise.
+	* ld-arm/farcall-mixed-lib-v4t.d: Likewise.
+	* ld-arm/farcall-mixed-lib.d: Likewise.
+	* ld-arm/mixed-app-v5.d: Likewise.
+	* ld-arm/mixed-app.d: Likewise.
+	* ld-arm/mixed-lib.d: Likewise.
+
+2015-04-24  Nick Clifton  <nickc@redhat.com>
+
+	* ld-elf/compressed1d.d: Add notarget for ELF based targets that
+	do not use elf.em.
+
+2015-04-24  Hans-Peter Nilsson  <hp@axis.com>
+
+	* ld-elf/compressed1e.d: Correct xfail to notarget and cris*-*-*
+	to cris*-*-elf.
+
+2015-04-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-elf/compressed1e.d: Only run for Linux/gnu.  Xfail cris and
+	frv.
+
+2015-04-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/18277
+	* ld-elf/compressed1d.d: New.
+	* ld-elf/compressed1e.d: Likewise.
+
+2015-04-23  Alan Modra  <amodra@gmail.com>
+
+	* ld-powerpc/ambiguousv1b.d: Update for aligned .got.
+	* ld-powerpc/defsym.d: Likewise.
+	* ld-powerpc/elfv2-2exe.d: Likewise.
+	* ld-powerpc/elfv2exe.d: Likewise.
+	* ld-powerpc/elfv2so.d: Likewise.
+	* ld-powerpc/relbrlt.d: Likewise.
+	* ld-powerpc/tls.g: Likewise.
+	* ld-powerpc/tlsexe.d: Likewise.
+	* ld-powerpc/tlsexe.g: Likewise.
+	* ld-powerpc/tlsexe.r: Likewise.
+	* ld-powerpc/tlsexetoc.d: Likewise.
+	* ld-powerpc/tlsexetoc.g: Likewise.
+	* ld-powerpc/tlsexetoc.r: Likewise.
+	* ld-powerpc/tlsso.d: Likewise.
+	* ld-powerpc/tlsso.g: Likewise.
+	* ld-powerpc/tlsso.r: Likewise.
+	* ld-powerpc/tlstoc.g: Likewise.
+	* ld-powerpc/tlstocso.d: Likewise.
+	* ld-powerpc/tlstocso.g: Likewise.
+	* ld-powerpc/tlstocso.r: Likewise.
+	* ld-powerpc/tocopt.d: Likewise.
+	* ld-powerpc/tocopt2.d: Likewise.
+	* ld-powerpc/tocopt3.d: Likewise.
+	* ld-powerpc/tocopt4.d: Likewise.
+	* ld-powerpc/tocopt5.d: Likewise.
+	* ld-powerpc/tocnovar.d: Adjust.
+
+2015-04-22  Alan Modra  <amodra@gmail.com>
+
+	* ld-x86-64/pr18176.d: Update.
+
+2015-04-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/18289
+	* ld-i386/copyreloc-lib.c: New file.
+	* ld-i386/copyreloc-main.S: Likewise.
+	* ld-i386/copyreloc-main.out: Likewise.
+	* ld-i386/copyreloc-main1.rd: Likewise.
+	* ld-i386/copyreloc-main2.rd: Likewise.
+	* ld-i386/dummy.c: Likewise.
+	* ld-i386/pr17689.out: Likewise.
+	* ld-i386/pr17689.rd: Likewise.
+	* ld-i386/pr17689a.c: Likewise.
+	* ld-i386/pr17689b.S: Likewise.
+	* ld-i386/pr17827.rd: Likewise.
+	* ld-i386/pr17827ver.rd: Likewise.
+	* ld-i386/i386.exp: Run copyreloc tests.
+
+2015-04-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-mmix/bspec1.d: Don't hardcode offset of .shstrtab section.
+	* ld-mmix/bspec2.d: Likewise.
+	* ld-mmix/local1.d: Likewise.
+	* ld-mmix/local3.d: Likewise.
+	* ld-mmix/local5.d: Likewise.
+	* ld-mmix/local7.d: Likewise.
+	* ld-mmix/undef-3.d: Likewise.
+	* ld-sh/sh64/crangerel1.rd: Likewise.
+	* ld-sh/sh64/crangerel2.rd: Likewise.
+	* ld-tic6x/common.d: Likewise.
+	* ld-tic6x/shlib-1.rd: Likewise.
+	* ld-tic6x/shlib-1b.rd: Likewise.
+	* ld-tic6x/shlib-1r.rd: Likewise.
+	* ld-tic6x/shlib-1rb.rd: Likewise.
+	* ld-tic6x/shlib-app-1.rd: Likewise.
+	* ld-tic6x/shlib-app-1b.rd: Likewise.
+	* ld-tic6x/shlib-app-1r.rd: Likewise.
+	* ld-tic6x/shlib-app-1rb.rd: Likewise.
+	* ld-tic6x/shlib-noindex.rd: Likewise.
+	* ld-tic6x/static-app-1.rd: Likewise.
+	* ld-tic6x/static-app-1b.rd: Likewise.
+	* ld-tic6x/static-app-1r.rd: Likewise.
+	* ld-tic6x/static-app-1rb.rd: Likewise.
+	* ld-x86-64/ilp32-4.d: Likewise.
+	* ld-x86-64/split-by-file-nacl.rd: Likewise.
+	* ld-x86-64/split-by-file.rd: Likewise.
+
+2015-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-elf/compress.exp (build_tests): Add tests for
+	--compress-debug-sections=.
+	(run_tests): Likewise.
+	Add additonal tests for --compress-debug-sections=.
+	* ld-elf/gabiend.rt: New file.
+	* ld-elf/gabinormal.rt: Likewise.
+	* ld-elf/gnubegin.rS: Likewise.
+	* ld-elf/gnunormal.rS: Likewise.
+	* ld-elf/zlibbegin.rS: Likewise.
+	* ld-elf/zlibnormal.rS: Likewise.
+
+2015-04-15  Alan Modra  <amodra@gmail.com>
+
+	* ld-gc/pr18223.d: xfail tic6x.
+
+2015-04-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/pr17709
+	* ld-i386/i386.exp: Run protected6b.
+	* ld-i386/protected6b.d: New file.
+	* ld-x86-64/protected6b.d: Likewise.
+	* ld-x86-64/x86-64.exp:  Run protected6b.
+
+2015-04-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-i386/i386.exp: Run protected6a.
+	* ld-i386/protected6.d: Renamed to ...
+	* ld-i386/protected6a.d: This.
+	* ld-x86-64/hidden4.d: New file.
+	* ld-x86-64/hidden4.s: Likewise.
+	* ld-x86-64/hidden5.d: Likewise.
+	* ld-x86-64/hidden5.s: Likewise.
+	* ld-x86-64/protected6.d: Renamed to ...
+	* ld-x86-64/protected6a.d: This.
+	* ld-x86-64/x86-64.exp: Run hidden4, hidden5, protected6a,
+	protected7a and protected7b.
+
+2015-04-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/pr17709
+	* ld-i386/protected6.d: New file.
+	* ld-i386/protected6.s: Likewise.
+	* ld-x86-64/protected6.d: Likewise.
+	* ld-x86-64/protected6.s: Likewise.
+	* ld-x86-64/protected7.d: Likewise.
+	* ld-x86-64/protected7.s: Likewise.
+	* ld-x86-64/protected7a.d: Likewise.
+	* ld-x86-64/protected7b.d: Likewise.
+
+2015-04-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/pr15228
+	PR ld/pr17709
+	* ld-i386/i386.exp (i386tests): Add a test for PR ld/17709.
+	* ld-i386/pr17709-nacl.rd: New file.
+	* ld-i386/pr17709.rd: Likewise.
+	* ld-i386/pr17709a.s: Likewise.
+	* ld-i386/pr17709b.s: Likewise.
+	* ld-i386/protected3.d: Updated.
+	* ld-i386/protected3.s: Likewise.
+	* ld-x86-64/pr17709-nacl.rd: New file.
+	* ld-x86-64/pr17709.rd: Likewise.
+	* ld-x86-64/pr17709a.s: Likewise.
+	* ld-x86-64/pr17709b.s: Likewise.
+	* ld-x86-64/protected3.d: Updated.
+	* ld-x86-64/protected3.s: Likewise.
+	* ld-x86-64/x86-64.exp (x86_64tests): Add a test for PR ld/17709.
+
+2015-04-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/18223
+	* ld-gc/gc.exp: Run pr18223.
+	* ld-gc/pr18223.d: New file.
+	* ld-gc/pr18223.s: Likewise.
+
+2015-04-10  Alan Modra  <amodra@gmail.com>
+
+	Revert 2015-03-05  H.J. Lu  <hongjiu.lu@intel.com>
+	PR ld/pr15228
+	PR ld/pr17709
+	* ld-i386/i386.exp (i386tests): Remove test for PR ld/17709.
+	* ld-i386/pr17709-nacl.rd: Delete.
+	* ld-i386/pr17709.rd: Likewise.
+	* ld-i386/pr17709a.s: Likewise.
+	* ld-i386/pr17709b.s: Likewise.
+	* ld-i386/protected3.d: Updated.
+	* ld-i386/protected3.s: Likewise.
+	* ld-x86-64/pr17709-nacl.rd: Delete.
+	* ld-x86-64/pr17709.rd: Likewise.
+	* ld-x86-64/pr17709a.s: Likewise.
+	* ld-x86-64/pr17709b.s: Likewise.
+	* ld-x86-64/protected3.d: Updated.
+	* ld-x86-64/protected3.s: Likewise.
+	* ld-x86-64/x86-64.exp (x86_64tests): Remove test for PR ld/17709.
+
+2015-04-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-elf/compress.exp: Add a test for
+	--compress-debug-sections=zlib-gabi.
+	(build_tests): Add 2 tests for --compress-debug-sections=zlib-gabi.
+	(run_tests): Likewise.
+	Verify linker output with zlib-gabi compressed debug input.
+	* ld-elf/compressed1a.d: New file.
+	* ld-elf/compressed1b.d: Likewise.
+	* ld-elf/compressed1c.d: Likewise.
+
+2015-04-07  Alan Modra  <amodra@gmail.com>
+
+	* ld-arm/tls-gdesc-nlazy.g: Adjust for readelf note.
+	* ld-tic6x/shlib-1.rd: Expect corrected .rela.plt sh_info.
+	* ld-tic6x/shlib-1b.rd: Likewise.
+	* ld-tic6x/shlib-1r.rd: Likewise.
+	* ld-tic6x/shlib-1rb.rd: Likewise.
+	* ld-tic6x/shlib-app-1.rd: Likewise.
+	* ld-tic6x/shlib-app-1b.rd: Likewise.
+	* ld-tic6x/shlib-app-1r.rd: Likewise.
+	* ld-tic6x/shlib-app-1rb.rd: Likewise.
+	* ld-tic6x/shlib-noindex.rd: Likewise.
+
+2015-04-07  Nick Clifton  <nickc@redhat.com>
+
+	* ld-elf/orphan-5.l: New test - checks the linker's output with
+	--warn-orphan enabled.
+	* ld-elf/elf.exp: Run the new test.
+
+2015-04-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-elf/compress.exp: Remove is_zlib_supported check.
+	Fail if --compress-debug-sections doesn't work.
+	* lib/ld-lib.exp (run_dump_test): Remove is_zlib_supported check.
+
+2015-04-01  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* ld-aarch64/aarch64-elf.exp: Add erratum843419 test.
+	* ld-aarch64/erratum843419.d: New.
+	* ld-aarch64/erratum843419.s: New.
+
+2015-04-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/18176
+	* ld-x86-64/pr18176.d: New file.
+	* ld-x86-64/pr18176.s: Likewise.
+	* ld-x86-64/pr18176.t: Likewise.
+	* ld-x86-64/x86-64.exp: Run pr18176.
+
+2015-03-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-bootstrap/bootstrap.exp (extralibs): Add -lz.
+
+2015-03-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/18169
+	* ld-elf/linkinfo1a.d: Updated.
+	* ld-elf/linkinfo1b.d: Likewise.
+
+2015-03-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld-x86-64/pr18160.d: Don't run for x86_64-*-nacl* target.
+
+2015-03-26  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* ld-aarch64/farcall-back-be.d: New.
+
+2015-03-26  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/18160
+	* ld-x86-64/pr18160.d: New file.
+	* ld-x86-64/pr18160.s: Likewise.
+	* ld-x86-64/pr18160.t: Likewise.
+	* ld-x86-64/x86-64.exp: Run pr18160.
+---
+2015-03-25  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* ld-aarch64/erratum835769.d: Adjust for initial branch over stub
+	section.
+	* ld-aarch64/farcall-b.d: Likewise.
+	* ld-aarch64/farcall-bl.d: Likewise.
+	* ld-aarch64/farcall-back.d: Likewise.
+
+2015-03-25  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* ld-aarch64/erratum835769.d: Adjust for removal of padding before
+	835769 workaround stubs.
+
+2015-03-25  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	* ld-gc/all-debug-sections.d: New file.
+	* ld-gc/all-debug-sections.s: Likewise.
+	* ld-gc/gc.exp: Execute new testcase.
+
+2015-03-11  Alan Modra  <amodra@gmail.com>
+
+	* ld-powerpc/tls32.s: Add GOT pointer setup.
+	* ld-powerpc/tls32.d: Update.
+	* ld-powerpc/tls32.g: Update.
+	* ld-powerpc/tls32.t: Update.
+	* ld-powerpc/tlsexe.d: Update.
+	* ld-powerpc/tlsexe32.d: Update.
+	* ld-powerpc/tlsexe32.g: Update.
+	* ld-powerpc/tlsexe32.r: Update.
+	* ld-powerpc/tlsexetoc.d: Update.
+	* ld-powerpc/tlsso32.d: Update.
+	* ld-powerpc/tlsso32.g: Update.
+	* ld-powerpc/tlsso32.r: Update.
+
 2015-03-05  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR ld/pr15228

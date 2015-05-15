@@ -184,6 +184,17 @@ get_insn_name (sim_cpu *cpu, int i)
 
 uint32 OP[4];
 
+static sim_cia
+v850_pc_get (sim_cpu *cpu)
+{
+  return PC;
+}
+
+static void
+v850_pc_set (sim_cpu *cpu, sim_cia pc)
+{
+  PC = pc;
+}
 
 SIM_DESC
 sim_open (SIM_OPEN_KIND    kind,
@@ -191,10 +202,15 @@ sim_open (SIM_OPEN_KIND    kind,
 	  struct bfd *     abfd,
 	  char **          argv)
 {
+  int i;
   SIM_DESC sd = sim_state_alloc (kind, cb);
   int mach;
 
   SIM_ASSERT (STATE_MAGIC (sd) == SIM_MAGIC_NUMBER);
+
+  /* The cpu data is kept in a separately allocated chunk of memory.  */
+  if (sim_cpu_alloc_all (sd, 1, /*cgen_cpu_max_extra_bytes ()*/0) != SIM_RC_OK)
+    return 0;
 
   /* for compatibility */
   simulator = sd;
@@ -281,6 +297,15 @@ sim_open (SIM_OPEN_KIND    kind,
       STATE_CPU (sd, 0)->psw_mask = (PSW_NP | PSW_EP | PSW_ID | PSW_SAT
 				     | PSW_CY | PSW_OV | PSW_S | PSW_Z);
       break;
+    }
+
+  /* CPU specific initialization.  */
+  for (i = 0; i < MAX_NR_PROCESSORS; ++i)
+    {
+      SIM_CPU *cpu = STATE_CPU (sd, i);
+
+      CPU_PC_FETCH (cpu) = v850_pc_get;
+      CPU_PC_STORE (cpu) = v850_pc_set;
     }
 
   return sd;

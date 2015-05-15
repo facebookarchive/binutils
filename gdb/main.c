@@ -50,9 +50,6 @@
    do_setshow_command will free it.  */
 char *interpreter_p;
 
-/* Whether xdb commands will be handled.  */
-int xdb_commands = 0;
-
 /* Whether dbx commands will be handled.  */
 int dbx_commands = 0;
 
@@ -339,7 +336,7 @@ captured_command_loop (void *data)
    catch_command_errors/catch_command_errors_const.  */
 
 static int
-handle_command_errors (volatile struct gdb_exception e)
+handle_command_errors (struct gdb_exception e)
 {
   if (e.reason < 0)
     {
@@ -364,9 +361,7 @@ static int
 catch_command_errors (catch_command_errors_ftype *command,
 		      char *arg, int from_tty)
 {
-  volatile struct gdb_exception e;
-
-  TRY_CATCH (e, RETURN_MASK_ALL)
+  TRY
     {
       int was_sync = sync_execution;
 
@@ -374,7 +369,13 @@ catch_command_errors (catch_command_errors_ftype *command,
 
       maybe_wait_sync_command_done (was_sync);
     }
-  return handle_command_errors (e);
+  CATCH (e, RETURN_MASK_ALL)
+    {
+      return handle_command_errors (e);
+    }
+  END_CATCH
+
+  return 1;
 }
 
 /* Type of the command callback passed to catch_command_errors_const.  */
@@ -387,9 +388,7 @@ static int
 catch_command_errors_const (catch_command_errors_const_ftype *command,
 			    const char *arg, int from_tty)
 {
-  volatile struct gdb_exception e;
-
-  TRY_CATCH (e, RETURN_MASK_ALL)
+  TRY
     {
       int was_sync = sync_execution;
 
@@ -397,7 +396,13 @@ catch_command_errors_const (catch_command_errors_const_ftype *command,
 
       maybe_wait_sync_command_done (was_sync);
     }
-  return handle_command_errors (e);
+  CATCH (e, RETURN_MASK_ALL)
+    {
+      return handle_command_errors (e);
+    }
+  END_CATCH
+
+  return 1;
 }
 
 /* Type of this option.  */
@@ -540,6 +545,12 @@ captured_main (void *data)
   gdb_sysroot = relocate_gdb_directory (TARGET_SYSTEM_ROOT,
 					TARGET_SYSTEM_ROOT_RELOCATABLE);
 
+  if (gdb_sysroot == NULL || *gdb_sysroot == '\0')
+    {
+      xfree (gdb_sysroot);
+      gdb_sysroot = xstrdup (TARGET_SYSROOT_PREFIX);
+    }
+
   debug_file_directory = relocate_gdb_directory (DEBUGDIR,
 						 DEBUGDIR_RELOCATABLE);
 
@@ -588,7 +599,6 @@ captured_main (void *data)
     static struct option long_options[] =
     {
       {"tui", no_argument, 0, OPT_TUI},
-      {"xdb", no_argument, &xdb_commands, 1},
       {"dbx", no_argument, &dbx_commands, 1},
       {"readnow", no_argument, &readnow_symbol_files, 1},
       {"r", no_argument, &readnow_symbol_files, 1},
@@ -849,8 +859,7 @@ captured_main (void *data)
   /* Try to set up an alternate signal stack for SIGSEGV handlers.  */
   setup_alternate_signal_stack ();
 
-  /* Initialize all files.  Give the interpreter a chance to take
-     control of the console via the deprecated_init_ui_hook ().  */
+  /* Initialize all files.  */
   gdb_init (gdb_program_name);
 
   /* Now that gdb_init has created the initial inferior, we're in
@@ -1223,7 +1232,6 @@ Output and user interface control:\n\n\
 #endif
   fputs_unfiltered (_("\
   --dbx              DBX compatibility mode.\n\
-  --xdb              XDB compatibility mode.\n\
   -q, --quiet, --silent\n\
                      Do not print version number on startup.\n\n\
 "), stream);

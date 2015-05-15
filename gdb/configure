@@ -680,6 +680,8 @@ READLINE_TEXI_INCFLAG
 READLINE_CFLAGS
 READLINE_DEPS
 READLINE
+zlibinc
+zlibdir
 MIG
 WINDRES
 DLLTOOL
@@ -817,7 +819,7 @@ with_curses
 enable_profiling
 with_pkgversion
 with_bugurl
-with_zlib
+with_system_zlib
 with_libiconv_prefix
 with_iconv_bin
 with_system_readline
@@ -1536,7 +1538,7 @@ Optional Packages:
                           library
   --with-pkgversion=PKG   Use PKG in the version string in place of "GDB"
   --with-bugurl=URL       Direct users to URL to report a bug
-  --with-zlib             include zlib support (auto/yes/no) default=auto
+  --with-system-zlib      use installed libz
   --with-libiconv-prefix=DIR
                           search for libiconv in DIR/include and DIR/lib
   --with-iconv-bin=PATH   specify where to find the iconv program
@@ -7017,20 +7019,27 @@ fi
 
 # Link in zlib if we can.  This allows us to read compressed debug sections.
 
-  # See if the user specified whether he wants zlib support or not.
+  # Use the system's zlib library.
+  zlibdir="-L\$(top_builddir)/../zlib"
+  zlibinc="-I\$(top_srcdir)/../zlib"
 
-# Check whether --with-zlib was given.
-if test "${with_zlib+set}" = set; then :
-  withval=$with_zlib;
-else
-  with_zlib=auto
+# Check whether --with-system-zlib was given.
+if test "${with_system_zlib+set}" = set; then :
+  withval=$with_system_zlib; if test x$with_system_zlib = xyes ; then
+    zlibdir=
+    zlibinc=
+  fi
+
 fi
 
 
-  if test "$with_zlib" != "no"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing zlibVersion" >&5
-$as_echo_n "checking for library containing zlibVersion... " >&6; }
-if test "${ac_cv_search_zlibVersion+set}" = set; then :
+
+
+
+# On FreeBSD we may need libutil for kinfo_getvmmap (used by fbsd-nat.c).
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing kinfo_getvmmap" >&5
+$as_echo_n "checking for library containing kinfo_getvmmap... " >&6; }
+if test "${ac_cv_search_kinfo_getvmmap+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
   ac_func_search_save_LIBS=$LIBS
@@ -7043,16 +7052,16 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char zlibVersion ();
+char kinfo_getvmmap ();
 int
 main ()
 {
-return zlibVersion ();
+return kinfo_getvmmap ();
   ;
   return 0;
 }
 _ACEOF
-for ac_lib in '' z; do
+for ac_lib in '' util; do
   if test -z "$ac_lib"; then
     ac_res="none required"
   else
@@ -7060,101 +7069,29 @@ for ac_lib in '' z; do
     LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_zlibVersion=$ac_res
+  ac_cv_search_kinfo_getvmmap=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext
-  if test "${ac_cv_search_zlibVersion+set}" = set; then :
+  if test "${ac_cv_search_kinfo_getvmmap+set}" = set; then :
   break
 fi
 done
-if test "${ac_cv_search_zlibVersion+set}" = set; then :
+if test "${ac_cv_search_kinfo_getvmmap+set}" = set; then :
 
 else
-  ac_cv_search_zlibVersion=no
+  ac_cv_search_kinfo_getvmmap=no
 fi
 rm conftest.$ac_ext
 LIBS=$ac_func_search_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_zlibVersion" >&5
-$as_echo "$ac_cv_search_zlibVersion" >&6; }
-ac_res=$ac_cv_search_zlibVersion
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_kinfo_getvmmap" >&5
+$as_echo "$ac_cv_search_kinfo_getvmmap" >&6; }
+ac_res=$ac_cv_search_kinfo_getvmmap
 if test "$ac_res" != no; then :
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  for ac_header in zlib.h
-do :
-  ac_fn_c_check_header_mongrel "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
-if test "x$ac_cv_header_zlib_h" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_ZLIB_H 1
-_ACEOF
 
-fi
-
-done
-
-fi
-
-    if test "$with_zlib" = "yes" -a "$ac_cv_header_zlib_h" != "yes"; then
-      as_fn_error "zlib (libz) library was explicitly requested but not found" "$LINENO" 5
-    fi
-  fi
-
-
-# On HP/UX we may need libxpdl for dlgetmodinfo (used by solib-pa64.c).
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing dlgetmodinfo" >&5
-$as_echo_n "checking for library containing dlgetmodinfo... " >&6; }
-if test "${ac_cv_search_dlgetmodinfo+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char dlgetmodinfo ();
-int
-main ()
-{
-return dlgetmodinfo ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' dl xpdl; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_search_dlgetmodinfo=$ac_res
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext
-  if test "${ac_cv_search_dlgetmodinfo+set}" = set; then :
-  break
-fi
-done
-if test "${ac_cv_search_dlgetmodinfo+set}" = set; then :
-
-else
-  ac_cv_search_dlgetmodinfo=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_dlgetmodinfo" >&5
-$as_echo "$ac_cv_search_dlgetmodinfo" >&6; }
-ac_res=$ac_cv_search_dlgetmodinfo
-if test "$ac_res" != no; then :
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+$as_echo "#define HAVE_KINFO_GETVMMAP 1" >>confdefs.h
 
 fi
 
@@ -7518,11 +7455,6 @@ case $host_os in
   go32* | *djgpp*)
     ac_cv_search_tgetent="none required"
     ;;
-  *mingw32*)
-    if test x"$curses_found" != xyes; then
-      ac_cv_search_tgetent="none required"
-      CONFIG_OBS="$CONFIG_OBS stub-termcap.o"
-    fi ;;
 esac
 
 # These are the libraries checked by Readline.
@@ -7584,7 +7516,7 @@ fi
 
 
 if test "$ac_cv_search_tgetent" = no; then
-  as_fn_error "no termcap library found" "$LINENO" 5
+  CONFIG_OBS="$CONFIG_OBS stub-termcap.o"
 fi
 
 
@@ -9229,6 +9161,14 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+        ac_fn_c_check_func "$LINENO" "scm_set_automatic_finalization_enabled" "ac_cv_func_scm_set_automatic_finalization_enabled"
+if test "x$ac_cv_func_scm_set_automatic_finalization_enabled" = x""yes; then :
+
+$as_echo "#define HAVE_GUILE_MANUAL_FINALIZATION 1" >>confdefs.h
+
+
+fi
+
     CPPFLAGS=$save_CPPFLAGS
     LIBS=$save_LIBS
     if test "${found_usable_guile}" = no; then
@@ -9305,6 +9245,14 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+        ac_fn_c_check_func "$LINENO" "scm_set_automatic_finalization_enabled" "ac_cv_func_scm_set_automatic_finalization_enabled"
+if test "x$ac_cv_func_scm_set_automatic_finalization_enabled" = x""yes; then :
+
+$as_echo "#define HAVE_GUILE_MANUAL_FINALIZATION 1" >>confdefs.h
+
+
+fi
+
     CPPFLAGS=$save_CPPFLAGS
     LIBS=$save_LIBS
     if test "${found_usable_guile}" = no; then
@@ -9378,6 +9326,14 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+        ac_fn_c_check_func "$LINENO" "scm_set_automatic_finalization_enabled" "ac_cv_func_scm_set_automatic_finalization_enabled"
+if test "x$ac_cv_func_scm_set_automatic_finalization_enabled" = x""yes; then :
+
+$as_echo "#define HAVE_GUILE_MANUAL_FINALIZATION 1" >>confdefs.h
+
+
+fi
+
     CPPFLAGS=$save_CPPFLAGS
     LIBS=$save_LIBS
     if test "${found_usable_guile}" = no; then
@@ -9461,6 +9417,14 @@ else
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
+        ac_fn_c_check_func "$LINENO" "scm_set_automatic_finalization_enabled" "ac_cv_func_scm_set_automatic_finalization_enabled"
+if test "x$ac_cv_func_scm_set_automatic_finalization_enabled" = x""yes; then :
+
+$as_echo "#define HAVE_GUILE_MANUAL_FINALIZATION 1" >>confdefs.h
+
+
+fi
+
     CPPFLAGS=$save_CPPFLAGS
     LIBS=$save_LIBS
     if test "${found_usable_guile}" = no; then
@@ -13383,18 +13347,19 @@ if test "${ERROR_ON_WARNING}" = yes ; then
 fi
 
 # These options work in either C or C++ modes.
-build_warnings="-Wall -Wdeclaration-after-statement -Wpointer-arith \
+build_warnings="-Wall -Wpointer-arith \
 -Wno-unused -Wunused-value -Wunused-function \
--Wno-switch -Wno-char-subscripts -Wmissing-prototypes \
--Wdeclaration-after-statement -Wempty-body -Wmissing-parameter-type \
--Wold-style-declaration -Wold-style-definition"
+-Wno-switch -Wno-char-subscripts \
+-Wempty-body"
 
 # Now add in C and C++ specific options, depending on mode.
 if test "$enable_build_with_cxx" = "yes"; then
    build_warnings="$build_warnings -Wno-sign-compare -Wno-write-strings \
 -Wno-narrowing"
 else
-   build_warnings="$build_warnings -Wpointer-sign"
+   build_warnings="$build_warnings -Wpointer-sign -Wmissing-prototypes \
+-Wdeclaration-after-statement -Wmissing-parameter-type \
+-Wold-style-declaration -Wold-style-definition"
 fi
 
 # Enable -Wno-format by default when using gcc on mingw since many
@@ -13561,9 +13526,10 @@ esac
   # points somewhere with bfd, with -I/foo/lib and -L/foo/lib.  We
   # always want our bfd.
   CFLAGS="-I${srcdir}/../include -I../bfd -I${srcdir}/../bfd $CFLAGS"
-  LDFLAGS="-L../bfd -L../libiberty $LDFLAGS"
+  ZLIBDIR=`echo $zlibdir | sed 's,\$(top_builddir)/,,g'`
+  LDFLAGS="-L../bfd -L../libiberty $ZLIBDIR $LDFLAGS"
   intl=`echo $LIBINTL | sed 's,${top_builddir}/,,g'`
-  LIBS="-lbfd -liberty $intl $LIBS"
+  LIBS="-lbfd -liberty -lz $intl $LIBS"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ELF support in BFD" >&5
 $as_echo_n "checking for ELF support in BFD... " >&6; }
 if test "${gdb_cv_var_elf+set}" = set; then :
@@ -13671,9 +13637,10 @@ fi
   # points somewhere with bfd, with -I/foo/lib and -L/foo/lib.  We
   # always want our bfd.
   CFLAGS="-I${srcdir}/../include -I../bfd -I${srcdir}/../bfd $CFLAGS"
-  LDFLAGS="-L../bfd -L../libiberty $LDFLAGS"
+  ZLIBDIR=`echo $zlibdir | sed 's,\$(top_builddir)/,,g'`
+  LDFLAGS="-L../bfd -L../libiberty $ZLIBDIR $LDFLAGS"
   intl=`echo $LIBINTL | sed 's,${top_builddir}/,,g'`
-  LIBS="-lbfd -liberty $intl $LIBS"
+  LIBS="-lbfd -liberty -lz $intl $LIBS"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Mach-O support in BFD" >&5
 $as_echo_n "checking for Mach-O support in BFD... " >&6; }
 if test "${gdb_cv_var_macho+set}" = set; then :
@@ -13708,54 +13675,6 @@ $as_echo "$gdb_cv_var_macho" >&6; }
   LIBS=$OLD_LIBS
 if test $gdb_cv_var_macho = yes; then
   CONFIG_OBS="$CONFIG_OBS machoread.o"
-fi
-
-# Add SOM support to GDB, but only if BFD includes it.
-
-  OLD_CFLAGS=$CFLAGS
-  OLD_LDFLAGS=$LDFLAGS
-  OLD_LIBS=$LIBS
-  # Put the old CFLAGS/LDFLAGS last, in case the user's (C|LD)FLAGS
-  # points somewhere with bfd, with -I/foo/lib and -L/foo/lib.  We
-  # always want our bfd.
-  CFLAGS="-I${srcdir}/../include -I../bfd -I${srcdir}/../bfd $CFLAGS"
-  LDFLAGS="-L../bfd -L../libiberty $LDFLAGS"
-  intl=`echo $LIBINTL | sed 's,${top_builddir}/,,g'`
-  LIBS="-lbfd -liberty $intl $LIBS"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SOM support in BFD" >&5
-$as_echo_n "checking for SOM support in BFD... " >&6; }
-if test "${gdb_cv_var_som+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <stdlib.h>
-  #include "bfd.h"
-  #include "som.h"
-
-int
-main ()
-{
-return bfd_som_attach_aux_hdr (NULL, 0, NULL);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  gdb_cv_var_som=yes
-else
-  gdb_cv_var_som=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gdb_cv_var_som" >&5
-$as_echo "$gdb_cv_var_som" >&6; }
-  CFLAGS=$OLD_CFLAGS
-  LDFLAGS=$OLD_LDFLAGS
-  LIBS=$OLD_LIBS
-if test $gdb_cv_var_som = yes; then
-  CONFIG_OBS="$CONFIG_OBS somread.o"
 fi
 
 # Add any host-specific objects to GDB.

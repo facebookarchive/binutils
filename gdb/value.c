@@ -1704,6 +1704,27 @@ value_copy (struct value *arg)
   return val;
 }
 
+/* Return a "const" and/or "volatile" qualified version of the value V.
+   If CNST is true, then the returned value will be qualified with
+   "const".
+   if VOLTL is true, then the returned value will be qualified with
+   "volatile".  */
+
+struct value *
+make_cv_value (int cnst, int voltl, struct value *v)
+{
+  struct type *val_type = value_type (v);
+  struct type *enclosing_type = value_enclosing_type (v);
+  struct value *cv_val = value_copy (v);
+
+  deprecated_set_value_type (cv_val,
+			     make_cv_type (cnst, voltl, val_type, NULL));
+  set_value_enclosing_type (cv_val,
+			    make_cv_type (cnst, voltl, enclosing_type, NULL));
+
+  return cv_val;
+}
+
 /* Return a version of ARG that is non-lvalue.  */
 
 struct value *
@@ -2545,7 +2566,6 @@ show_convenience (char *ignore, int from_tty)
   get_user_print_options (&opts);
   for (var = internalvars; var; var = var->next)
     {
-      volatile struct gdb_exception ex;
 
       if (!varseen)
 	{
@@ -2553,15 +2573,19 @@ show_convenience (char *ignore, int from_tty)
 	}
       printf_filtered (("$%s = "), var->name);
 
-      TRY_CATCH (ex, RETURN_MASK_ERROR)
+      TRY
 	{
 	  struct value *val;
 
 	  val = value_of_internalvar (gdbarch, var);
 	  value_print (val, gdb_stdout, &opts);
 	}
-      if (ex.reason < 0)
-	fprintf_filtered (gdb_stdout, _("<error: %s>"), ex.message);
+      CATCH (ex, RETURN_MASK_ERROR)
+	{
+	  fprintf_filtered (gdb_stdout, _("<error: %s>"), ex.message);
+	}
+      END_CATCH
+
       printf_filtered (("\n"));
     }
   if (!varseen)
@@ -2595,6 +2619,18 @@ value_of_xmethod (struct xmethod_worker *worker)
     }
 
   return worker->value;
+}
+
+/* Return the type of the result of TYPE_CODE_XMETHOD value METHOD.  */
+
+struct type *
+result_type_of_xmethod (struct value *method, int argc, struct value **argv)
+{
+  gdb_assert (TYPE_CODE (value_type (method)) == TYPE_CODE_XMETHOD
+	      && method->lval == lval_xcallable && argc > 0);
+
+  return get_xmethod_result_type (method->location.xm_worker,
+				  argv[0], argv + 1, argc - 1);
 }
 
 /* Call the xmethod corresponding to the TYPE_CODE_XMETHOD value METHOD.  */
@@ -3494,7 +3530,7 @@ value_from_contents_and_address (struct type *type,
 				 const gdb_byte *valaddr,
 				 CORE_ADDR address)
 {
-  struct type *resolved_type = resolve_dynamic_type (type, address);
+  struct type *resolved_type = resolve_dynamic_type (type, valaddr, address);
   struct type *resolved_type_no_typedef = check_typedef (resolved_type);
   struct value *v;
 
