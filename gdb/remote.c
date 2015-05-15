@@ -1756,6 +1756,7 @@ demand_private_info (ptid_t ptid)
       info->private_dtor = free_private_thread_info;
       info->priv->core = -1;
       info->priv->extra = 0;
+      info->priv->name = 0;
     }
 
   return info->priv;
