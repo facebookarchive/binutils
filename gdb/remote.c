@@ -6142,6 +6142,12 @@ process_stop_reply (struct stop_reply *stop_reply,
     {
       struct remote_state *rs = get_remote_state ();
 
+      rs->stop_reason = stop_reply->stop_reason;
+      rs->remote_watch_data_address = stop_reply->watch_data_address;
+
+      remote_notice_new_inferior (ptid, 0);
+      demand_private_info (ptid)->core = stop_reply->core;
+
       /* Expedited registers.  */
       if (stop_reply->regcache)
 	{
@@ -6156,12 +6162,6 @@ process_stop_reply (struct stop_reply *stop_reply,
 	    regcache_raw_supply (regcache, reg->num, reg->data);
 	  VEC_free (cached_reg_t, stop_reply->regcache);
 	}
-
-      rs->stop_reason = stop_reply->stop_reason;
-      rs->remote_watch_data_address = stop_reply->watch_data_address;
-
-      remote_notice_new_inferior (ptid, 0);
-      demand_private_info (ptid)->core = stop_reply->core;
     }
 
   stop_reply_xfree (stop_reply);
