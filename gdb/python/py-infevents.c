@@ -30,6 +30,8 @@ extern PyTypeObject memory_changed_event_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("event_object");
 extern PyTypeObject solib_about_to_search_event_object_type
     CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("event_object");
+extern PyTypeObject inferior_appeared_event_object_type
+    CPYCHECKER_TYPE_OBJECT_FOR_TYPEDEF ("event_object");
 
 /* Construct either a gdb.InferiorCallPreEvent or a
    gdb.InferiorCallPostEvent. */
@@ -279,6 +281,51 @@ emit_solib_about_to_search (struct inferior *inf)
   return -1;
 }
 
+static PyObject*
+create_inferior_appeared_event_object (struct inferior *inf)
+{
+  PyObject *inferior_appeared_event;
+  PyObject *inf_obj = NULL;
+
+  inferior_appeared_event = create_event_object (
+    &inferior_appeared_event_object_type);
+
+  if (!inferior_appeared_event)
+    goto fail;
+
+  inf_obj = inferior_to_inferior_object (inf);
+  if (!inf_obj || evpy_add_attribute (inferior_appeared_event,
+                                      "inferior",
+                                      inf_obj) < 0)
+    goto fail;
+  Py_DECREF (inf_obj);
+
+  return inferior_appeared_event;
+
+ fail:
+  Py_XDECREF (inf_obj);
+  Py_XDECREF (inferior_appeared_event);
+  return NULL;
+
+}
+
+int
+emit_inferior_appeared (struct inferior *inf)
+{
+  PyObject *event;
+
+  if (evregpy_no_listeners_p (gdb_py_events.inferior_appeared))
+    return 0;
+
+  event = create_inferior_appeared_event_object (inf);
+
+  if (event)
+    return evpy_emit_event (event, gdb_py_events.inferior_appeared);
+
+  return -1;
+
+}
+
 GDBPY_NEW_EVENT_TYPE (inferior_call_pre,
 		      "gdb.InferiorCallPreEvent",
 		      "InferiorCallPreEvent",
@@ -307,4 +354,10 @@ GDBPY_NEW_EVENT_TYPE (solib_about_to_search,
 		      "gdb.SolibAboutToSearchEvent",
 		      "SolibAboutToSearchEvent",
 		      "GDB solib search notification event object",
+		      event_object_type);
+
+GDBPY_NEW_EVENT_TYPE (inferior_appeared,
+		      "gdb.InferiorAppearedEvent",
+		      "InferiorAppearedEvent",
+		      "GDB inferior appeared event",
 		      event_object_type);

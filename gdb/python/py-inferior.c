@@ -254,6 +254,25 @@ python_solib_about_to_search (struct inferior *inferior)
 
 }
 
+/* Callback used to notify Python listeners that a new inferior has
+   appeared.  */
+static void
+python_inferior_appeared (struct inferior *inferior)
+{
+  struct cleanup *cleanup;
+  const LONGEST *exit_code = NULL;
+
+  if (!gdb_python_initialized)
+    return;
+
+  cleanup = ensure_python_env (target_gdbarch (), current_language);
+
+  if (emit_inferior_appeared (inferior) < 0)
+    gdbpy_print_stack ();
+
+  do_cleanups (cleanup);
+}
+
 /* Return a reference to the Python object of type Inferior
    representing INFERIOR.  If the object has already been created,
    return it and increment the reference count,  otherwise, create it.
@@ -913,6 +932,7 @@ gdbpy_initialize_inferior (void)
   observer_attach_inferior_exit (python_inferior_exit);
   observer_attach_new_objfile (python_new_objfile);
   observer_attach_solib_about_to_search (python_solib_about_to_search);
+  observer_attach_inferior_appeared (python_inferior_appeared);
 
   membuf_object_type.tp_new = PyType_GenericNew;
   if (PyType_Ready (&membuf_object_type) < 0)

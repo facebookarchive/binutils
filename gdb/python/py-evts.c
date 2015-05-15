@@ -95,6 +95,10 @@ gdbpy_initialize_py_events (void)
 			"solib_about_to_search") < 0)
     return -1;
 
+  if (add_new_registry (&gdb_py_events.inferior_appeared,
+			"inferior_appeared") < 0)
+    return -1;
+
   if (gdb_pymodule_addobject (gdb_module,
 			      "events",
 			      (PyObject *) gdb_py_events.module) < 0)
