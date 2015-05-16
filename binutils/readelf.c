@@ -10572,19 +10572,36 @@ process_symbol_table (FILE * file)
 	{
 	  error (_("Unable to seek to start of dynamic information\n"));
 	  goto no_hash;
-	}
+        }
 
-      if (fread (nb, hash_ent_size, 1, file) != 1)
-	{
-	  error (_("Failed to read in number of buckets\n"));
-	  goto no_hash;
-	}
+      if (hash_ent_size == 4)
+        {
+          if (fread (nb, 4, 1, file) != 1)
+            {
+              error (_("Failed to read in number of buckets\n"));
+              goto no_hash;
+            }
 
-      if (fread (nc, hash_ent_size, 1, file) != 1)
-	{
-	  error (_("Failed to read in number of chains\n"));
-	  goto no_hash;
-	}
+          if (fread (nc, 4, 1, file) != 1)
+            {
+              error (_("Failed to read in number of chains\n"));
+              goto no_hash;
+            }
+        }
+      else
+        {
+          if (fread (nb, 8, 1, file) != 1)
+            {
+              error (_("Failed to read in number of buckets\n"));
+              goto no_hash;
+            }
+
+          if (fread (nc, 8, 1, file) != 1)
+            {
+              error (_("Failed to read in number of chains\n"));
+              goto no_hash;
+            }
+        }
 
       nbuckets = byte_get (nb, hash_ent_size);
       nchains  = byte_get (nc, hash_ent_size);
