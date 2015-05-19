@@ -567,7 +567,7 @@ solib_map_sections (struct so_list *so)
   struct cleanup *old_chain;
   bfd *abfd;
 
-  filename = tilde_expand (so->so_name);
+  filename = xstrdup (so->so_name);
   old_chain = make_cleanup (xfree, filename);
   abfd = ops->bfd_open2 (filename, so);
 
@@ -1405,7 +1405,7 @@ reload_shared_libraries_1 (int from_tty)
       const int flags =
 	SYMFILE_DEFER_BP_RESET | (from_tty ? SYMFILE_VERBOSE : 0);
 
-      filename = tilde_expand (so->so_original_name);
+      filename = xstrdup (so->so_original_name);
       make_cleanup (xfree, filename);
       abfd = solib_bfd_open2 (filename, so);
       if (abfd != NULL)
