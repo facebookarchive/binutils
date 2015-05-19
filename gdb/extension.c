@@ -1055,7 +1055,7 @@ invoke_solib_find_hook (
 {
   int i;
   const struct extension_language_defn *extlang;
-  char* new_name = NULL;
+  char* new_name;
 
   ALL_ENABLED_EXTENSION_LANGUAGES (i, extlang)
     {
@@ -1065,11 +1065,12 @@ invoke_solib_find_hook (
 	    extlang, hook_spec, name, is_solib, so);
 
 	  if (new_name != NULL)
-	    break;
+	    return new_name;
 	}
     }
 
-  return new_name;
+  errno = ENOENT;
+  return NULL;
 }
 
 
