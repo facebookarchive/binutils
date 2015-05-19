@@ -163,7 +163,7 @@ solib_find_1 (char *in_pathname, int *fd, int is_solib, struct so_list *so)
   int found_file = -1;
   char *temp_pathname = NULL;
   const char *fskind = effective_target_file_system_kind ();
-  struct cleanup *old_chain = make_cleanup (null_cleanup, NULL);
+  struct cleanup *old_chain;
   char *sysroot = gdb_sysroot;
 
   if (sysroot != NULL && extension_prefixed_p (sysroot))
@@ -171,6 +171,8 @@ solib_find_1 (char *in_pathname, int *fd, int is_solib, struct so_list *so)
       sysroot += strlen (EXTENSION_SYSROOT_PREFIX);
       return invoke_solib_find_hook (sysroot, in_pathname, is_solib, so);
     }
+
+  old_chain = make_cleanup (null_cleanup, NULL);
 
   if (sysroot != NULL)
     {
