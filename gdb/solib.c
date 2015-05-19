@@ -115,7 +115,8 @@ show_solib_search_path (struct ui_file *file, int from_tty,
    or a shared library file), or NULL if not found.  The returned
    pathname is malloc'ed and must be freed by the caller.  If FD
    is non-NULL, *FD is set to either -1 or an open file handle for
-   the binary file.
+   the binary file.  Optional SO contains information about the
+   shared object for which we are searching.
 
    Global variable GDB_SYSROOT is used as a prefix directory
    to search for binary files if they have an absolute path.
@@ -124,6 +125,13 @@ show_solib_search_path (struct ui_file *file, int from_tty,
    stripped before the search starts.  This ensures that the
    same search algorithm is used for local files regardless of
    whether a "target:" prefix was used.
+
+   If GDB_SYSROOT is of the form "extension:<NAME>:REST...", then
+   defer responsibility for finding executable files to the extension
+   mechanism.  In this case, we do not use SOLIB_SEARCH_PATH or rely
+   on legacy LD_LIBRARY_PATH searching.  The extension is entirely
+   responsible for returning to GDB a full local (or
+   "target:"-prefixed) path.
 
    Global variable SOLIB_SEARCH_PATH is used as a prefix directory
    (or set of directories, as in LD_LIBRARY_PATH) to search for all
@@ -149,7 +157,7 @@ show_solib_search_path (struct ui_file *file, int from_tty,
 */
 
 static char *
-solib_find_1 (char *in_pathname, int *fd, int is_solib)
+solib_find_1 (char *in_pathname, int *fd, int is_solib, struct so_list *so)
 {
   const struct target_so_ops *ops = solib_ops (target_gdbarch ());
   int found_file = -1;
@@ -157,6 +165,12 @@ solib_find_1 (char *in_pathname, int *fd, int is_solib)
   const char *fskind = effective_target_file_system_kind ();
   struct cleanup *old_chain = make_cleanup (null_cleanup, NULL);
   char *sysroot = gdb_sysroot;
+
+  if (sysroot != NULL && extension_prefixed_p (sysroot))
+    {
+      sysroot += strlen (EXTENSION_SYSROOT_PREFIX);
+      return invoke_solib_find_hook (sysroot, in_pathname, is_solib, so);
+    }
 
   if (sysroot != NULL)
     {
@@ -390,7 +404,7 @@ solib_find_1 (char *in_pathname, int *fd, int is_solib)
 char *
 exec_file_find (char *in_pathname, int *fd)
 {
-  char *result = solib_find_1 (in_pathname, fd, 0);
+  char *result = solib_find_1 (in_pathname, fd, 0, NULL);
 
   if (result == NULL)
     {
@@ -404,7 +418,7 @@ exec_file_find (char *in_pathname, int *fd)
 	  strcpy (new_pathname, in_pathname);
 	  strcat (new_pathname, ".exe");
 
-	  result = solib_find_1 (new_pathname, fd, 0);
+	  result = solib_find_1 (new_pathname, fd, 0, NULL);
 	}
     }
 
@@ -448,7 +462,7 @@ solib_find (char *in_pathname, struct so_list* so, int *fd)
 	}
     }
 
-  return solib_find_1 (in_pathname, fd, 1);
+  return solib_find_1 (in_pathname, fd, 1, so);
 }
 
 /* Open and return a BFD for the shared library PATHNAME.  If FD is not -1,
@@ -479,13 +493,9 @@ solib_bfd_fopen (char *pathname, int fd)
   return abfd;
 }
 
-/* Find shared library PATHNAME and open a BFD for it.  */
-
-bfd *
-solib_bfd_open (char *pathname)
-{
-  return solib_bfd_open2 (pathname, NULL);
-}
+/* Find shared library PATHNAME and open a BFD for it.  SO is an
+   optional pointer containing information about the DSO we're trying
+   to find.  */
 
 bfd *
 solib_bfd_open2 (char *pathname, struct so_list *so)
@@ -496,7 +506,7 @@ solib_bfd_open2 (char *pathname, struct so_list *so)
   const struct bfd_arch_info *b;
 
   found_file = -1;
-  found_pathname = invoke_solib_find_hook (pathname, so);
+  found_pathname = NULL;
 
   /* Search for shared library file.  */
   if (found_pathname == NULL)
@@ -559,10 +569,7 @@ solib_map_sections (struct so_list *so)
 
   filename = tilde_expand (so->so_name);
   old_chain = make_cleanup (xfree, filename);
-  if (ops->bfd_open2)
-    abfd = ops->bfd_open2 (filename, so);
-  else
-    abfd = ops->bfd_open (filename);
+  abfd = ops->bfd_open2 (filename, so);
 
   do_cleanups (old_chain);
 

@@ -163,3 +163,25 @@ def GdbSetPythonDirectory(dir):
     # attributes
     reload(__import__(__name__))
     auto_load_packages()
+
+# Set up the solib hooking mechanism
+_solib_find_hooks = {}
+def _impl_solib_find_hook(hook_spec, name, is_solib, so):
+    sep = hook_spec.find(":")
+    if sep == -1:
+        return None
+
+    hook = _solib_find_hooks.get(hook_spec[:sep])
+    if hook is None:
+        return None
+
+    return hook(hook_spec[sep+1:], name, is_solib, so)
+
+_gdb._set_solib_find_hook(_impl_solib_find_hook)
+del _impl_solib_find_hook
+
+def register_solib_find_hook(hook_name, callback):
+    _solib_find_hooks[hook_name] = callback
+
+def unregister_solib_find_hook(hook_name):
+    del _solib_find_hooks[hook_name]

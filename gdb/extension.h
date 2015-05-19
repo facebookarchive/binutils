@@ -260,8 +260,19 @@ extern xmethod_worker_vec *get_matching_xmethod_workers
 
 extern struct type **get_xmethod_arg_types (struct xmethod_worker *, int *);
 
+/* If GDB_SYSROOT begin with this prefix, delegate responsibility
+   for finding shared objects and executables to a loadable
+   extension hook.  */
+#define EXTENSION_SYSROOT_PREFIX "extension:"
+
+extern int extension_prefixed_p (const char *str);
+
 struct so_list;
-extern char *invoke_solib_find_hook (const char *, struct so_list *so);
+extern char *invoke_solib_find_hook (
+  const char *hook_spec,
+  const char *name,
+  int is_solib,
+  struct so_list *so);
 
 extern struct type *get_xmethod_result_type (struct xmethod_worker *,
 					     struct value *object,

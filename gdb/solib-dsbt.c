@@ -835,7 +835,7 @@ enable_break (void)
 
       TRY
 	{
-	  tmp_bfd = solib_bfd_open (buf);
+	  tmp_bfd = solib_bfd_open2 (buf, NULL);
 	}
       CATCH (ex, RETURN_MASK_ALL)
 	{
@@ -1079,7 +1079,7 @@ _initialize_dsbt_solib (void)
   dsbt_so_ops.current_sos = dsbt_current_sos;
   dsbt_so_ops.open_symbol_file_object = open_symbol_file_object;
   dsbt_so_ops.in_dynsym_resolve_code = dsbt_in_dynsym_resolve_code;
-  dsbt_so_ops.bfd_open = solib_bfd_open;
+  dsbt_so_ops.bfd_open2 = solib_bfd_open2;
 
   /* Debug this file's internals.  */
   add_setshow_zuinteger_cmd ("solib-dsbt", class_maintenance,

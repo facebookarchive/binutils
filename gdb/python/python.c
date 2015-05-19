@@ -152,7 +152,9 @@ static enum ext_lang_rc gdbpy_before_prompt_hook
   (const struct extension_language_defn *, const char *current_gdb_prompt);
 static char* gdbpy_invoke_solib_find_hook
   (const struct extension_language_defn *extlang,
-   const char *original_name,
+   const char *hook_spec,
+   const char *name,
+   int is_solib,
    struct so_list *so);
 
 /* The interface between gdb proper and loading of python scripts.  */
@@ -1579,16 +1581,6 @@ python_command (char *arg, int from_tty)
 static PyObject *solib_find_hook = NULL;
 
 static PyObject *
-gdbpy_get_solib_find_hook (PyObject *self, PyObject *args)
-{
-  if (solib_find_hook == NULL)
-    Py_RETURN_NONE;
-
-  Py_INCREF (solib_find_hook);
-  return solib_find_hook;
-}
-
-static PyObject *
 gdbpy_set_solib_find_hook (PyObject *self, PyObject *args)
 {
   PyObject *new_solib_find_hook;
@@ -1659,7 +1651,9 @@ gdbpy_describe_lm_info_callback (
 static char *
 gdbpy_invoke_solib_find_hook
   (const struct extension_language_defn *extlang,
-   const char *original_name,
+   const char *hook_spec,
+   const char *name,
+   int is_solib,
    struct so_list *so)
 {
   const struct target_so_ops *ops;
@@ -1702,10 +1696,7 @@ gdbpy_invoke_solib_find_hook
     }
 
   py_ret = PyObject_CallFunction (
-    solib_find_hook,
-    "sO",
-    original_name,
-    py_so);
+    solib_find_hook, "ssiO", hook_spec, name, is_solib, py_so);
 
   if (py_ret == NULL)
     {
@@ -2248,10 +2239,8 @@ Return the selected inferior object." },
   { "inferiors", gdbpy_inferiors, METH_NOARGS,
     "inferiors () -> (gdb.Inferior, ...).\n\
 Return a tuple containing all inferiors." },
-  { "get_solib_find_hook", gdbpy_get_solib_find_hook, METH_NOARGS,
-    "Get the current solib find hook." },
-  { "set_solib_find_hook", gdbpy_set_solib_find_hook, METH_VARARGS,
-    "Get the current solib find hook." },
+  { "_set_solib_find_hook", gdbpy_set_solib_find_hook, METH_VARARGS,
+    "(Internal) Set the current solib find hook." },
   {NULL, NULL, 0, NULL}
 };
 

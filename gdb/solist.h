@@ -137,9 +137,6 @@ struct target_so_ops
        the run time loader.  */
     int (*in_dynsym_resolve_code) (CORE_ADDR pc);
 
-    /* Find and open shared library binary file.  */
-    bfd *(*bfd_open) (char *pathname);
-
     /* Find and open shared library binary file.
        Optional variant that accepts an so_list
        describing the file to load. */
@@ -208,9 +205,6 @@ extern char *solib_find (char *in_pathname,
 
 /* Open BFD for shared library file.  */
 extern bfd *solib_bfd_fopen (char *pathname, int fd);
-
-/* Find solib binary file and open it.  */
-extern bfd *solib_bfd_open (char *in_pathname);
 
 /* Find solib binary file and open it, with
    additional context.  */

@@ -53,6 +53,7 @@
 #include "elf-bfd.h"
 #include "solib.h"
 #include "remote.h"
+#include "extension.h"
 #include "stack.h"
 #include "gdb_bfd.h"
 #include "cli/cli-utils.h"
@@ -1518,6 +1519,8 @@ find_separate_debug_file (const char *dir,
       /* If the file is in the sysroot, try using its base path in the
 	 global debugfile directory.  */
       if (canon_dir != NULL
+	  && gdb_sysroot != NULL
+	  && !extension_prefixed_p (gdb_sysroot)
 	  && filename_ncmp (canon_dir, gdb_sysroot,
 			    strlen (gdb_sysroot)) == 0
 	  && IS_DIR_SEPARATOR (canon_dir[strlen (gdb_sysroot)]))

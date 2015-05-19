@@ -327,7 +327,9 @@ struct extension_language_ops
      name, or NULL to continue normally.  */
   char * (*invoke_solib_find_hook)
     (const struct extension_language_defn *extlang,
-     const char *original_name,
+     const char *hook,
+     const char *name,
+     int is_solib,
      struct so_list *so);
 };
 

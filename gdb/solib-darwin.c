@@ -578,7 +578,7 @@ darwin_lookup_lib_symbol (struct objfile *objfile,
 }
 
 static bfd *
-darwin_bfd_open (char *pathname)
+darwin_bfd_open2 (char *pathname, struct so_list *so)
 {
   char *found_pathname;
   int found_file;
@@ -586,7 +586,7 @@ darwin_bfd_open (char *pathname)
   bfd *res;
 
   /* Search for shared library file.  */
-  found_pathname = solib_find (pathname, NULL, &found_file);
+  found_pathname = solib_find (pathname, so, &found_file);
   if (found_pathname == NULL)
     perror_with_name (pathname);
 
@@ -633,5 +633,5 @@ _initialize_darwin_solib (void)
   darwin_so_ops.open_symbol_file_object = open_symbol_file_object;
   darwin_so_ops.in_dynsym_resolve_code = darwin_in_dynsym_resolve_code;
   darwin_so_ops.lookup_lib_global_symbol = darwin_lookup_lib_symbol;
-  darwin_so_ops.bfd_open = darwin_bfd_open;
+  darwin_so_ops.bfd_open2 = darwin_bfd_open2;
 }

@@ -633,7 +633,7 @@ solib_aix_in_dynsym_resolve_code (CORE_ADDR pc)
 /* Implement the "bfd_open" target_so_ops method.  */
 
 static bfd *
-solib_aix_bfd_open (char *pathname)
+solib_aix_bfd_open2 (char *pathname, struct so_list *so)
 {
   /* The pathname is actually a synthetic filename with the following
      form: "/path/to/sharedlib(member.o)" (double-quotes excluded).
@@ -650,7 +650,7 @@ solib_aix_bfd_open (char *pathname)
   struct cleanup *cleanup;
 
   if (pathname[path_len - 1] != ')')
-    return solib_bfd_open (pathname);
+    return solib_bfd_open2 (pathname, so);
 
   /* Search for the associated parens.  */
   sep = strrchr (pathname, '(');
@@ -660,7 +660,7 @@ solib_aix_bfd_open (char *pathname)
 	 to open pathname without decoding, possibly leading to
 	 a failure), rather than triggering an assert failure).  */
       warning (_("missing '(' in shared object pathname: %s"), pathname);
-      return solib_bfd_open (pathname);
+      return solib_bfd_open2 (pathname, so);
     }
   filename_len = sep - pathname;
 
@@ -830,7 +830,7 @@ _initialize_solib_aix (void)
     = solib_aix_open_symbol_file_object;
   solib_aix_so_ops.in_dynsym_resolve_code
     = solib_aix_in_dynsym_resolve_code;
-  solib_aix_so_ops.bfd_open = solib_aix_bfd_open;
+  solib_aix_so_ops.bfd_open2 = solib_aix_bfd_open2;
 
   solib_aix_inferior_data_handle = register_inferior_data ();
 

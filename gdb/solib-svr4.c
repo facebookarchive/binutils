@@ -2293,7 +2293,7 @@ enable_break (struct svr4_info *info, int from_tty)
 
       TRY
         {
-	  tmp_bfd = solib_bfd_open (interp_name);
+	  tmp_bfd = solib_bfd_open2 (interp_name, NULL);
 	}
       CATCH (ex, RETURN_MASK_ALL)
 	{
@@ -3283,7 +3283,6 @@ _initialize_svr4_solib (void)
   svr4_so_ops.current_sos = svr4_current_sos;
   svr4_so_ops.open_symbol_file_object = open_symbol_file_object;
   svr4_so_ops.in_dynsym_resolve_code = svr4_in_dynsym_resolve_code;
-  svr4_so_ops.bfd_open = solib_bfd_open;
   svr4_so_ops.bfd_open2 = solib_bfd_open2;
   svr4_so_ops.lookup_lib_global_symbol = elf_lookup_lib_symbol;
   svr4_so_ops.same = svr4_same;

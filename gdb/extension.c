@@ -1029,10 +1029,29 @@ free_xmethod_worker_vec (void *vec)
   VEC_free (xmethod_worker_ptr, v);
 }
 
-/* Called before we try to find a disk file backing a shared object
-   loaded in our target process.  */
+/* Return whether STR delegates to an extension.  */
+
+int
+extension_prefixed_p (const char *str)
+{
+  return startswith (str, EXTENSION_SYSROOT_PREFIX);
+}
+
+/* Called in lieu of solib_find_1 when sysroot is set to an extension
+   string.  HOOK is the whole sysroot string that led us to consult
+   extensions.  NAME is the name of the shared library we are trying
+   to load.  IS_SOLIB is true when we are trying to load a shared
+   library and false when we are trying to load an executable.  SO is
+   an optional pointer to information about the shared library we are
+   trying to load.  Return NULL if no extension was able to satisfy
+   the request or a heap-allocated local to "target:"-prefixed path to
+   the requested shared library.  */
 char *
-invoke_solib_find_hook (const char *original_name, struct so_list *so)
+invoke_solib_find_hook (
+  const char *hook_spec,
+  const char *name,
+  int is_solib,
+  struct so_list *so)
 {
   int i;
   const struct extension_language_defn *extlang;
@@ -1043,9 +1062,7 @@ invoke_solib_find_hook (const char *original_name, struct so_list *so)
       if (extlang->ops->invoke_solib_find_hook)
 	{
 	  new_name = extlang->ops->invoke_solib_find_hook (
-	    extlang,
-	    original_name,
-	    so);
+	    extlang, hook_spec, name, is_solib, so);
 
 	  if (new_name != NULL)
 	    break;
