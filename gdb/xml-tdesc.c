@@ -617,6 +617,7 @@ target_read_description_xml (struct target_ops *ops)
   struct target_desc *tdesc;
   char *tdesc_str;
   struct cleanup *back_to;
+  const struct bfd_arch_info *arch;
 
   tdesc_str = fetch_available_features_from_target ("target.xml", ops);
   if (tdesc_str == NULL)
@@ -627,6 +628,16 @@ target_read_description_xml (struct target_ops *ops)
 			   fetch_available_features_from_target,
 			   ops);
   do_cleanups (back_to);
+
+  // Hack: if the client gives us a feature that obviously means ARM,
+  // but didn't specify the architecture explicitly, pretend it did.
+
+  if (tdesc_architecture (tdesc) == NULL &&
+      tdesc_find_feature (tdesc, "org.gnu.gdb.arm.core") &&
+      (arch = bfd_scan_arch ("arm")))
+    {
+      set_tdesc_architecture (tdesc, arch);
+    }
 
   return tdesc;
 }
