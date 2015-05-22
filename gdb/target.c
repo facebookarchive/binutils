@@ -3140,6 +3140,12 @@ generic_mourn_inferior (void)
 
   registers_changed ();
 
+  if (exec_bfd && is_target_filename (bfd_get_filename (exec_bfd)))
+    {
+      exec_file_attach (NULL, 0);
+      bfd_cache_close_all ();
+    }
+
   reopen_exec_file ();
   reinit_frame_cache ();
 
