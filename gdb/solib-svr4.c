@@ -2279,8 +2279,25 @@ enable_break (struct svr4_info *info, int from_tty)
       struct so_list *so;
       bfd *tmp_bfd = NULL;
       struct target_ops *tmp_bfd_target;
+      struct so_list *loader_so;
 
       sym_addr = 0;
+
+      /* Try to scan the loaded shared library list for the dynamic
+	 linker.  On a well-behaved system, it should be the first
+	 entry.  Having the so available early helps solib_bfd_open2
+	 below find the right DSO.  */
+      loader_so = NULL;
+      so = master_so_list ();
+      while (so)
+	{
+	  if (svr4_same_1 (interp_name, so->so_original_name))
+	    {
+	      loader_so = so;
+	      break;
+	    }
+	  so = so->next;
+	}
 
       /* Now we need to figure out where the dynamic linker was
          loaded so that we can load its symbols and place a breakpoint
@@ -2293,7 +2310,7 @@ enable_break (struct svr4_info *info, int from_tty)
 
       TRY
         {
-	  tmp_bfd = solib_bfd_open2 (interp_name, NULL);
+	  tmp_bfd = solib_bfd_open2 (interp_name, loader_so);
 	}
       CATCH (ex, RETURN_MASK_ALL)
 	{
