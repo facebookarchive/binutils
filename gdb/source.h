@@ -20,6 +20,7 @@
 #define SOURCE_H
 
 struct symtab;
+struct objfile;
 
 /* This function is capable of finding the absolute path to a
    source file, and opening it, provided you give it a FILENAME.  Both the
@@ -31,6 +32,8 @@ struct symtab;
    FULLNAME can be the last known absolute path to the file in question.
      Space for the path must have been malloc'd.  If a path substitution
      is applied we free the old value and set a new one.
+   OBJFILE is the object file to which the source file belongs.  If
+     unknown, it may be NULL.
 
    On Success
      A valid file descriptor is returned (the return value is positive).
@@ -41,7 +44,8 @@ struct symtab;
      An invalid file descriptor is returned (the return value is negative).
      FULLNAME is set to NULL.  */
 extern int find_and_open_source (const char *filename,
-				 const char *dirname,
+                                 const char *dirname,
+                                 struct objfile* objfile,
 				 char **fullname);
 
 /* Open a source file given a symtab S.  Returns a file descriptor or

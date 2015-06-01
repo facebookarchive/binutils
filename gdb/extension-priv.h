@@ -331,6 +331,15 @@ struct extension_language_ops
      const char *name,
      int is_solib,
      struct so_list *so);
+
+  /* Try to find real source file for the given inputs.
+     See find_and_open_source.  On success, return a malloced string
+     naming the file to open.  On failure, return NULL.  */
+  char * (*invoke_find_source_hook)(
+    const struct extension_language_defn *extlang,
+    const char *filename,
+    const char *dirname,
+    struct objfile *objfile);
 };
 
 /* State necessary to restore a signal handler to its previous value.  */

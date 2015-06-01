@@ -57,7 +57,8 @@ static struct partial_symbol *lookup_partial_symbol (struct objfile *,
 						     const char *, int,
 						     domain_enum);
 
-static const char *psymtab_to_fullname (struct partial_symtab *ps);
+static const char *psymtab_to_fullname (struct partial_symtab *ps,
+					struct objfile *objfile);
 
 static struct partial_symbol *find_pc_sect_psymbol (struct objfile *,
 						    struct partial_symtab *,
@@ -192,7 +193,7 @@ psym_map_symtabs_matching_filename (struct objfile *objfile,
 	&& FILENAME_CMP (name_basename, lbasename (pst->filename)) != 0)
       continue;
 
-    if (compare_filenames_for_search (psymtab_to_fullname (pst), name))
+    if (compare_filenames_for_search (psymtab_to_fullname (pst, objfile), name))
       {
 	if (partial_map_expand_apply (objfile, name, real_path,
 				      pst, callback, data))
@@ -206,7 +207,7 @@ psym_map_symtabs_matching_filename (struct objfile *objfile,
       {
 	gdb_assert (IS_ABSOLUTE_PATH (real_path));
 	gdb_assert (IS_ABSOLUTE_PATH (name));
-	if (filename_cmp (psymtab_to_fullname (pst), real_path) == 0)
+	if (filename_cmp (psymtab_to_fullname (pst, objfile), real_path) == 0)
 	  {
 	    if (partial_map_expand_apply (objfile, name, real_path,
 					  pst, callback, data))
@@ -1161,7 +1162,7 @@ psym_expand_symtabs_with_fullname (struct objfile *objfile,
 	 Don't call it if we know the basenames don't match.  */
       if ((basenames_may_differ
 	   || filename_cmp (lbasename (fullname), lbasename (p->filename)) == 0)
-	  && filename_cmp (fullname, psymtab_to_fullname (p)) == 0)
+	  && filename_cmp (fullname, psymtab_to_fullname (p, objfile)) == 0)
 	psymtab_to_symtab (objfile, p);
     }
 }
@@ -1194,7 +1195,7 @@ psym_map_symbol_filenames (struct objfile *objfile,
 
       QUIT;
       if (need_fullname)
-	fullname = psymtab_to_fullname (ps);
+	fullname = psymtab_to_fullname (ps, objfile);
       else
 	fullname = NULL;
       (*fun) (ps->filename, fullname, data);
@@ -1204,13 +1205,14 @@ psym_map_symbol_filenames (struct objfile *objfile,
 /* Finds the fullname that a partial_symtab represents.
 
    If this functions finds the fullname, it will save it in ps->fullname
-   and it will also return the value.
+   and it will also return the value.  OBJFILE is the object file to which
+   this psymtab belongs.
 
    If this function fails to find the file that this partial_symtab represents,
    NULL will be returned and ps->fullname will be set to NULL.  */
 
 static const char *
-psymtab_to_fullname (struct partial_symtab *ps)
+psymtab_to_fullname (struct partial_symtab *ps, struct objfile *objfile)
 {
   gdb_assert (!ps->anonymous);
 
@@ -1219,7 +1221,10 @@ psymtab_to_fullname (struct partial_symtab *ps)
      to handle cases like the file being moved.  */
   if (ps->fullname == NULL)
     {
-      int fd = find_and_open_source (ps->filename, ps->dirname, &ps->fullname);
+      int fd = find_and_open_source (ps->filename,
+				     ps->dirname,
+				     objfile,
+				     &ps->fullname);
 
       if (fd >= 0)
 	close (fd);
@@ -1447,7 +1452,8 @@ psym_expand_symtabs_matching
 		 files are involved, do a quick comparison of the basenames.  */
 	      if (basenames_may_differ
 		  || (*file_matcher) (lbasename (ps->filename), data, 1))
-		match = (*file_matcher) (psymtab_to_fullname (ps), data, 0);
+		match = (*file_matcher) (psymtab_to_fullname (ps, objfile),
+					 data, 0);
 	    }
 	  if (!match)
 	    continue;

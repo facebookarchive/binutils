@@ -156,6 +156,11 @@ static char* gdbpy_invoke_solib_find_hook
    const char *name,
    int is_solib,
    struct so_list *so);
+static char *gdbpy_invoke_find_source_hook
+( const struct extension_language_defn *extlang,
+  const char *filename,
+  const char *directory,
+  struct objfile *objfile);
 
 /* The interface between gdb proper and loading of python scripts.  */
 
@@ -201,7 +206,8 @@ const struct extension_language_ops python_extension_ops =
   gdbpy_get_xmethod_arg_types,
   gdbpy_get_xmethod_result_type,
   gdbpy_invoke_xmethod,
-  gdbpy_invoke_solib_find_hook
+  gdbpy_invoke_solib_find_hook,
+  gdbpy_invoke_find_source_hook
 };
 
 /* Architecture and language to be used in callbacks from
@@ -1724,6 +1730,104 @@ gdbpy_invoke_solib_find_hook
 
 
 
+/* Source search hook.  */
+
+static PyObject *find_source_hook = NULL;
+
+static PyObject *
+gdbpy_set_find_source_hook (PyObject *self, PyObject *args)
+{
+  PyObject *new_find_source_hook;
+
+  if (!PyArg_ParseTuple (args, "O", &new_find_source_hook))
+    return NULL;
+
+  if (find_source_hook != NULL)
+    {
+      Py_DECREF (find_source_hook);
+      find_source_hook = NULL;
+    }
+
+  if (new_find_source_hook != Py_None) {
+    find_source_hook = new_find_source_hook;
+    Py_INCREF (find_source_hook);
+  }
+
+  Py_RETURN_NONE;
+}
+
+static PyObject *
+gdbpy_string_or_none (const char* str)
+{
+  PyObject *ret;
+
+  if (str == NULL)
+    {
+      ret = Py_None;
+    }
+  else
+    {
+      ret = PyUnicode_FromString (str);
+      if (ret == NULL)
+	{
+	  gdbpy_print_stack ();
+	  error (_ ("Error while executing Python code."));
+	}
+
+      make_cleanup_py_decref (ret);
+    }
+
+  return ret;
+}
+
+static char *
+gdbpy_invoke_find_source_hook
+( const struct extension_language_defn *extlang,
+  const char *filename,
+  const char *directory,
+  struct objfile *objfile)
+{
+  const struct target_so_ops *ops;
+  struct lm_info_desc_ctx ctx;
+  PyObject *py_ret;
+  struct cleanup *cleanup;
+  char* ret = NULL;
+
+  if (!find_source_hook)
+    return NULL;
+
+  cleanup = ensure_python_env (get_current_arch (), current_language);
+
+  py_ret = PyObject_CallFunction (
+    find_source_hook, "OOO",
+    gdbpy_string_or_none (filename),
+    gdbpy_string_or_none (directory),
+    objfile ? objfile_to_objfile_object (objfile) : Py_None);
+
+  if (py_ret == NULL)
+    {
+      gdbpy_print_stack ();
+      error (_ ("Error while executing Python code."));
+    }
+
+  make_cleanup_py_decref (py_ret);
+
+  if (py_ret != Py_None)
+    {
+      ret = gdbpy_obj_to_string (py_ret);
+      if (ret == NULL)
+	{
+	  gdbpy_print_stack ();
+	  error (_ ("Error while executing Python code."));
+	}
+    }
+
+  do_cleanups (cleanup);
+  return ret;
+}
+
+
+
 /* Lists for 'set python' commands.  */
 
 static struct cmd_list_element *user_set_python_list;
@@ -2241,6 +2345,8 @@ Return the selected inferior object." },
 Return a tuple containing all inferiors." },
   { "_set_solib_find_hook", gdbpy_set_solib_find_hook, METH_VARARGS,
     "(Internal) Set the current solib find hook." },
+  { "_set_find_source_hook", gdbpy_set_find_source_hook, METH_VARARGS,
+    "(Internal) Set the current source search hook." },
   {NULL, NULL, 0, NULL}
 };
 

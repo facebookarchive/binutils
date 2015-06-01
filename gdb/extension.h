@@ -276,6 +276,24 @@ extern char *invoke_solib_find_hook (
 
 extern struct type *get_xmethod_result_type (struct xmethod_worker *,
 					     struct value *object,
-					     struct value **args, int nargs);
+                                             struct value **args, int nargs);
+
+/* Give extensions a chance to find the real path to a source file.
+   FILENAME, DIRNAME, and OBJFILE mean what they do for
+   find_and_open_source.  On success, return the name
+   of the found source file.  This string is heap-allocated
+   and must be free()ed.  On failure, return NULL.
+
+   The returned path must be absolute.  GDB does not additional
+   expansion on the path: the extension is responsible for tilde
+   expansion and other transformations.
+
+   As a special case, returning an empty string indicates failure and
+   that GDB should not go on to try its usual source path searching.
+   */
+char *invoke_find_source_hook (
+  const char *filename,
+  const char *dirname,
+  struct objfile *objfile);
 
 #endif /* EXTENSION_H */

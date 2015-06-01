@@ -1073,6 +1073,30 @@ invoke_solib_find_hook (
   return NULL;
 }
 
+char *
+invoke_find_source_hook (
+  const char *filename,
+  const char *dirname,
+  struct objfile *objfile)
+{
+  int i;
+  const struct extension_language_defn *extlang;
+
+  ALL_ENABLED_EXTENSION_LANGUAGES (i, extlang)
+    {
+      if (extlang->ops->invoke_find_source_hook)
+	{
+	  char *found = extlang->ops->invoke_find_source_hook (
+	    extlang, filename, dirname, objfile);
+
+	  if (found != NULL)
+	    return found;
+	}
+    }
+
+  return NULL;
+}
+
 
 /* Called via an observer before gdb prints its prompt.
    Iterate over the extension languages giving them a chance to

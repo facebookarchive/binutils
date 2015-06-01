@@ -42,6 +42,7 @@
 #include "completer.h"
 #include "ui-out.h"
 #include "readline/readline.h"
+#include "extension.h"
 
 #define OPEN_MODE (O_RDONLY | O_BINARY)
 #define FDOPEN_MODE FOPEN_RB
@@ -1003,12 +1004,44 @@ rewrite_source_path (const char *path)
 int
 find_and_open_source (const char *filename,
 		      const char *dirname,
+		      struct objfile *objfile,
 		      char **fullname)
 {
   char *path = source_path;
   const char *p;
   int result;
   struct cleanup *cleanup;
+  char *extension_found;
+
+  /* First, give extensions a chance to override the usual logic.  */
+
+  extension_found = invoke_find_source_hook (filename, dirname, objfile);
+  if (extension_found != NULL)
+    {
+      if (*extension_found == '\0')
+	{
+	  xfree (extension_found);
+	  errno = ENOENT;
+	  return -1;
+	}
+
+      if (!IS_ABSOLUTE_PATH (extension_found))
+	{
+	  warning (_("Extension returned non-absolute path."));
+	  xfree (extension_found);
+	  errno = ENOENT;
+	  return -1;
+	}
+
+      result = gdb_open_cloexec (extension_found, OPEN_MODE, 0);
+      if (result >= 0)
+	{
+	  xfree (*fullname);
+	  *fullname = extension_found;
+	}
+
+      return result;
+    }
 
   /* Quick way out if we already know its full name.  */
 
@@ -1115,7 +1148,11 @@ open_source_file (struct symtab *s)
   if (!s)
     return -1;
 
-  return find_and_open_source (s->filename, SYMTAB_DIRNAME (s), &s->fullname);
+  return find_and_open_source (
+    s->filename,
+    SYMTAB_DIRNAME (s),
+    SYMTAB_OBJFILE (s),
+    &s->fullname);
 }
 
 /* Finds the fullname that a symtab represents.
@@ -1135,8 +1172,10 @@ symtab_to_fullname (struct symtab *s)
      to handle cases like the file being moved.  */
   if (s->fullname == NULL)
     {
-      int fd = find_and_open_source (s->filename, SYMTAB_DIRNAME (s),
-				     &s->fullname);
+      int fd = find_and_open_source (
+	s->filename, SYMTAB_DIRNAME (s),
+	SYMTAB_OBJFILE (s),
+	&s->fullname);
 
       if (fd >= 0)
 	close (fd);

@@ -185,3 +185,20 @@ def register_solib_find_hook(hook_name, callback):
 
 def unregister_solib_find_hook(hook_name):
     del _solib_find_hooks[hook_name]
+
+_find_source_hooks = []
+def _impl_find_source_hook(filename, directory, objfile):
+    for hook in _find_source_hooks:
+        found = hook(filename, directory, objfile)
+        if found is not None:
+            return found
+    return None
+
+_gdb._set_find_source_hook(_impl_find_source_hook)
+del _impl_find_source_hook
+
+def register_find_source_hook(fn):
+    _find_source_hooks.append(fn)
+
+def unregister_find_source_hook(fn):
+    _find_source_hooks.remove(fn)
