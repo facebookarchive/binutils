@@ -1710,6 +1710,8 @@ gdbpy_invoke_solib_find_hook
       error (_ ("Error while executing Python code."));
     }
 
+  make_cleanup_py_decref (py_ret);
+
   if (py_ret != Py_None)
     {
       ret = gdbpy_obj_to_string (py_ret);
@@ -1719,8 +1721,6 @@ gdbpy_invoke_solib_find_hook
 	  error (_ ("Error while executing Python code."));
 	}
     }
-
-  make_cleanup_py_decref (py_ret);
 
  done:
 
