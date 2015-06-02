@@ -1826,6 +1826,13 @@ gdbpy_invoke_find_source_hook
   return ret;
 }
 
+static PyObject *
+gdbpy_forget_cached_source_info (PyObject *self, PyObject *args)
+{
+  forget_cached_source_info ();
+  Py_RETURN_NONE;
+}
+
 
 
 /* Lists for 'set python' commands.  */
@@ -2347,6 +2354,8 @@ Return a tuple containing all inferiors." },
     "(Internal) Set the current solib find hook." },
   { "_set_find_source_hook", gdbpy_set_find_source_hook, METH_VARARGS,
     "(Internal) Set the current source search hook." },
+  { "forget_cached_source_info", gdbpy_forget_cached_source_info,
+    METH_NOARGS, "Flush the objfile->srcfile cache." },
   {NULL, NULL, 0, NULL}
 };
 
