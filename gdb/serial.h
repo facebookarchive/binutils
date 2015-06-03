@@ -109,11 +109,6 @@ extern int serial_readchar (struct serial *scb, int timeout);
 
 extern int serial_write (struct serial *scb, const void *buf, size_t count);
 
-/* Write a printf style string onto the serial port.  */
-
-extern void serial_printf (struct serial *desc, 
-			   const char *,...) ATTRIBUTE_PRINTF (2, 3);
-
 /* Allow pending output to drain.  */
 
 extern int serial_drain_output (struct serial *);

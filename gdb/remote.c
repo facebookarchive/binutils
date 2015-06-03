@@ -3554,9 +3554,6 @@ remote_start_remote (int from_tty, struct target_ops *target, int extended_p)
   struct packet_config *noack_config;
   char *wait_status = NULL;
 
-  immediate_quit++;		/* Allow user to interrupt it.  */
-  QUIT;
-
   if (interrupt_on_connect)
     send_interrupt_sequence ();
 
@@ -3748,7 +3745,6 @@ remote_start_remote (int from_tty, struct target_ops *target, int extended_p)
       strcpy (rs->buf, wait_status);
       rs->cached_wait_status = 1;
 
-      immediate_quit--;
       start_remote (from_tty); /* Initialize gdb process mechanisms.  */
     }
   else

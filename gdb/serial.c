@@ -379,7 +379,11 @@ serial_readchar (struct serial *scb, int timeout)
     internal_error (__FILE__, __LINE__,
 		    _("serial_readchar: blocking read in async mode"));
 
+  ++immediate_quit;
+  QUIT;
   ch = scb->ops->readchar (scb, timeout);
+  --immediate_quit;
+
   if (serial_logfp != NULL)
     {
       serial_logchar (serial_logfp, 'r', ch, timeout);
@@ -402,6 +406,8 @@ serial_readchar (struct serial *scb, int timeout)
 int
 serial_write (struct serial *scb, const void *buf, size_t count)
 {
+  int ret;
+
   if (serial_logfp != NULL)
     {
       const char *str = buf;
@@ -428,21 +434,11 @@ serial_write (struct serial *scb, const void *buf, size_t count)
       gdb_flush (gdb_stdlog);
     }
 
-  return (scb->ops->write (scb, buf, count));
-}
-
-void
-serial_printf (struct serial *desc, const char *format,...)
-{
-  va_list args;
-  char *buf;
-  va_start (args, format);
-
-  buf = xstrvprintf (format, args);
-  serial_write (desc, buf, strlen (buf));
-
-  xfree (buf);
-  va_end (args);
+  ++immediate_quit;
+  QUIT;
+  ret = (scb->ops->write (scb, buf, count));
+  --immediate_quit;
+  return ret;
 }
 
 int
@@ -454,13 +450,23 @@ serial_drain_output (struct serial *scb)
 int
 serial_flush_output (struct serial *scb)
 {
-  return scb->ops->flush_output (scb);
+  int ret;
+  ++immediate_quit;
+  QUIT;
+  ret = scb->ops->flush_output (scb);
+  --immediate_quit;
+  return ret;
 }
 
 int
 serial_flush_input (struct serial *scb)
 {
-  return scb->ops->flush_input (scb);
+  int ret;
+  ++immediate_quit;
+  QUIT;
+  ret = scb->ops->flush_input (scb);
+  --immediate_quit;
+  return ret;
 }
 
 int
