@@ -40,3 +40,7 @@ core
 !core/
 
 lost+found
+
+GPATH
+GRTAGS
+GTAGS
