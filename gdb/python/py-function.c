@@ -109,12 +109,12 @@ fnpy_call (struct gdbarch *gdbarch, const struct language_defn *language,
 	{
 	  /* An error occurred computing the string representation of the
 	     error message.  This is rare, but we should inform the user.  */
-
+	  gdbpy_check_for_interrupt ();
 	  printf_filtered (_("An error occurred in a Python "
 			     "convenience function\n"
 			     "and then another occurred computing the "
 			     "error message.\n"));
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_only ();
 	}
 
       /* Don't print the stack for gdb.GdbError exceptions.
@@ -128,7 +128,7 @@ fnpy_call (struct gdbarch *gdbarch, const struct language_defn *language,
 	  || msg == NULL || *msg == '\0')
 	{
 	  PyErr_Restore (ptype, pvalue, ptraceback);
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  if (msg != NULL && *msg != '\0')
 	    error (_("Error occurred in Python convenience function: %s"),
 		   msg);
@@ -148,8 +148,7 @@ fnpy_call (struct gdbarch *gdbarch, const struct language_defn *language,
   if (value == NULL)
     {
       Py_DECREF (result);
-      gdbpy_print_stack ();
-      error (_("Error while executing Python code."));
+      gdbpy_top_error ();
     }
 
   Py_DECREF (result);

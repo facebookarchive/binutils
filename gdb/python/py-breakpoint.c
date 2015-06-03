@@ -797,7 +797,7 @@ gdbpy_breakpoint_cond_says_stop (const struct extension_language_defn *extlang,
 	  int evaluate = PyObject_IsTrue (result);
 
 	  if (evaluate == -1)
-	    gdbpy_print_stack ();
+	    gdbpy_print_stack_check_interrupt ();
 
 	  /* If the "stop" function returns False that means
 	     the Python breakpoint wants GDB to continue.  */
@@ -807,7 +807,7 @@ gdbpy_breakpoint_cond_says_stop (const struct extension_language_defn *extlang,
 	  Py_DECREF (result);
 	}
       else
-	gdbpy_print_stack ();
+	gdbpy_print_stack_check_interrupt ();
     }
 
   if (bp_obj->is_finish_bp)
@@ -889,7 +889,7 @@ gdbpy_breakpoint_created (struct breakpoint *bp)
     {
       PyErr_SetString (PyExc_RuntimeError,
 		       _("Error while creating breakpoint from GDB."));
-      gdbpy_print_stack ();
+      gdbpy_print_stack_only ();
     }
 
   PyGILState_Release (state);

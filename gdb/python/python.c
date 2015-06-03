@@ -236,7 +236,7 @@ restore_python_env (void *p)
   if (PyErr_Occurred ())
     {
       /* This order is similar to the one calling error afterwards. */
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       warning (_("internal error: Unhandled Python exception"));
     }
 
@@ -369,10 +369,7 @@ python_interactive_command (char *arg, int from_tty)
     }
 
   if (err)
-    {
-      gdbpy_print_stack ();
-      error (_("Error while executing Python code."));
-    }
+      gdbpy_top_error ();
 
   do_cleanups (cleanup);
 }
@@ -414,7 +411,7 @@ python_run_simple_file (FILE *file, const char *filename)
   if (! python_file)
     {
       do_cleanups (cleanup);
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       error (_("Error while opening file: %s"), full_path);
     }
 
@@ -475,7 +472,7 @@ gdbpy_eval_from_control_command (const struct extension_language_defn *extlang,
   ret = PyRun_SimpleString (script);
   xfree (script);
   if (ret)
-    error (_("Error while executing Python code."));
+    gdbpy_throw_python_error_exception ();
 
   do_cleanups (cleanup);
 }
@@ -496,7 +493,7 @@ python_command (char *arg, int from_tty)
   if (arg && *arg)
     {
       if (PyRun_SimpleString (arg))
-	error (_("Error while executing Python code."));
+	gdbpy_throw_python_error_exception ();
     }
   else
     {
@@ -1113,7 +1110,7 @@ gdbpy_before_prompt_hook (const struct extension_language_defn *extlang,
   return prompt != NULL ? EXT_LANG_RC_OK : EXT_LANG_RC_NOP;
 
  fail:
-  gdbpy_print_stack ();
+  gdbpy_print_stack_check_interrupt ();
   do_cleanups (cleanup);
   return EXT_LANG_RC_ERROR;
 }
@@ -1210,7 +1207,7 @@ gdbpy_print_python_errors_p (void)
    gdbpy_should_print_stack.  Only call this if a python exception is
    set.  */
 void
-gdbpy_print_stack (void)
+gdbpy_print_stack_only (void)
 {
 
   /* Print "none", just clear exception.  */
@@ -1270,6 +1267,43 @@ gdbpy_print_stack (void)
       Py_XDECREF (ptraceback);
       xfree (msg);
     }
+}
+
+/* Like gdbpy_print_stack_only, but first check
+   whether a KeyboardInterrupt exception is pending.  If
+   one is, simulate SIGINT.  */
+void
+gdbpy_print_stack_check_interrupt (void)
+{
+  gdbpy_check_for_interrupt ();
+  gdbpy_print_stack_only ();
+}
+
+/* Check whether a KeyboardInterrupt exception is pending.
+   If one is, simulate SIGINT.  */
+void
+gdbpy_check_for_interrupt (void)
+{
+  if (PyErr_Occurred () && PyErr_ExceptionMatches (PyExc_KeyboardInterrupt))
+    {
+      PyErr_Clear ();
+      quit ();
+    }
+}
+
+/* Throw a GDB exception indicating that we saw and reported
+   a Python error.  */
+void
+gdbpy_throw_python_error_exception (void)
+{
+  error (_("Error while executing Python code."));
+}
+
+/* Print Python stack trace and throw GDB error.  */
+void
+gdbpy_top_error (void)
+{
+  gdbpy_print_stack_check_interrupt ();
 }
 
 
@@ -1434,20 +1468,20 @@ gdbpy_start_type_printers (const struct extension_language_defn *extlang,
   type_module = PyImport_ImportModule ("gdb.types");
   if (type_module == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       goto done;
     }
 
   func = PyObject_GetAttrString (type_module, "get_type_recognizers");
   if (func == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       goto done;
     }
 
   printers_obj = PyObject_CallFunctionObjArgs (func, (char *) NULL);
   if (printers_obj == NULL)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
   else
     ext_printers->py_type_printers = printers_obj;
 
@@ -1486,21 +1520,21 @@ gdbpy_apply_type_printers (const struct extension_language_defn *extlang,
   type_obj = type_to_type_object (type);
   if (type_obj == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       goto done;
     }
 
   type_module = PyImport_ImportModule ("gdb.types");
   if (type_module == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       goto done;
     }
 
   func = PyObject_GetAttrString (type_module, "apply_type_recognizers");
   if (func == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       goto done;
     }
 
@@ -1508,7 +1542,7 @@ gdbpy_apply_type_printers (const struct extension_language_defn *extlang,
 					     type_obj, (char *) NULL);
   if (result_obj == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       goto done;
     }
 
@@ -1516,7 +1550,7 @@ gdbpy_apply_type_printers (const struct extension_language_defn *extlang,
     {
       result = python_string_to_host_string (result_obj);
       if (result == NULL)
-	gdbpy_print_stack ();
+	gdbpy_print_stack_check_interrupt ();
     }
 
  done:
@@ -1680,10 +1714,7 @@ gdbpy_invoke_solib_find_hook
 
   py_so = PyDict_New ();
   if (py_so == NULL)
-    {
-      gdbpy_print_stack ();
-      error (_ ("Error while executing Python code."));
-    }
+      gdbpy_top_error ();
 
   make_cleanup_py_decref (py_so);
 
@@ -1697,7 +1728,7 @@ gdbpy_invoke_solib_find_hook
 
   if (ctx.error)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       error (_ ("Error while describing lm_info."));
     }
 
@@ -1705,10 +1736,7 @@ gdbpy_invoke_solib_find_hook
     solib_find_hook, "ssiO", hook_spec, name, is_solib, py_so);
 
   if (py_ret == NULL)
-    {
-      gdbpy_print_stack ();
-      error (_ ("Error while executing Python code."));
-    }
+    gdbpy_top_error ();
 
   make_cleanup_py_decref (py_ret);
 
@@ -1716,10 +1744,7 @@ gdbpy_invoke_solib_find_hook
     {
       ret = gdbpy_obj_to_string (py_ret);
       if (ret == NULL)
-	{
-	  gdbpy_print_stack ();
-	  error (_ ("Error while executing Python code."));
-	}
+	gdbpy_top_error ();
     }
 
  done:
@@ -1769,10 +1794,7 @@ gdbpy_string_or_none (const char* str)
     {
       ret = PyUnicode_FromString (str);
       if (ret == NULL)
-	{
-	  gdbpy_print_stack ();
-	  error (_ ("Error while executing Python code."));
-	}
+	gdbpy_top_error ();
 
       make_cleanup_py_decref (ret);
     }
@@ -1805,10 +1827,7 @@ gdbpy_invoke_find_source_hook
     objfile ? objfile_to_objfile_object (objfile) : Py_None);
 
   if (py_ret == NULL)
-    {
-      gdbpy_print_stack ();
-      error (_ ("Error while executing Python code."));
-    }
+    gdbpy_top_error ();
 
   make_cleanup_py_decref (py_ret);
 
@@ -1816,10 +1835,7 @@ gdbpy_invoke_find_source_hook
     {
       ret = gdbpy_obj_to_string (py_ret);
       if (ret == NULL)
-	{
-	  gdbpy_print_stack ();
-	  error (_ ("Error while executing Python code."));
-	}
+	gdbpy_top_error ();
     }
 
   do_cleanups (cleanup);
@@ -2132,7 +2148,7 @@ message == an error message without a stack will be printed."),
   return;
 
  fail:
-  gdbpy_print_stack ();
+  gdbpy_print_stack_only ();
   /* Do not set 'gdb_python_initialized'.  */
   return;
 
@@ -2200,7 +2216,7 @@ gdbpy_finish_initialization (const struct extension_language_defn *extlang)
   gdb_python_module = PyImport_ImportModule ("gdb");
   if (gdb_python_module == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_only ();
       /* This is passed in one call to warning so that blank lines aren't
 	 inserted between each line of text.  */
       warning (_("\n"
@@ -2222,7 +2238,7 @@ gdbpy_finish_initialization (const struct extension_language_defn *extlang)
   return;
 
  fail:
-  gdbpy_print_stack ();
+  gdbpy_print_stack_only ();
   warning (_("internal error: Unhandled Python exception"));
   do_cleanups (cleanup);
 }

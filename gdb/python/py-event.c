@@ -114,7 +114,7 @@ evpy_emit_event (PyObject *event,
 	{
 	  /* Print the trace here, but keep going -- we want to try to
 	     call all of the callbacks even if one is broken.  */
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	}
       else
 	{
@@ -127,7 +127,7 @@ evpy_emit_event (PyObject *event,
   return 0;
 
  fail:
-  gdbpy_print_stack ();
+  gdbpy_print_stack_check_interrupt ();
   Py_XDECREF (callback_list_copy);
   Py_XDECREF (event);
   return -1;

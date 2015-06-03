@@ -142,7 +142,7 @@ cmdpy_function (struct cmd_list_element *command, char *args, int from_tty)
   argobj = PyUnicode_Decode (args, strlen (args), host_charset (), NULL);
   if (! argobj)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       error (_("Could not convert arguments to Python string."));
     }
 
@@ -169,12 +169,13 @@ cmdpy_function (struct cmd_list_element *command, char *args, int from_tty)
 
       if (msg == NULL)
 	{
+	  gdbpy_check_for_interrupt ();
 	  /* An error occurred computing the string representation of the
 	     error message.  This is rare, but we should inform the user.  */
 	  printf_filtered (_("An error occurred in a Python command\n"
 			     "and then another occurred computing the "
 			     "error message.\n"));
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_only ();
 	}
 
       /* Don't print the stack for gdb.GdbError exceptions.
@@ -188,7 +189,7 @@ cmdpy_function (struct cmd_list_element *command, char *args, int from_tty)
 	  || msg == NULL || *msg == '\0')
 	{
 	  PyErr_Restore (ptype, pvalue, ptraceback);
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  if (msg != NULL && *msg != '\0')
 	    error (_("Error occurred in Python command: %s"), msg);
 	  else

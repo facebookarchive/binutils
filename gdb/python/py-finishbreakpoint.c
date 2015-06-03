@@ -115,7 +115,7 @@ bpfinishpy_pre_stop_hook (struct gdbpy_breakpoint_object *bp_obj)
         {
           self_finishbp->return_value = value_to_value_object (ret);
           if (!self_finishbp->return_value)
-              gdbpy_print_stack ();
+              gdbpy_print_stack_check_interrupt ();
         }
       else
         {
@@ -126,7 +126,7 @@ bpfinishpy_pre_stop_hook (struct gdbpy_breakpoint_object *bp_obj)
   CATCH (except, RETURN_MASK_ALL)
     {
       gdbpy_convert_exception (except);
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
     }
   END_CATCH
 }
@@ -147,7 +147,7 @@ bpfinishpy_post_stop_hook (struct gdbpy_breakpoint_object *bp_obj)
   CATCH (except, RETURN_MASK_ALL)
     {
       gdbpy_convert_exception (except);
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
     }
   END_CATCH
 }
@@ -343,7 +343,7 @@ bpfinishpy_out_of_scope (struct finish_breakpoint_object *bpfinish_obj)
 
       meth_result = PyObject_CallMethod (py_obj, outofscope_func, NULL);
       if (meth_result == NULL)
-	gdbpy_print_stack ();
+	gdbpy_print_stack_check_interrupt ();
       Py_XDECREF (meth_result);
     }
 
@@ -380,7 +380,7 @@ bpfinishpy_detect_out_scope_cb (struct breakpoint *b, void *args)
           CATCH (except, RETURN_MASK_ALL)
             {
               gdbpy_convert_exception (except);
-              gdbpy_print_stack ();
+              gdbpy_print_stack_check_interrupt ();
             }
 	  END_CATCH
         }

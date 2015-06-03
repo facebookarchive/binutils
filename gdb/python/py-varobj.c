@@ -84,7 +84,7 @@ py_varobj_iter_next (struct varobj_iter *self)
 	  Py_XDECREF (trace);
 	  if (value_str == NULL)
 	    {
-	      gdbpy_print_stack ();
+	      gdbpy_print_stack_check_interrupt ();
 	      return NULL;
 	    }
 
@@ -95,28 +95,28 @@ py_varobj_iter_next (struct varobj_iter *self)
 	  xfree (value_str);
 	  if (item == NULL)
 	    {
-	      gdbpy_print_stack ();
+	      gdbpy_print_stack_check_interrupt ();
 	      return NULL;
 	    }
 	}
       else
 	{
 	  /* Any other kind of error.  */
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  return NULL;
 	}
     }
 
   if (!PyArg_ParseTuple (item, "sO", &name, &py_v))
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       error (_("Invalid item from the child list"));
     }
 
   vitem = xmalloc (sizeof *vitem);
   vitem->value = convert_value_from_python (py_v);
   if (vitem->value == NULL)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
   vitem->name = xstrdup (name);
 
   self->next_raw_index++;
@@ -183,7 +183,7 @@ py_varobj_get_iterator (struct varobj *var, PyObject *printer)
 					 NULL);
   if (children == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       error (_("Null value returned for children"));
     }
 
@@ -192,7 +192,7 @@ py_varobj_get_iterator (struct varobj *var, PyObject *printer)
   iter = PyObject_GetIter (children);
   if (iter == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       error (_("Could not get children iterator"));
     }
 

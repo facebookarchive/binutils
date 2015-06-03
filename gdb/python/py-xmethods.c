@@ -177,7 +177,7 @@ gdbpy_get_matching_xmethod_workers
   py_type = type_to_type_object (obj_type);
   if (py_type == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanups);
 
       return EXT_LANG_RC_ERROR;
@@ -188,7 +188,7 @@ gdbpy_get_matching_xmethod_workers
   py_xmethod_matcher_list = PyList_New (0);
   if (py_xmethod_matcher_list == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanups);
 
       return EXT_LANG_RC_ERROR;
@@ -204,7 +204,7 @@ gdbpy_get_matching_xmethod_workers
 
       if (py_objfile == NULL)
 	{
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  Py_DECREF (py_xmethod_matcher_list);
 	  do_cleanups (cleanups);
 
@@ -217,7 +217,7 @@ gdbpy_get_matching_xmethod_workers
       Py_DECREF (objfile_matchers);
       if (py_xmethod_matcher_list == NULL)
 	{
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  do_cleanups (cleanups);
 
 	  return EXT_LANG_RC_ERROR;
@@ -237,7 +237,7 @@ gdbpy_get_matching_xmethod_workers
       Py_DECREF (pspace_matchers);
       if (py_xmethod_matcher_list == NULL)
 	{
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  do_cleanups (cleanups);
 
 	  return EXT_LANG_RC_ERROR;
@@ -245,7 +245,7 @@ gdbpy_get_matching_xmethod_workers
     }
   else
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       Py_DECREF (py_xmethod_matcher_list);
       do_cleanups (cleanups);
 
@@ -268,7 +268,7 @@ gdbpy_get_matching_xmethod_workers
 	  Py_DECREF (gdb_matchers);
 	  if (py_xmethod_matcher_list == NULL)
 	    {
-	      gdbpy_print_stack ();
+	      gdbpy_print_stack_check_interrupt ();
 	      do_cleanups (cleanups);
 
 	      return EXT_LANG_RC_ERROR;
@@ -276,7 +276,7 @@ gdbpy_get_matching_xmethod_workers
 	}
       else
 	{
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  Py_DECREF (py_xmethod_matcher_list);
 	  do_cleanups (cleanups);
 
@@ -291,7 +291,7 @@ gdbpy_get_matching_xmethod_workers
   list_iter = PyObject_GetIter (py_xmethod_matcher_list);
   if (list_iter == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanups);
 
       return EXT_LANG_RC_ERROR;
@@ -303,7 +303,7 @@ gdbpy_get_matching_xmethod_workers
 
       if (match_result == NULL)
 	{
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  Py_DECREF (matcher);
 	  do_cleanups (cleanups);
 
@@ -318,7 +318,7 @@ gdbpy_get_matching_xmethod_workers
 
 	  if (iter == NULL)
 	    {
-	      gdbpy_print_stack ();
+	      gdbpy_print_stack_check_interrupt ();
 	      Py_DECREF (matcher);
 	      Py_DECREF (match_result);
 	      do_cleanups (cleanups);
@@ -337,7 +337,7 @@ gdbpy_get_matching_xmethod_workers
 	  /* Report any error that could have occurred while iterating.  */
 	  if (PyErr_Occurred ())
 	    {
-	      gdbpy_print_stack ();
+	      gdbpy_print_stack_check_interrupt ();
 	      Py_DECREF (matcher);
 	      Py_DECREF (match_result);
 	      do_cleanups (cleanups);
@@ -360,7 +360,7 @@ gdbpy_get_matching_xmethod_workers
   /* Report any error that could have occurred while iterating.  */
   if (PyErr_Occurred ())
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanups);
 
       return EXT_LANG_RC_ERROR;
@@ -397,7 +397,7 @@ gdbpy_get_xmethod_arg_types (const struct extension_language_defn *extlang,
 						  get_arg_types_method_name);
   if (get_arg_types_method == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanups);
 
       return EXT_LANG_RC_ERROR;
@@ -409,7 +409,7 @@ gdbpy_get_xmethod_arg_types (const struct extension_language_defn *extlang,
 						NULL);
   if (py_argtype_list == NULL)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanups);
 
       return EXT_LANG_RC_ERROR;
@@ -422,7 +422,7 @@ gdbpy_get_xmethod_arg_types (const struct extension_language_defn *extlang,
       arg_count = PySequence_Size (py_argtype_list);
       if (arg_count == -1)
 	{
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  do_cleanups (cleanups);
 
 	  return EXT_LANG_RC_ERROR;
@@ -431,7 +431,7 @@ gdbpy_get_xmethod_arg_types (const struct extension_language_defn *extlang,
       list_iter = PyObject_GetIter (py_argtype_list);
       if (list_iter == NULL)
 	{
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  do_cleanups (cleanups);
 
 	  return EXT_LANG_RC_ERROR;
@@ -485,7 +485,7 @@ gdbpy_get_xmethod_arg_types (const struct extension_language_defn *extlang,
     }
   if (PyErr_Occurred ())
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanups);
       xfree (type_array);
 
@@ -599,7 +599,7 @@ gdbpy_get_xmethod_result_type (const struct extension_language_defn *extlang,
   return EXT_LANG_RC_OK;
 
  Fail:
-  gdbpy_print_stack ();
+  gdbpy_print_stack_check_interrupt ();
   do_cleanups (cleanups);
   return EXT_LANG_RC_ERROR;
 }
@@ -644,18 +644,12 @@ gdbpy_invoke_xmethod (const struct extension_language_defn *extlang,
     }
   py_value_obj = value_to_value_object (obj);
   if (py_value_obj == NULL)
-    {
-      gdbpy_print_stack ();
-      error (_("Error while executing Python code."));
-    }
+    gdbpy_top_error ();
   make_cleanup_py_decref (py_value_obj);
 
   py_arg_tuple = PyTuple_New (nargs + 1);
   if (py_arg_tuple == NULL)
-    {
-      gdbpy_print_stack ();
-      error (_("Error while executing Python code."));
-    }
+    gdbpy_top_error ();
   make_cleanup_py_decref (py_arg_tuple);
 
   /* PyTuple_SET_ITEM steals the reference of the element.  Hence INCREF the
@@ -668,30 +662,21 @@ gdbpy_invoke_xmethod (const struct extension_language_defn *extlang,
       PyObject *py_value_arg = value_to_value_object (args[i]);
 
       if (py_value_arg == NULL)
-	{
-	  gdbpy_print_stack ();
-	  error (_("Error while executing Python code."));
-	}
+	gdbpy_top_error ();
 
       PyTuple_SET_ITEM (py_arg_tuple, i + 1, py_value_arg);
     }
 
   py_result = PyObject_CallObject (xmethod_worker, py_arg_tuple);
   if (py_result == NULL)
-    {
-      gdbpy_print_stack ();
-      error (_("Error while executing Python code."));
-    }
+    gdbpy_top_error ();
   make_cleanup_py_decref (py_result);
 
   if (py_result != Py_None)
     {
       res = convert_value_from_python (py_result);
       if (res == NULL)
-	{
-	  gdbpy_print_stack ();
-	  error (_("Error while executing Python code."));
-	}
+	gdbpy_top_error ();
     }
   else
     {

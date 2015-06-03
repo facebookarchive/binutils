@@ -260,12 +260,12 @@ gdbpy_get_display_hint (PyObject *printer)
 	{
 	  result = python_string_to_host_string (hint);
 	  if (result == NULL)
-	    gdbpy_print_stack ();
+	    gdbpy_print_stack_check_interrupt ();
 	}
       Py_DECREF (hint);
     }
   else
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   return result;
 }
@@ -297,7 +297,7 @@ print_stack_unless_memory_error (struct ui_file *stream)
       do_cleanups (cleanup);
     }
   else
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 }
 
 /* Helper for gdbpy_apply_val_pretty_printer which calls to_string and
@@ -530,7 +530,7 @@ print_children (PyObject *printer, const char *hint,
   frame = push_dummy_python_frame ();
   if (!frame)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       goto done;
     }
   make_cleanup_py_decref (frame);
@@ -559,7 +559,7 @@ print_children (PyObject *printer, const char *hint,
 	  PyErr_SetString (PyExc_TypeError,
 			   _("Result of children iterator not a tuple"
 			     " of two elements."));
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  Py_DECREF (item);
 	  continue;
 	}
@@ -570,7 +570,7 @@ print_children (PyObject *printer, const char *hint,
 	  if (gdbpy_print_python_errors_p ())
 	    fprintf_unfiltered (gdb_stderr,
 				_("Bad result from children iterator.\n"));
-	  gdbpy_print_stack ();
+	  gdbpy_print_stack_check_interrupt ();
 	  Py_DECREF (item);
 	  continue;
 	}
@@ -651,7 +651,7 @@ print_children (PyObject *printer, const char *hint,
 
 	  output = python_string_to_host_string (py_v);
 	  if (!output)
-	    gdbpy_print_stack ();
+	    gdbpy_print_stack_check_interrupt ();
 	  else
 	    {
 	      fputs_filtered (output, stream);
@@ -663,10 +663,7 @@ print_children (PyObject *printer, const char *hint,
 	  struct value *value = convert_value_from_python (py_v);
 
 	  if (value == NULL)
-	    {
-	      gdbpy_print_stack ();
-	      error (_("Error while executing Python code."));
-	    }
+	    gdbpy_top_error ();
 	  else
 	    common_val_print (value, stream, recurse + 1, options, language);
 	}

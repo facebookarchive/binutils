@@ -1198,7 +1198,7 @@ install_default_visualizer (struct varobj *var)
 	  pretty_printer = gdbpy_get_varobj_pretty_printer (var->value);
 	  if (! pretty_printer)
 	    {
-	      gdbpy_print_stack ();
+	      gdbpy_print_stack_check_interrupt ();
 	      error (_("Cannot instantiate printer for default visualizer"));
 	    }
 	}
@@ -1233,10 +1233,10 @@ construct_visualizer (struct varobj *var, PyObject *constructor)
       pretty_printer = instantiate_pretty_printer (constructor, var->value);
       if (! pretty_printer)
 	{
-	  gdbpy_print_stack ();
 	  Py_DECREF (constructor);
 	  constructor = Py_None;
 	  Py_INCREF (constructor);
+	  gdbpy_print_stack_check_interrupt ();
 	}
 
       if (pretty_printer == Py_None)
@@ -1560,7 +1560,7 @@ varobj_set_visualizer (struct varobj *var, const char *visualizer)
 
   if (! constructor)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       error (_("Could not evaluate visualizer expression: %s"), visualizer);
     }
 
@@ -2624,7 +2624,7 @@ varobj_value_get_print_value (struct value *value,
 			  make_cleanup (xfree, thevalue);
 			}
 		      else
-			gdbpy_print_stack ();
+			gdbpy_print_stack_check_interrupt ();
 		    }
 		}
 	      /* If the printer returned a replacement value, set VALUE

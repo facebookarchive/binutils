@@ -95,7 +95,7 @@ python_on_normal_stop (struct bpstats *bs, int print_frame)
   cleanup = ensure_python_env (get_current_arch (), current_language);
 
   if (emit_stop_event (bs, stop_signal) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 }
@@ -111,7 +111,7 @@ python_on_resume (ptid_t ptid)
   cleanup = ensure_python_env (target_gdbarch (), current_language);
 
   if (emit_continue_event (ptid) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 }
@@ -127,7 +127,7 @@ python_on_inferior_call_pre (ptid_t thread, CORE_ADDR address)
   cleanup = ensure_python_env (target_gdbarch (), current_language);
 
   if (emit_inferior_call_event (INFERIOR_CALL_PRE, thread, address) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 }
@@ -143,7 +143,7 @@ python_on_inferior_call_post (ptid_t thread, CORE_ADDR address)
   cleanup = ensure_python_env (target_gdbarch (), current_language);
 
   if (emit_inferior_call_event (INFERIOR_CALL_POST, thread, address) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 }
@@ -160,7 +160,7 @@ python_on_memory_change (struct inferior *inferior, CORE_ADDR addr, ssize_t len,
   cleanup = ensure_python_env (target_gdbarch (), current_language);
 
   if (emit_memory_changed_event (addr, len) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 }
@@ -177,7 +177,7 @@ python_on_register_change (struct frame_info *frame, int regnum)
   cleanup = ensure_python_env (target_gdbarch (), current_language);
 
   if (emit_register_changed_event (frame, regnum) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 }
@@ -197,7 +197,7 @@ python_inferior_exit (struct inferior *inf)
     exit_code = &inf->exit_code;
 
   if (emit_exited_event (exit_code, inf) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 }
@@ -222,12 +222,12 @@ python_new_objfile (struct objfile *objfile)
   if (objfile == NULL)
     {
       if (emit_clear_objfiles_event () < 0)
-	gdbpy_print_stack ();
+	gdbpy_print_stack_check_interrupt ();
     }
   else
     {
       if (emit_new_objfile_event (objfile) < 0)
-	gdbpy_print_stack ();
+	gdbpy_print_stack_check_interrupt ();
     }
 
   do_cleanups (cleanup);
@@ -248,7 +248,7 @@ python_solib_about_to_search (struct inferior *inferior)
   cleanup = ensure_python_env (target_gdbarch (), current_language);
 
   if (emit_solib_about_to_search (inferior) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 
@@ -268,7 +268,7 @@ python_inferior_appeared (struct inferior *inferior)
   cleanup = ensure_python_env (target_gdbarch (), current_language);
 
   if (emit_inferior_appeared (inferior) < 0)
-    gdbpy_print_stack ();
+    gdbpy_print_stack_check_interrupt ();
 
   do_cleanups (cleanup);
 }
@@ -365,7 +365,7 @@ add_thread_object (struct thread_info *tp)
   thread_obj = create_thread_object (tp);
   if (!thread_obj)
     {
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanup);
       return;
     }

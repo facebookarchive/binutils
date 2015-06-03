@@ -1557,7 +1557,7 @@ gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
 	 initialization error.  This return code will trigger a
 	 default backtrace.  */
 
-      gdbpy_print_stack ();
+      gdbpy_print_stack_check_interrupt ();
       do_cleanups (cleanups);
       return EXT_LANG_BT_NO_FILTERS;
     }
@@ -1590,7 +1590,7 @@ gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
       /* Do not exit on error printing a single frame.  Print the
 	 error and continue with other frames.  */
       if (success == EXT_LANG_BT_ERROR)
-	gdbpy_print_stack ();
+	gdbpy_print_stack_check_interrupt ();
     }
 
   if (item == NULL && PyErr_Occurred ())
@@ -1603,7 +1603,7 @@ gdbpy_apply_frame_filter (const struct extension_language_defn *extlang,
   /* Exit and abandon backtrace on error, printing the exception that
      is set.  */
  error:
-  gdbpy_print_stack ();
+  gdbpy_print_stack_check_interrupt ();
   do_cleanups (cleanups);
   return EXT_LANG_BT_ERROR;
 }

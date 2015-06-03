@@ -598,7 +598,7 @@ pyuw_sniffer (const struct frame_unwind *self, struct frame_info *this_frame,
   return 1;
 
  error:
-  gdbpy_print_stack ();
+  gdbpy_print_stack_check_interrupt ();
   /* Fallthrough.  */
  cannot_unwind:
   do_cleanups (cleanups);

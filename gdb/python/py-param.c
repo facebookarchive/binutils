@@ -314,7 +314,7 @@ get_doc_string (PyObject *object, PyObject *attr)
 	{
 	  result = python_string_to_host_string (ds_obj);
 	  if (result == NULL)
-	    gdbpy_print_stack ();
+	    gdbpy_print_stack_check_interrupt ();
 	}
       Py_XDECREF (ds_obj);
     }
@@ -396,7 +396,7 @@ get_set_value (char *args, int from_tty,
 
  error:
   Py_XDECREF (set_doc_func);
-  gdbpy_print_stack ();
+  gdbpy_print_stack_check_interrupt ();
   do_cleanups (cleanup);
   return;
 }
@@ -453,7 +453,7 @@ get_show_value (struct ui_file *file, int from_tty,
 
  error:
   Py_XDECREF (show_doc_func);
-  gdbpy_print_stack ();
+  gdbpy_print_stack_check_interrupt ();
   do_cleanups (cleanup);
   return;
 }

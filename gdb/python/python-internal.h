@@ -537,7 +537,11 @@ extern const struct language_defn *python_language;
     } while (0)
 
 int gdbpy_print_python_errors_p (void);
-void gdbpy_print_stack (void);
+void gdbpy_print_stack_only (void);
+void gdbpy_top_error (void);
+void gdbpy_check_for_interrupt (void);
+void gdbpy_print_stack_check_interrupt (void);
+void gdbpy_throw_python_error_exception (void);
 
 PyObject *python_string_to_unicode (PyObject *obj);
 char *unicode_to_target_string (PyObject *unicode_str);
