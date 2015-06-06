@@ -187,6 +187,9 @@ struct target_so_ops
     void (*describe_lm_info) (describe_lm_info_callback cb,
                               void *opaque,
                               struct lm_info *lm_info);
+
+    /* Target-specific hook for exec_file_find.  */
+    char *(*exec_file_find) (char *in_pathname, int *fd);
   };
 
 /* Free the memory associated with a (so_list *).  */
@@ -197,6 +200,11 @@ struct so_list *master_so_list (void);
 
 /* Find main executable binary file.  */
 extern char *exec_file_find (char *in_pathname, int *fd);
+/* Find main executable binary file, providing a location hint to the
+   DSO-searching machinery.  */
+extern char *exec_file_find2 (char *in_pathname,
+                              int *fd,
+                              struct so_list *so);
 
 /* Find shared library binary file.  */
 extern char *solib_find (char *in_pathname,

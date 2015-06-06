@@ -396,17 +396,21 @@ solib_find_1 (char *in_pathname, int *fd, int is_solib, struct so_list *so)
 }
 
 /* Return the full pathname of the main executable, or NULL if not
-   found.  The returned pathname is malloc'ed and must be freed by
-   the caller.  If FD is non-NULL, *FD is set to either -1 or an open
-   file handle for the main executable.
+   found.  The returned pathname is malloc'ed and must be freed by the
+   caller.  If FD is non-NULL, *FD is set to either -1 or an open file
+   handle for the main executable.  SO is an optional pointer to a
+   so_list structure (not necessarily a real DSO) used to provide
+   hints to any extension loading plugins.
 
    The search algorithm used is described in solib_find_1's comment
    above.  */
-
 char *
-exec_file_find (char *in_pathname, int *fd)
+exec_file_find2 (char *in_pathname, int *fd, struct so_list* so)
 {
-  char *result = solib_find_1 (in_pathname, fd, 0, NULL);
+  char *result = NULL;
+
+  if (result == NULL)
+    result = solib_find_1 (in_pathname, fd, 0, so);
 
   if (result == NULL)
     {
@@ -420,11 +424,21 @@ exec_file_find (char *in_pathname, int *fd)
 	  strcpy (new_pathname, in_pathname);
 	  strcat (new_pathname, ".exe");
 
-	  result = solib_find_1 (new_pathname, fd, 0, NULL);
+	  result = solib_find_1 (new_pathname, fd, 0, so);
 	}
     }
 
   return result;
+}
+
+char *
+exec_file_find (char *in_pathname, int *fd)
+{
+  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  if (ops->exec_file_find)
+    return ops->exec_file_find (in_pathname, fd);
+
+  return exec_file_find2 (in_pathname, fd, NULL);
 }
 
 /* Return the full pathname of a shared library file, or NULL if not

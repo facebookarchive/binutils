@@ -2158,6 +2158,35 @@ cmp_name_and_sec_flags (asymbol *sym, void *data)
   return (strcmp (sym->name, (const char *) data) == 0
 	  && (sym->section->flags & (SEC_CODE | SEC_DATA)) != 0);
 }
+
+__attribute__((unused))
+static void
+do_cleanup_free_fake_so (void* x)
+{
+  struct so_list *fake = x;
+  free (fake->lm_info);
+  free (fake);
+}
+
+/* Helper funtion for making synthetic so_list entries.  */
+static struct so_list*
+make_fake_so (const char* filename, CORE_ADDR addr)
+{
+  struct so_list *fake = xzalloc (sizeof (*fake));
+  fake->lm_info = xzalloc (sizeof (*fake->lm_info));
+  make_cleanup (do_cleanup_free_fake_so, fake);
+  xsnprintf (fake->so_original_name,
+	     sizeof (fake->so_original_name),
+	     "%s", filename);
+  xsnprintf (fake->so_name,
+	     sizeof (fake->so_name),
+	     "%s", filename);
+  fake->lm_info->l_addr_p = 1;
+  fake->lm_info->fake_p = 1;
+  fake->lm_info->l_addr = addr;
+  return fake;
+}
+
 /* Arrange for dynamic linker to hit breakpoint.
 
    Both the SunOS and the SVR4 dynamic linkers have, as part of their
@@ -2288,8 +2317,10 @@ enable_break (struct svr4_info *info, int from_tty)
       bfd *tmp_bfd = NULL;
       struct target_ops *tmp_bfd_target;
       struct so_list *loader_so;
+      struct cleanup *loader_so_cleanup;
 
       sym_addr = 0;
+      loader_so_cleanup = make_cleanup (null_cleanup, NULL);
 
       /* Try to scan the loaded shared library list for the dynamic
 	 linker.  Having the so available early helps solib_bfd_open2
@@ -2316,26 +2347,8 @@ enable_break (struct svr4_info *info, int from_tty)
 	 hint to the solib_bfd_open2 machinery, which is allowed to
 	 fail.  */
       if (loader_so == NULL)
-	{
 	  if (target_auxv_search (&current_target, AT_BASE, &load_addr) > 0)
-	    {
-	      loader_so = alloca (sizeof (*loader_so));
-	      memset (loader_so, 0, sizeof (*loader_so));
-	      xsnprintf (loader_so->so_original_name,
-			 sizeof (loader_so->so_original_name),
-			 "%s", interp_name);
-	      xsnprintf (loader_so->so_name,
-			 sizeof (loader_so->so_name),
-			 "%s", interp_name);
-	      loader_so->lm_info = alloca (sizeof (*loader_so->lm_info));
-	      memset (loader_so->lm_info, 0, sizeof (*loader_so->lm_info));
-	      memcpy (&loader_so->lm_info->l_addr,
-		      &load_addr,
-		      sizeof (CORE_ADDR));
-	      loader_so->lm_info->l_addr_p = 1;
-	      loader_so->lm_info->fake_p = 1;
-	    }
-	}
+	    loader_so = make_fake_so (interp_name, load_addr);
 
       /* Now we need to figure out where the dynamic linker was
          loaded so that we can load its symbols and place a breakpoint
@@ -2354,6 +2367,8 @@ enable_break (struct svr4_info *info, int from_tty)
 	{
 	}
       END_CATCH
+
+      do_cleanups (loader_so_cleanup);
 
       if (tmp_bfd == NULL)
 	goto bkpt_at_symbol;
@@ -3296,7 +3311,7 @@ elf_lookup_lib_symbol (struct objfile *objfile,
   return lookup_global_symbol_from_objfile (objfile, name, domain);
 }
 
-void
+static void
 svr4_describe_lm_info (describe_lm_info_callback cb,
 		       void *opaque,
 		       struct lm_info *lm_info);
@@ -3328,6 +3343,137 @@ svr4_describe_lm_info (describe_lm_info_callback cb,
       }
 }
 
+/* This routine is like a light, exec_bfd-less version of
+   svr4_exec_displacement that we use to find the executable base
+   address (if it's mapped) for use as a hint to exec_file_find2.  */
+static int
+find_program_base (CORE_ADDR *base)
+{
+  enum bfd_endian byte_order = gdbarch_byte_order (target_gdbarch ());
+  CORE_ADDR at_phdr;
+  int phdrs_size, arch_size;
+  CORE_ADDR pt_phdr_vaddr;
+  CORE_ADDR file_header_vaddr;
+  CORE_ADDR displacement;
+  int found_pt_phdr_vaddr = 0;
+  int found_file_header_vaddr = 0;
+  gdb_byte *pt_header;
+  unsigned i;
+  int p_type;
+  int p_offset;
+
+  if (target_auxv_search (&current_target, AT_PHDR, &at_phdr) <= 0)
+    return 0;
+
+  pt_header = read_program_header (-1, &phdrs_size, &arch_size);
+  if (pt_header == NULL)
+    return 0;
+
+  if (
+    arch_size == 32
+    && phdrs_size >= sizeof (Elf32_External_Phdr)
+    && phdrs_size % sizeof (Elf32_External_Phdr) == 0)
+    {
+      Elf32_External_Phdr *phdrs = (Elf32_External_Phdr*) pt_header;
+      for (i = 0; i < phdrs_size / sizeof (*phdrs); ++i)
+	{
+	  Elf32_External_Phdr *phdr = &phdrs[i];
+
+	  p_type = extract_unsigned_integer ((gdb_byte *) &phdr->p_type,
+					     4, byte_order);
+
+	  p_offset = extract_unsigned_integer ((gdb_byte *) &phdr->p_offset,
+					       4, byte_order);
+
+	  if (p_type == PT_LOAD &&
+	      p_offset == 0 &&
+	      !found_file_header_vaddr)
+	    {
+	      file_header_vaddr = extract_unsigned_integer (
+		(gdb_byte *) &phdr->p_vaddr, 4, byte_order);
+	      found_file_header_vaddr = 1;
+	    }
+
+	  if (p_type == PT_PHDR && !found_pt_phdr_vaddr)
+	    {
+	      pt_phdr_vaddr = extract_unsigned_integer (
+		(gdb_byte *) &phdr->p_vaddr, 4, byte_order);
+	      found_pt_phdr_vaddr = 1;
+	    }
+	}
+
+      xfree (pt_header);
+    }
+  else if (
+    arch_size == 64
+    && phdrs_size >= sizeof (Elf64_External_Phdr)
+    && phdrs_size % sizeof (Elf64_External_Phdr) == 0)
+    {
+      Elf64_External_Phdr *phdrs = (Elf64_External_Phdr*) pt_header;
+      for (i = 0; i < phdrs_size / sizeof (*phdrs); ++i)
+	{
+	  Elf64_External_Phdr *phdr = &phdrs[i];
+
+	  p_type = extract_unsigned_integer ((gdb_byte *) &phdr->p_type,
+					     8, byte_order);
+
+	  p_offset = extract_unsigned_integer ((gdb_byte *) &phdr->p_offset,
+					       8, byte_order);
+
+	  if (p_type == PT_LOAD &&
+	      p_offset == 0 &&
+	      !found_file_header_vaddr)
+	    {
+	      file_header_vaddr = extract_unsigned_integer (
+		(gdb_byte *) &phdr->p_vaddr, 8, byte_order);
+	      found_file_header_vaddr = 1;
+	    }
+
+	  if (p_type == PT_PHDR && !found_pt_phdr_vaddr)
+	    {
+	      pt_phdr_vaddr = extract_unsigned_integer (
+		(gdb_byte *) &phdr->p_vaddr, 8, byte_order);
+	      found_pt_phdr_vaddr = 1;
+	    }
+	}
+
+      xfree (pt_header);
+    }
+  else
+    {
+      xfree (pt_header);
+      return 0;
+    }
+
+  if (!found_pt_phdr_vaddr || !found_file_header_vaddr)
+    return 0;
+
+  displacement = at_phdr - pt_phdr_vaddr;
+  *base = file_header_vaddr + displacement;
+  return 1;
+}
+
+static char * svr4_exec_file_find (char *in_pathname, int *fd);
+
+char *
+svr4_exec_file_find (char *in_pathname, int *fd)
+{
+  struct so_list *exe_so = NULL;
+  CORE_ADDR exe_base;
+  struct cleanup *back_to;
+  char *ret;
+
+  back_to = make_cleanup (null_cleanup, NULL);
+  if (find_program_base (&exe_base))
+    {
+      exe_so = make_fake_so (in_pathname, exe_base);
+    }
+
+  ret = exec_file_find2 (in_pathname, fd, exe_so);
+  do_cleanups (back_to);
+  return ret;
+}
+
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */
 
 void
@@ -3353,4 +3499,5 @@ _initialize_svr4_solib (void)
   svr4_so_ops.update_breakpoints = svr4_update_solib_event_breakpoints;
   svr4_so_ops.handle_event = svr4_handle_solib_event;
   svr4_so_ops.describe_lm_info = svr4_describe_lm_info;
+  svr4_so_ops.exec_file_find = svr4_exec_file_find;
 }
