@@ -1130,10 +1130,12 @@ follow_exec (ptid_t ptid, char *execd_pathname)
   if (gdb_sysroot != NULL && *gdb_sysroot != '\0')
     {
       char *name = exec_file_find (execd_pathname, NULL);
-
-      execd_pathname = alloca (strlen (name) + 1);
-      strcpy (execd_pathname, name);
-      xfree (name);
+      if (name != NULL)
+	{
+	  execd_pathname = alloca (strlen (name) + 1);
+	  strcpy (execd_pathname, name);
+	  xfree (name);
+	}
     }
 
   /* Reset the shared library package.  This ensures that we get a
