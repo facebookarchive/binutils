@@ -21,6 +21,10 @@
 
 #include <sys/types.h>
 
+#if __GNUC__ >= 4
+# pragma GCC visibility push (default)
+#endif
+
 #ifdef HAVE_PROC_SERVICE_H
 
 /* glibc's proc_service.h doesn't wrap itself with extern "C".  Need
@@ -162,6 +166,10 @@ extern void ps_plog (const char *fmt, ...);
 EXTERN_C_POP
 
 #endif /* HAVE_PROC_SERVICE_H */
+
+#if __GNUC__ >= 4
+# pragma GCC visibility pop
+#endif
 
 /* Fix-up some broken systems.  */
 
