@@ -64,6 +64,14 @@ struct lm_info
        iff L_ADDR_P.  */
     CORE_ADDR l_addr, l_addr_inferior;
     unsigned int l_addr_p : 1;
+    /* If FAKE_P, everything but l_addr is invalid, probably because
+       we made this lm_info up out of thin air to act as a stand-in
+       for an object whose address we know, but that isn't really a
+       DSO.  We create these fake entries in some cases when we need
+       to communicate the base addresses of the executable proper and
+       the program interpreter to loader extensions during early
+       program startup.  */
+    unsigned int fake_p : 1;
 
     /* The target location of lm.  */
     CORE_ADDR lm_addr;
@@ -2284,9 +2292,10 @@ enable_break (struct svr4_info *info, int from_tty)
       sym_addr = 0;
 
       /* Try to scan the loaded shared library list for the dynamic
-	 linker.  On a well-behaved system, it should be the first
-	 entry.  Having the so available early helps solib_bfd_open2
-	 below find the right DSO.  */
+	 linker.  Having the so available early helps solib_bfd_open2
+	 below find the right DSO.  If we're too early in process
+	 initialization, we might not be able to find the interpreter
+	 here.  */
       loader_so = NULL;
       so = master_so_list ();
       while (so)
@@ -2297,6 +2306,35 @@ enable_break (struct svr4_info *info, int from_tty)
 	      break;
 	    }
 	  so = so->next;
+	}
+
+      /* If that didn't work, try grabbing the interpreter base
+	 address from the program header and making a fake so_list
+	 entry for it.  This procedure should work even early in
+	 initialization.  We more thoroughly validate load_addr below
+	 when we query AT_BASE again --- here, we're just giving a
+	 hint to the solib_bfd_open2 machinery, which is allowed to
+	 fail.  */
+      if (loader_so == NULL)
+	{
+	  if (target_auxv_search (&current_target, AT_BASE, &load_addr) > 0)
+	    {
+	      loader_so = alloca (sizeof (*loader_so));
+	      memset (loader_so, 0, sizeof (*loader_so));
+	      xsnprintf (loader_so->so_original_name,
+			 sizeof (loader_so->so_original_name),
+			 "%s", interp_name);
+	      xsnprintf (loader_so->so_name,
+			 sizeof (loader_so->so_name),
+			 "%s", interp_name);
+	      loader_so->lm_info = alloca (sizeof (*loader_so->lm_info));
+	      memset (loader_so->lm_info, 0, sizeof (*loader_so->lm_info));
+	      memcpy (&loader_so->lm_info->l_addr,
+		      &load_addr,
+		      sizeof (CORE_ADDR));
+	      loader_so->lm_info->l_addr_p = 1;
+	      loader_so->lm_info->fake_p = 1;
+	    }
 	}
 
       /* Now we need to figure out where the dynamic linker was
@@ -3271,15 +3309,23 @@ svr4_describe_lm_info (describe_lm_info_callback cb,
     if (lm_info->l_addr_p)
 	cb (opaque, "l_addr", describe_lm_info_core_addr, lm_info->l_addr);
 
-    cb (opaque, "l_addr_inferior",
-	describe_lm_info_core_addr,
-	lm_info->l_addr_inferior);
+    if (!lm_info->fake_p)
+      {
+	cb (opaque, "l_addr_inferior",
+	    describe_lm_info_core_addr,
+	    lm_info->l_addr_inferior);
 
-    cb (opaque, "l_ld", describe_lm_info_core_addr, lm_info->l_ld);
-    cb (opaque, "l_next", describe_lm_info_core_addr, lm_info->l_next);
-    cb (opaque, "l_prev", describe_lm_info_core_addr, lm_info->l_prev);
-    cb (opaque, "l_name", describe_lm_info_core_addr, lm_info->l_name);
-    cb (opaque, "lm_addr", describe_lm_info_core_addr, lm_info->lm_addr);
+	cb (opaque, "l_ld", describe_lm_info_core_addr,
+	    lm_info->l_ld);
+	cb (opaque, "l_next", describe_lm_info_core_addr,
+	    lm_info->l_next);
+	cb (opaque, "l_prev", describe_lm_info_core_addr,
+	    lm_info->l_prev);
+	cb (opaque, "l_name", describe_lm_info_core_addr,
+	    lm_info->l_name);
+	cb (opaque, "lm_addr", describe_lm_info_core_addr,
+	    lm_info->lm_addr);
+      }
 }
 
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */
