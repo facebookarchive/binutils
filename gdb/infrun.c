@@ -1126,6 +1126,7 @@ follow_exec (ptid_t ptid, char *execd_pathname)
   gdb_flush (gdb_stdout);
 
   breakpoint_init_inferior (inf_execd);
+  observer_notify_executable_changed ();
 
   if (gdb_sysroot != NULL && *gdb_sysroot != '\0')
     {
@@ -4139,8 +4140,8 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
       /* This causes the eventpoints and symbol table to be reset.
          Must do this now, before trying to determine whether to
          stop.  */
-      follow_exec (inferior_ptid, ecs->ws.value.execd_pathname);
 
+      follow_exec (inferior_ptid, ecs->ws.value.execd_pathname);
       ecs->event_thread->control.stop_bpstat
 	= bpstat_stop_status (get_regcache_aspace (get_current_regcache ()),
 			      stop_pc, ecs->ptid, &ecs->ws);
