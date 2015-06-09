@@ -1040,17 +1040,30 @@ extension_prefixed_p (const char *str)
 /* Called in lieu of solib_find_1 when sysroot is set to an extension
    string.  HOOK is the whole sysroot string that led us to consult
    extensions.  NAME is the name of the shared library we are trying
-   to load.  IS_SOLIB is true when we are trying to load a shared
-   library and false when we are trying to load an executable.  SO is
-   an optional pointer to information about the shared library we are
-   trying to load.  Return NULL if no extension was able to satisfy
-   the request or a heap-allocated local to "target:"-prefixed path to
-   the requested shared library.  */
+   to load.  FLAGS contains zero or more flags that control searching.
+
+     INVOKE_SOLIB_FIND_HOOK_IS_SOLIB - We're searching for a shared
+       library instead of a main executable.
+
+     INVOKE_SOLIB_FIND_HOOK_NAME_IS_LOCAL - NAME is a local filename,
+       which extensions should be able to open and examine.
+
+     INVOKE_SOLIB_WANT_SEPARATE_DEBUG_INFORMATION - If set, we have
+       a local file (named by NAME) and want to find a separate debug
+       information file for it.
+
+   SO is an optional pointer to information about the shared library
+   we are trying to load.  We use describe_lm_info to pass information
+   about the loaded DSO to extensions.
+
+   Return NULL if no extension was able to satisfy the request or a
+   heap-allocated absolute-local or "target:"-prefixed path to the
+   requested shared library.  */
 char *
 invoke_solib_find_hook (
   const char *hook_spec,
   const char *name,
-  int is_solib,
+  int flags,
   struct so_list *so)
 {
   int i;
@@ -1062,7 +1075,7 @@ invoke_solib_find_hook (
       if (extlang->ops->invoke_solib_find_hook)
 	{
 	  new_name = extlang->ops->invoke_solib_find_hook (
-	    extlang, hook_spec, name, is_solib, so);
+	    extlang, hook_spec, name, flags, so);
 
 	  if (new_name != NULL)
 	    return new_name;

@@ -267,11 +267,17 @@ extern struct type **get_xmethod_arg_types (struct xmethod_worker *, int *);
 
 extern int extension_prefixed_p (const char *str);
 
+enum invoke_solib_find_hook_flags {
+  FIND_HOOK_IS_SOLIB = 1,
+  FIND_HOOK_NAME_IS_LOCAL = 2,
+  FIND_HOOK_WANT_SEPARATE_DEBUG_INFORMATION = 4,
+};
+
 struct so_list;
 extern char *invoke_solib_find_hook (
   const char *hook_spec,
   const char *name,
-  int is_solib,
+  int flags,
   struct so_list *so);
 
 extern struct type *get_xmethod_result_type (struct xmethod_worker *,

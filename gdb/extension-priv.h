@@ -321,15 +321,13 @@ struct extension_language_ops
      int nargs);
 
   /* Give an extension language an opportunity to change the filename
-     of a shared object before passing it through the usual
-     file-location system.  ORIGINAL_NAME is the name of the shared
-     object directly from the target process.  Return the malloced new
-     name, or NULL to continue normally.  */
+     of a shared object or regular file before passing it through the
+     usual file-location system.  See `invoke_solib_find_hook'.  */
   char * (*invoke_solib_find_hook)
     (const struct extension_language_defn *extlang,
      const char *hook,
      const char *name,
-     int is_solib,
+     int flags,
      struct so_list *so);
 
   /* Try to find real source file for the given inputs.

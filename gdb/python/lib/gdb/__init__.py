@@ -166,7 +166,7 @@ def GdbSetPythonDirectory(dir):
 
 # Set up the solib hooking mechanism
 _solib_find_hooks = {}
-def _impl_solib_find_hook(hook_spec, name, is_solib, so):
+def _impl_solib_find_hook(hook_spec, name, flags, so):
     sep = hook_spec.find(":")
     if sep == -1:
         return None
@@ -175,7 +175,7 @@ def _impl_solib_find_hook(hook_spec, name, is_solib, so):
     if hook is None:
         return None
 
-    return hook(hook_spec[sep+1:], name, is_solib, so)
+    return hook(hook_spec[sep+1:], name, flags, so)
 
 _gdb._set_solib_find_hook(_impl_solib_find_hook)
 del _impl_solib_find_hook

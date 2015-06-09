@@ -45,6 +45,7 @@
 #include "bcache.h"
 #include "gdb_bfd.h"
 #include "build-id.h"
+#include "extension.h"
 
 extern void _initialize_elfread (void);
 
@@ -1341,9 +1342,26 @@ elf_symfile_read (struct objfile *objfile, int symfile_flags)
 	   && objfile->separate_debug_objfile == NULL
 	   && objfile->separate_debug_objfile_backlink == NULL)
     {
-      char *debugfile;
+      char *debugfile = NULL;
+      char *sysroot = gdb_sysroot;
 
-      debugfile = find_separate_debug_file_by_buildid (objfile);
+      if (sysroot != NULL && extension_prefixed_p (sysroot))
+	{
+	  int find_flags = (FIND_HOOK_WANT_SEPARATE_DEBUG_INFORMATION |
+			    FIND_HOOK_NAME_IS_LOCAL );
+	  if ((symfile_flags & SYMFILE_MAINLINE) == 0)
+	    find_flags |= FIND_HOOK_IS_SOLIB;
+
+	  sysroot += strlen (EXTENSION_SYSROOT_PREFIX);
+	  debugfile = invoke_solib_find_hook (
+	    sysroot,
+	    bfd_get_filename (abfd),
+	    find_flags,
+	    NULL);
+	}
+
+      if (debugfile == NULL)
+	debugfile = find_separate_debug_file_by_buildid (objfile);
 
       if (debugfile == NULL)
 	debugfile = find_separate_debug_file_by_debuglink (objfile);

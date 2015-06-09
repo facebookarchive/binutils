@@ -154,7 +154,7 @@ static char* gdbpy_invoke_solib_find_hook
   (const struct extension_language_defn *extlang,
    const char *hook_spec,
    const char *name,
-   int is_solib,
+   int flags,
    struct so_list *so);
 static char *gdbpy_invoke_find_source_hook
 ( const struct extension_language_defn *extlang,
@@ -1694,7 +1694,7 @@ gdbpy_invoke_solib_find_hook
   (const struct extension_language_defn *extlang,
    const char *hook_spec,
    const char *name,
-   int is_solib,
+   int flags,
    struct so_list *so)
 {
   const struct target_so_ops *ops;
@@ -1734,7 +1734,7 @@ gdbpy_invoke_solib_find_hook
     }
 
   py_ret = PyObject_CallFunction (
-    solib_find_hook, "ssiO", hook_spec, name, is_solib, py_so);
+    solib_find_hook, "ssiO", hook_spec, name, flags, py_so);
 
   if (py_ret == NULL)
     gdbpy_top_error ();
@@ -2075,6 +2075,22 @@ message == an error message without a stack will be printed."),
   if (gdbpy_gdberror_exc == NULL
       || gdb_pymodule_addobject (gdb_module, "GdbError",
 				 gdbpy_gdberror_exc) < 0)
+    goto fail;
+
+  /* Add solib-find-hook flags constants.  */
+
+  if (PyModule_AddIntConstant (
+	gdb_module,
+	"FIND_HOOK_IS_SOLIB",
+	FIND_HOOK_IS_SOLIB) < 0 ||
+      PyModule_AddIntConstant (
+	gdb_module,
+	"FIND_HOOK_NAME_IS_LOCAL",
+	FIND_HOOK_NAME_IS_LOCAL) < 0 ||
+      PyModule_AddIntConstant (
+	gdb_module,
+	"FIND_HOOK_WANT_SEPARATE_DEBUG_INFORMATION",
+	FIND_HOOK_WANT_SEPARATE_DEBUG_INFORMATION) < 0)
     goto fail;
 
   gdbpy_initialize_gdb_readline ();

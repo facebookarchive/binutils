@@ -169,7 +169,13 @@ solib_find_1 (char *in_pathname, int *fd, int is_solib, struct so_list *so)
   if (sysroot != NULL && extension_prefixed_p (sysroot))
     {
       sysroot += strlen (EXTENSION_SYSROOT_PREFIX);
-      return invoke_solib_find_hook (sysroot, in_pathname, is_solib, so);
+      return invoke_solib_find_hook (
+	sysroot,
+	in_pathname,
+	(is_solib
+	 ? FIND_HOOK_IS_SOLIB
+	 : 0),
+	so);
     }
 
   old_chain = make_cleanup (null_cleanup, NULL);
