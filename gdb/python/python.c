@@ -1304,6 +1304,7 @@ void
 gdbpy_top_error (void)
 {
   gdbpy_print_stack_check_interrupt ();
+  gdbpy_throw_python_error_exception ();
 }
 
 
