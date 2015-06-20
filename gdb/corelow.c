@@ -404,6 +404,11 @@ core_open (const char *arg, int from_tty)
 	switch_to_thread (thread->ptid);
     }
 
+  /* If no main executable is currently open then attempt to
+     open the file that was executed to create this inferior.  */
+  if (get_exec_file (0) == NULL)
+    exec_file_locate_attach (ptid_get_pid (inferior_ptid), from_tty);
+
   post_create_inferior (&core_ops, from_tty);
 
   /* Now go through the target stack looking for threads since there
@@ -955,6 +960,15 @@ core_read_description (struct target_ops *target)
 }
 
 static char *
+core_pid_to_exec_file (struct target_ops *ops, int pid)
+{
+  if (core_bfd != NULL)
+    return (char*) bfd_core_file_failing_command (core_bfd);
+
+  return NULL;
+}
+
+static char *
 core_pid_to_str (struct target_ops *ops, ptid_t ptid)
 {
   static char buf[64];
@@ -1037,6 +1051,7 @@ init_core_ops (void)
   core_ops.to_remove_breakpoint = ignore;
   core_ops.to_thread_alive = core_thread_alive;
   core_ops.to_read_description = core_read_description;
+  core_ops.to_pid_to_exec_file = core_pid_to_exec_file;
   core_ops.to_pid_to_str = core_pid_to_str;
   core_ops.to_stratum = process_stratum;
   core_ops.to_has_memory = core_has_memory;
