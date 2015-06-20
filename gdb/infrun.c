@@ -445,11 +445,14 @@ holding the child stopped.  Try \"set detach-on-fork\" or \
 
 	  if (info_verbose || debug_infrun)
 	    {
+	      /* Ensure that we have a process ptid.  */
+	      ptid_t process_ptid = pid_to_ptid (ptid_get_pid (child_ptid));
+
 	      target_terminal_ours_for_output ();
 	      fprintf_filtered (gdb_stdlog,
 				_("Detaching after %s from child %s.\n"),
 				has_vforked ? "vfork" : "fork",
-				target_pid_to_str (child_ptid));
+				target_pid_to_str (process_ptid));
 	    }
 	}
       else
@@ -578,11 +581,14 @@ holding the child stopped.  Try \"set detach-on-fork\" or \
 	{
 	  if (info_verbose || debug_infrun)
 	    {
+	      /* Ensure that we have a process ptid.  */
+	      ptid_t process_ptid = pid_to_ptid (ptid_get_pid (child_ptid));
+
 	      target_terminal_ours_for_output ();
 	      fprintf_filtered (gdb_stdlog,
 				_("Detaching after fork from "
 				  "child %s.\n"),
-				target_pid_to_str (child_ptid));
+				target_pid_to_str (process_ptid));
 	    }
 
 	  target_detach (NULL, 0);
@@ -3683,7 +3689,7 @@ get_inferior_stop_soon (ptid_t ptid)
    once).  */
 
 static void
-handle_inferior_event (struct execution_control_state *ecs)
+handle_inferior_event_1 (struct execution_control_state *ecs)
 {
   enum stop_kind stop_soon;
 
@@ -4203,6 +4209,22 @@ Cannot fill $_exitsignal with the correct signal number.\n"));
       stop_waiting (ecs);
       return;
     }
+}
+
+/* A wrapper around handle_inferior_event_1, which also makes sure
+   that all temporary struct value objects that were created during
+   the handling of the event get deleted at the end.  */
+
+static void
+handle_inferior_event (struct execution_control_state *ecs)
+{
+  struct value *mark = value_mark ();
+
+  handle_inferior_event_1 (ecs);
+  /* Purge all temporary values created during the event handling,
+     as it could be a long time before we return to the command level
+     where such values would otherwise be purged.  */
+  value_free_to_mark (mark);
 }
 
 /* Come here when the program has stopped with a signal.  */

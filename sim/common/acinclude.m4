@@ -5,7 +5,7 @@
 # SIM_AC_OUTPUT is a cover function to AC_OUTPUT to generate the Makefile.
 # It is intended to be invoked last.
 #
-# The simulator's configure.in should look like:
+# The simulator's configure.ac should look like:
 #
 # dnl Process this file with autoconf to produce a configure script.
 # AC_PREREQ(2.64)dnl
@@ -186,10 +186,10 @@ dnl use WITH_TRACE.
 AC_ARG_ENABLE(sim-trace,
 [  --enable-sim-trace=opts		Enable tracing flags],
 [case "${enableval}" in
-  yes)	sim_trace="-DTRACE=1 -DWITH_TRACE=-1";;
-  no)	sim_trace="-DTRACE=0 -DWITH_TRACE=0";;
+  yes)	sim_trace="-DWITH_TRACE=-1";;
+  no)	sim_trace="-DWITH_TRACE=0";;
   [[-0-9]]*)
-	sim_trace="-DTRACE='(${enableval})' -DWITH_TRACE='(${enableval})'";;
+	sim_trace="-DWITH_TRACE='(${enableval})'";;
   [[[:lower:]]]*)
 	sim_trace=""
 	for x in `echo "$enableval" | sed -e "s/,/ /g"`; do
@@ -263,12 +263,12 @@ sim_link_links="${sim_link_links} targ-vals.def"
 dnl Additional SIM options that can (optionally) be configured
 dnl For optional simulator options, a macro SIM_AC_OPTION_* is defined.
 dnl Simulators that wish to use the relevant option specify the macro
-dnl in the simulator specific configure.in file between the SIM_AC_COMMON
+dnl in the simulator specific configure.ac file between the SIM_AC_COMMON
 dnl and SIM_AC_OUTPUT lines.
 
 
 dnl Specify the running environment.
-dnl If the simulator invokes this in its configure.in then without this option
+dnl If the simulator invokes this in its configure.ac then without this option
 dnl the default is the user environment and all are runtime selectable.
 dnl If the simulator doesn't invoke this, only the user environment is
 dnl supported.

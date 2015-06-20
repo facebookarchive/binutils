@@ -1,9 +1,142 @@
+2015-06-18  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-syscall.c (sim_syscall_multi): Change unknown_syscall to a
+	constant string.
+
+2015-06-18  Mike Frysinger  <vapier@gentoo.org>
+
+	* callback.c (cb_target_map_entry, cb_host_map_entry): Change map to
+	m for sentinel testing.
+
+2015-06-17  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-syscall.c: Include errno.h and targ-vals.h.
+	(sim_syscall_multi, sim_syscall): Define.
+	* sim-syscall.h (sim_syscall_multi, sim_syscall): Declare.
+	* syscall.c (cb_syscall): Extend comment.
+
+2015-06-17  Mike Frysinger  <vapier@gentoo.org>
+
+	* Make-common.in (SIM_NEW_COMMON_OBJS): Add sim-syscall.o.
+	* sim-syscall.c: New file.
+	* sim-syscall.h: New file.
+
+2015-06-17  Mike Frysinger  <vapier@gentoo.org>
+
+	* callback.c (cb_target_map_entry, cb_host_map_entry): Define.
+	(cb_target_to_host_syscall): Rewrite to use cb_target_map_entry.
+	(cb_host_to_target_errno): Rewrite to use cb_host_map_entry.
+	(cb_host_str_syscall, cb_host_str_errno, cb_host_str_signal,
+	cb_target_str_syscall, cb_target_str_errno, cb_target_str_signal):
+	Define.
+	* gentmap.c (gen_targ_map_c): Output name field.
+
+2015-06-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* acinclude.m4: Change configure.in to configure.ac.
+	* sim-config.h: Likewise.
+
+2015-06-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* acinclude.m4 (sim-trace): Delete -DTRACE flags.
+	* configure: Regenerate.
+
+2015-06-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.h (TRACE, TRACE_INSN, TRACE_DECODE, TRACE_EXTRACT,
+	TRACE_LINENUM, TRACE_MEMORY, TRACE_MODEL, TRACE_ALU, TRACE_CORE,
+	TRACE_EVENTS, TRACE_FPU, TRACE_VPU, TRACE_BRANCH, TRACE_SYSCALL,
+	TRACE_DEBUG): Define.
+
+2015-06-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-module.c (modules): Change WITH_TRACE to WITH_TRACE_ANY_P.
+	* sim-trace.c (trace_option_handler): Likewise.
+	* sim-trace.h (WITH_TRACE_ANY_P): Define.
+	(STRACE_ANY_P): Use WITH_TRACE_ANY_P.
+	(TRACE_ANY_P): Likewise.
+
+2015-06-12  Mike Frysinger  <vapier@gentoo.org>
+
+	* cgen-run.c (sim_resume): Rename TRACE_INSN_FINI to
+	CGEN_TRACE_INSN_FINI.
+	* cgen-trace.c: Rename trace_insn to cgen_trace_insn,
+	trace_result to cgen_trace_result, trace_insn_fini to
+	cgen_trace_insn_fini, trace_insn_init to cgen_trace_insn_init,
+	and trace_extract to cgen_trace_extract.
+	* cgen-trace.h (trace_insn_init): Rename to ...
+	(cgen_trace_insn_init): ... this.
+	(trace_insn_fini): Rename to ...
+	(cgen_trace_insn_fini): ... this.
+	(trace_insn): Rename to ...
+	(cgen_trace_insn): ... this.
+	(trace_extract): Rename to ...
+	(cgen_trace_extract): ... this.
+	(trace_result): Rename to ...
+	(cgen_trace_result): ... this.
+	(TRACE_RESULT_P): Rename to ...
+	(CGEN_TRACE_RESULT_P): ... this.
+	(TRACE_INSN_INIT): Rename to ...
+	(CGEN_TRACE_INSN_INIT): ... this.  Change trace_insn_init to
+	cgen_trace_insn_init.
+	(TRACE_INSN_FINI): Rename to ...
+	(CGEN_TRACE_INSN_FINI): ... this.  Change trace_insn_fini to
+	cgen_trace_insn_fini.
+	(TRACE_PRINTF): Rename to ...
+	(CGEN_TRACE_PRINTF): ... this.
+	(TRACE_INSN): Rename to ...
+	(CGEN_TRACE_INSN): ... this.  Change trace_insn to cgen_trace_insn.
+	(TRACE_EXTRACT): Rename to ...
+	(CGEN_TRACE_EXTRACT): ... this.  Change trace_extract to
+	cgen_trace_extract.
+	(TRACE_RESULT): Rename to ...
+	(CGEN_TRACE_RESULT): ... this.  Change TRACE_RESULT_P to
+	CGEN_TRACE_RESULT_P and trace_result to cgen_trace_result.
+	* genmloop.sh (@prefix@_pbb_before): Change TRACE_INSN_FINI to
+	CGEN_TRACE_INSN_FINI, TRACE_INSN_INIT to CGEN_TRACE_INSN_INIT, and
+	TRACE_INSN to CGEN_TRACE_INSN.
+	(@prefix@_pbb_after): Change TRACE_INSN_FINI to CGEN_TRACE_INSN_FINI.
+
+2015-06-11  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-events.c (ETRACE_P): Delete.
+	(ETRACE): Change ETRACE_P to STRACE_EVENTS_P(sd).
+	(update_time_from_event, sim_events_schedule_vtracef): Likewise.
+	* sim-events.h (struct _sim_events): Delete trace member.
+	* sim-trace.c (set_trace_option_mask): Delete trace_nr check and
+	always set STATE_TRACE_FLAGS(sd)[trace_nr] element.
+
+2015-06-11  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.h (STRACE_ANY_P, STRACE_INSN_P, STRACE_DECODE_P,
+	STRACE_EXTRACT_P, STRACE_LINENUM_P, STRACE_MEMORY_P, STRACE_MODEL_P,
+	STRACE_ALU_P, STRACE_CORE_P, STRACE_EVENTS_P, STRACE_FPU_P,
+	STRACE_VPU_P, STRACE_BRANCH_P, STRACE_SYSCALL_P): Define.
+
+2015-06-11  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.h (TRACE_USEFUL_MASK): Change to TRACE_xxx defines.
+
+2015-06-11  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.h (WITH_TRACE_P): New define.
+	(WITH_TRACE_INSN_P, WITH_TRACE_DECODE_P, WITH_TRACE_EXTRACT_P,
+	WITH_TRACE_LINENUM_P, WITH_TRACE_MEMORY_P, WITH_TRACE_MODEL_P,
+	WITH_TRACE_ALU_P, WITH_TRACE_CORE_P, WITH_TRACE_EVENTS_P,
+	WITH_TRACE_FPU_P, WITH_TRACE_VPU_P, WITH_TRACE_BRANCH_P,
+	WITH_TRACE_SYSCALL_P, WITH_TRACE_DEBUG_P, STRACE_P, TRACE_P):
+	Redefine to use WITH_TRACE_P.
+
+2015-06-09  Mike Stump  <mrs@mrs.kithrup.com>
+
+	* sim-events.c (sim_events_schedule_after_signal): Fix spelling
+	mistake in call to sim_engine_abort.
+
 2015-04-29  Nick Clifton  <nickc@redhat.com>
 
 	PR 18273
 	* sim-fpu.c (INLINE_SIM_FPU): Fix static analysis warning by
 	increasing parenthesis around casts to signed values.
-	
 
 2015-04-21  Mike Frysinger  <vapier@gentoo.org>
 

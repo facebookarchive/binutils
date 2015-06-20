@@ -52,7 +52,7 @@ set x86_64tests {
     {"TLS -fpic -shared transitions"
      "-shared -melf_x86_64 --no-ld-generated-unwind-info" ""
      "--64" {tlspic1.s tlspic2.s}
-     {{readelf -WSsrl tlspic.rd} {objdump -drj.text tlspic.dd}
+     {{readelf -WSsrl tlspic.rd} {objdump -drj.text\ -Mintel64 tlspic.dd}
       {objdump -sj.got tlspic.sd} {objdump -sj.tdata tlspic.td}}
       "libtlspic.so"}
     {"TLS descriptor -fpic -shared transitions"
@@ -78,7 +78,7 @@ set x86_64tests {
     {"TLS with global dynamic and descriptors"
      "-shared -melf_x86_64 --no-ld-generated-unwind-info" ""
      "--64" {tlsgdesc.s}
-     {{readelf -WSsrl tlsgdesc.rd} {objdump -drj.text tlsgdesc.dd}}
+     {{readelf -WSsrl tlsgdesc.rd} {objdump -drj.text\ -Mintel64 tlsgdesc.dd}}
       "libtlsgdesc.so"}
     {"TLS in debug sections" "-melf_x86_64" ""
      "--64" {tlsg.s}
@@ -440,12 +440,28 @@ if { [isnative] && [which $CC] != 0 } {
 	    "pr17689.so" \
 	] \
 	[list \
+	    "Build pr17689now.so with -z now" \
+	    "-shared -Wl,-z,now" \
+	    "-fPIC" \
+	    { pr17689a.c } \
+	    {{readelf {-Wr} pr17689now.rd}} \
+	    "pr17689now.so" \
+	] \
+	[list \
 	    "Build pr17689 with PIE without -fPIE" \
 	    "tmpdir/pr17689.so -pie" \
 	    "" \
 	    { pr17689b.S } \
 	    {{readelf {-Wr} pr17689.rd}} \
 	    "pr17689" \
+	] \
+	[list \
+	    "Build pr17689 with PIE -z now without -fPIE" \
+	    "tmpdir/pr17689.so -pie -Wl,-z,now" \
+	    "" \
+	    { pr17689b.S } \
+	    {{readelf {-Wr} pr17689now.rd}} \
+	    "pr17689now" \
 	] \
 	[list \
 	    "Build pr17827 with PIE without -fPIE" \
@@ -491,6 +507,14 @@ if { [isnative] && [which $CC] != 0 } {
 	    "" \
 	    { pr17689b.S } \
 	    "pr17689" \
+	    "pr17689.out" \
+	] \
+	[list \
+	    "Run pr17689 with PIE -z now without -fPIE" \
+	    "tmpdir/pr17689.so -pie -z now" \
+	    "" \
+	    { pr17689b.S } \
+	    "pr17689now" \
 	    "pr17689.out" \
 	] \
     ]

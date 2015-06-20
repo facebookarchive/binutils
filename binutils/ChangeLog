@@ -1,3 +1,51 @@
+2015-06-05  Nick Clifton  <nickc@redhat.com>
+
+	* dwarf.c (read_debug_line_header): Use reloc_at to detect
+	incomplete .debug_line headers
+
+2015-05-29  Roland McGrath  <mcgrathr@google.com>
+
+	* readelf.c (print_gnu_note: NT_GNU_ABI_TAG): Recognize
+	GNU_ABI_TAG_SYLLABLE and GNU_ABI_TAG_NACL.
+
+2015-05-29  Stephen Kitt  <steve@sk2.org>
+
+	* dlltool.c (make_one_lib_file): Clear .idata$6 before use.
+	(main): Fail if the output file specified by the -z option cannot
+	be opened.
+
+2015-05-18  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/18420
+	* ia64-unwind.c (unw_decode): Add end parameter.  Pass parameter
+	on to decode functions.
+	(unw_devode_p2_p5): Pass end paraemter to UNW_DEC_SPILL_MASK.
+	(UNW_DEC_SPILL_MASK): Add end parameter.  Check that unw_rlen does
+	not take us beyond the end of the buffer.
+	* ia64-unwind.h (unw_decode): Update prototype.
+	* readelf.c (dump_ia64_unwind): Pass end pointer to unw_decode.
+
+2015-05-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* readelf.c (dump_section_as_strings): Change pointers from
+	char * to unsigned char *.
+
+2015-05-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutis/18386
+	* doc/binutils.texi: Document -Mamd64 and -Mintel64.
+
+2015-05-15  Nick Clifton  <nickc@redhat.com>
+
+	* readelf.c (options): Add "decompress".
+	(usage): Mention -z/--decompress.
+	(parse_args): Handle -z.
+	(uncompress_section_contents): Move to earlier in the file.
+	(dump_section_as_strings): If requested, decompress the section
+	before dumping.
+	(dump_section_as_bytes): Likewise.
+	* doc/binutils.texi: Document the new option.
+
 2015-05-14  Peter Bergner  <bergner@vnet.ibm.com>
 
 	* MAINTAINERS: Add myself as PPC maintainer.
@@ -7,6 +55,30 @@
 	* readelf.c (uncompress_section_contents): Add a parameter for
 	uncompressed size.  Don't check the zlib header.
 	(load_specific_debug_section): Updated.
+
+2015-05-15  Nick Clifton  <nickc@redhat.com>
+
+	PR binutils/18374
+	* dwarf.h (struct dwarf_section): Add reloc_info and num_relocs
+	fields.
+	(struct dwarf_section_display): Change bitfield to boolean.
+	(reloc_at): Add prototype.
+	* dwarf.c (display_loc_list): Ignore list terminators if there are
+	relocs against them.
+	(display_debug_loc): Issue a warning if there are relocs against
+	the .debug_loc section.
+	(display_displays): Initialise reloc_info and num_relocs fields.
+	* objdump.c (load_specific_debug_section): Initialise reloc_info
+	and num_relocs fields.
+	(reloc_at): New function.
+	* readelf.c (is_32bit_abs_reloc): Add IA64's R_IA64_DIS32LSB
+	reloc.
+	(reloc_at): New function.
+	(apply_relocations): Add relocs_return and num_relocs_return
+	parameters.  Fill them in with the loaded relocs if non-NULL.
+	(dump_section_as_bytes): Update call to apply_relocations.
+	(load_specific_debug_section): Initialise reloc_info and
+	num_relocs fields.
 
 2015-05-13  H.J. Lu  <hongjiu.lu@intel.com>
 

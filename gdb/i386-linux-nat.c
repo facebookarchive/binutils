@@ -33,7 +33,9 @@
 #include "i386-linux-tdep.h"
 #include "x86-xstate.h"
 
+#include "linux-nat.h"
 #include "x86-linux-nat.h"
+#include "nat/linux-ptrace.h"
 
 /* The register sets used in GNU/Linux ELF core-dumps are identical to
    the register sets in `struct user' that is used for a.out

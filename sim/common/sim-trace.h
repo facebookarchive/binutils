@@ -87,10 +87,7 @@ enum {
    splat on the screen everything under the sun making nothing easy to
    find.  */
 #define TRACE_USEFUL_MASK \
-((1 << TRACE_INSN_IDX) \
- | (1 << TRACE_LINENUM_IDX) \
- | (1 << TRACE_MEMORY_IDX) \
- | (1 << TRACE_MODEL_IDX))
+  (TRACE_insn | TRACE_linenum | TRACE_memory | TRACE_model)
 
 /* Masks so WITH_TRACE can have symbolic values.
    The case choice here is on purpose.  The lowercase parts are args to
@@ -110,21 +107,25 @@ enum {
 #define TRACE_syscall  (1 << TRACE_SYSCALL_IDX)
 #define TRACE_debug    (1 << TRACE_DEBUG_IDX)
 
+/* Return non-zero if tracing of idx is enabled (compiled in).  */
+#define WITH_TRACE_P(idx)	(WITH_TRACE & (1 << idx))
+
 /* Preprocessor macros to simplify tests of WITH_TRACE.  */
-#define WITH_TRACE_INSN_P	(WITH_TRACE & TRACE_insn)
-#define WITH_TRACE_DECODE_P	(WITH_TRACE & TRACE_decode)
-#define WITH_TRACE_EXTRACT_P	(WITH_TRACE & TRACE_extract)
-#define WITH_TRACE_LINENUM_P	(WITH_TRACE & TRACE_linenum)
-#define WITH_TRACE_MEMORY_P	(WITH_TRACE & TRACE_memory)
-#define WITH_TRACE_MODEL_P	(WITH_TRACE & TRACE_model)
-#define WITH_TRACE_ALU_P	(WITH_TRACE & TRACE_alu)
-#define WITH_TRACE_CORE_P	(WITH_TRACE & TRACE_core)
-#define WITH_TRACE_EVENTS_P	(WITH_TRACE & TRACE_events)
-#define WITH_TRACE_FPU_P	(WITH_TRACE & TRACE_fpu)
-#define WITH_TRACE_VPU_P	(WITH_TRACE & TRACE_vpu)
-#define WITH_TRACE_BRANCH_P	(WITH_TRACE & TRACE_branch)
-#define WITH_TRACE_SYSCALL_P	(WITH_TRACE & TRACE_syscall)
-#define WITH_TRACE_DEBUG_P	(WITH_TRACE & TRACE_debug)
+#define WITH_TRACE_ANY_P	(WITH_TRACE)
+#define WITH_TRACE_INSN_P	WITH_TRACE_P (TRACE_INSN_IDX)
+#define WITH_TRACE_DECODE_P	WITH_TRACE_P (TRACE_DECODE_IDX)
+#define WITH_TRACE_EXTRACT_P	WITH_TRACE_P (TRACE_EXTRACT_IDX)
+#define WITH_TRACE_LINENUM_P	WITH_TRACE_P (TRACE_LINENUM_IDX)
+#define WITH_TRACE_MEMORY_P	WITH_TRACE_P (TRACE_MEMORY_IDX)
+#define WITH_TRACE_MODEL_P	WITH_TRACE_P (TRACE_MODEL_IDX)
+#define WITH_TRACE_ALU_P	WITH_TRACE_P (TRACE_ALU_IDX)
+#define WITH_TRACE_CORE_P	WITH_TRACE_P (TRACE_CORE_IDX)
+#define WITH_TRACE_EVENTS_P	WITH_TRACE_P (TRACE_EVENTS_IDX)
+#define WITH_TRACE_FPU_P	WITH_TRACE_P (TRACE_FPU_IDX)
+#define WITH_TRACE_VPU_P	WITH_TRACE_P (TRACE_VPU_IDX)
+#define WITH_TRACE_BRANCH_P	WITH_TRACE_P (TRACE_BRANCH_IDX)
+#define WITH_TRACE_SYSCALL_P	WITH_TRACE_P (TRACE_SYSCALL_IDX)
+#define WITH_TRACE_DEBUG_P	WITH_TRACE_P (TRACE_DEBUG_IDX)
 
 /* Tracing install handler.  */
 MODULE_INSTALL_FN trace_install;
@@ -192,10 +193,23 @@ typedef struct _trace_data {
 /* Return non-zero if tracing of IDX is enabled for non-cpu specific
    components.  The "S" in "STRACE" refers to "System".  */
 #define STRACE_P(sd,idx) \
-((WITH_TRACE & (1 << (idx))) != 0 \
- && STATE_TRACE_FLAGS (sd)[idx] != 0)
+  (WITH_TRACE_P (idx) && STATE_TRACE_FLAGS (sd)[idx] != 0)
 
 /* Non-zero if --trace-<xxxx> was specified for SD.  */
+#define STRACE_ANY_P(sd)	(WITH_TRACE_ANY_P && (STATE_TRACE_DATA (sd)->trace_any_p))
+#define STRACE_INSN_P(sd)	STRACE_P (sd, TRACE_INSN_IDX)
+#define STRACE_DECODE_P(sd)	STRACE_P (sd, TRACE_DECODE_IDX)
+#define STRACE_EXTRACT_P(sd)	STRACE_P (sd, TRACE_EXTRACT_IDX)
+#define STRACE_LINENUM_P(sd)	STRACE_P (sd, TRACE_LINENUM_IDX)
+#define STRACE_MEMORY_P(sd)	STRACE_P (sd, TRACE_MEMORY_IDX)
+#define STRACE_MODEL_P(sd)	STRACE_P (sd, TRACE_MODEL_IDX)
+#define STRACE_ALU_P(sd)	STRACE_P (sd, TRACE_ALU_IDX)
+#define STRACE_CORE_P(sd)	STRACE_P (sd, TRACE_CORE_IDX)
+#define STRACE_EVENTS_P(sd)	STRACE_P (sd, TRACE_EVENTS_IDX)
+#define STRACE_FPU_P(sd)	STRACE_P (sd, TRACE_FPU_IDX)
+#define STRACE_VPU_P(sd)	STRACE_P (sd, TRACE_VPU_IDX)
+#define STRACE_BRANCH_P(sd)	STRACE_P (sd, TRACE_BRANCH_IDX)
+#define STRACE_SYSCALL_P(sd)	STRACE_P (sd, TRACE_SYSCALL_IDX)
 #define STRACE_DEBUG_P(sd)	STRACE_P (sd, TRACE_DEBUG_IDX)
 
 /* CPU tracing support.  */
@@ -204,11 +218,10 @@ typedef struct _trace_data {
 
 /* Return non-zero if tracing of IDX is enabled for CPU.  */
 #define TRACE_P(cpu,idx) \
-((WITH_TRACE & (1 << (idx))) != 0 \
- && CPU_TRACE_FLAGS (cpu)[idx] != 0)
+  (WITH_TRACE_P (idx) && CPU_TRACE_FLAGS (cpu)[idx] != 0)
 
 /* Non-zero if --trace-<xxxx> was specified for CPU.  */
-#define TRACE_ANY_P(cpu)	((WITH_TRACE) && (CPU_TRACE_DATA (cpu)->trace_any_p))
+#define TRACE_ANY_P(cpu)	(WITH_TRACE_ANY_P && (CPU_TRACE_DATA (cpu)->trace_any_p))
 #define TRACE_INSN_P(cpu)	TRACE_P (cpu, TRACE_INSN_IDX)
 #define TRACE_DECODE_P(cpu)	TRACE_P (cpu, TRACE_DECODE_IDX)
 #define TRACE_EXTRACT_P(cpu)	TRACE_P (cpu, TRACE_EXTRACT_IDX)
@@ -223,6 +236,27 @@ typedef struct _trace_data {
 #define TRACE_BRANCH_P(cpu)	TRACE_P (cpu, TRACE_BRANCH_IDX)
 #define TRACE_SYSCALL_P(cpu)	TRACE_P (cpu, TRACE_SYSCALL_IDX)
 #define TRACE_DEBUG_P(cpu)	TRACE_P (cpu, TRACE_DEBUG_IDX)
+
+/* Helper functions for printing messages.  */
+#define TRACE(cpu, idx, fmt, args...) \
+  do { \
+    if (TRACE_P (cpu, idx)) \
+      trace_generic (CPU_STATE (cpu), cpu, idx, fmt, ## args); \
+  } while (0)
+#define TRACE_INSN(cpu, fmt, args...)		TRACE (cpu, TRACE_INSN_IDX, fmt, ## args)
+#define TRACE_DECODE(cpu, fmt, args...)		TRACE (cpu, TRACE_DECODE_IDX, fmt, ## args)
+#define TRACE_EXTRACT(cpu, fmt, args...)	TRACE (cpu, TRACE_EXTRACT_IDX, fmt, ## args)
+#define TRACE_LINENUM(cpu, fmt, args...)	TRACE (cpu, TRACE_LINENUM_IDX, fmt, ## args)
+#define TRACE_MEMORY(cpu, fmt, args...)		TRACE (cpu, TRACE_MEMORY_IDX, fmt, ## args)
+#define TRACE_MODEL(cpu, fmt, args...)		TRACE (cpu, TRACE_MODEL_IDX, fmt, ## args)
+#define TRACE_ALU(cpu, fmt, args...)		TRACE (cpu, TRACE_ALU_IDX, fmt, ## args)
+#define TRACE_CORE(cpu, fmt, args...)		TRACE (cpu, TRACE_CORE_IDX, fmt, ## args)
+#define TRACE_EVENTS(cpu, fmt, args...)		TRACE (cpu, TRACE_EVENTS_IDX, fmt, ## args)
+#define TRACE_FPU(cpu, fmt, args...)		TRACE (cpu, TRACE_FPU_IDX, fmt, ## args)
+#define TRACE_VPU(cpu, fmt, args...)		TRACE (cpu, TRACE_VPU_IDX, fmt, ## args)
+#define TRACE_BRANCH(cpu, fmt, args...)		TRACE (cpu, TRACE_BRANCH_IDX, fmt, ## args)
+#define TRACE_SYSCALL(cpu, fmt, args...)	TRACE (cpu, TRACE_SYSCALL_IDX, fmt, ## args)
+#define TRACE_DEBUG(cpu, fmt, args...)		TRACE (cpu, TRACE_DEBUG_IDX, fmt, ## args)
 
 /* Tracing functions.  */
 

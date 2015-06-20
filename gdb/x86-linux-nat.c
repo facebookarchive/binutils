@@ -41,6 +41,7 @@
 #include "nat/linux-nat.h"
 #include "nat/x86-linux.h"
 #include "nat/x86-linux-dregs.h"
+#include "nat/linux-ptrace.h"
 
 /* Per-thread arch-specific data we want to keep.  */
 
@@ -50,8 +51,6 @@ struct arch_lwp_info
   int debug_registers_changed;
 };
 
-/* Does the current host support PTRACE_GETREGSET?  */
-int have_ptrace_getregset = -1;
 
 
 /* linux_nat_new_fork hook.   */

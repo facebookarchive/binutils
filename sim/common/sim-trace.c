@@ -173,22 +173,14 @@ set_trace_option_mask (SIM_DESC sd, const char *name, int mask, const char *arg)
 	}
     }
 
-  /* update applicable trace bits */
+  /* Update applicable trace bits.  */
   for (trace_nr = 0; trace_nr < MAX_TRACE_VALUES; ++trace_nr)
     {
       if ((mask & (1 << trace_nr)) == 0)
 	continue;
 
       /* Set non-cpu specific values.  */
-      switch (trace_nr)
-	{
-	case TRACE_EVENTS_IDX:
-	  STATE_EVENTS (sd)->trace = trace_val;
-	  break;
-	case TRACE_DEBUG_IDX:
-	  STATE_TRACE_FLAGS (sd)[trace_nr] = trace_val;
-	  break;
-	}
+      STATE_TRACE_FLAGS (sd)[trace_nr] = trace_val;
 
       /* Set cpu values.  */
       for (cpu_nr = 0; cpu_nr < MAX_NR_PROCESSORS; cpu_nr++)
@@ -240,7 +232,7 @@ trace_option_handler (SIM_DESC sd, sim_cpu *cpu, int opt,
   switch (opt)
     {
     case 't' :
-      if (! WITH_TRACE)
+      if (!WITH_TRACE_ANY_P)
 	sim_io_eprintf (sd, "Tracing not compiled in, `-t' ignored\n");
       else
 	return set_trace_option_mask (sd, "trace", TRACE_USEFUL_MASK, arg);
@@ -360,7 +352,7 @@ trace_option_handler (SIM_DESC sd, sim_cpu *cpu, int opt,
 
 #ifdef SIM_HAVE_ADDR_RANGE
     case OPTION_TRACE_RANGE :
-      if (WITH_TRACE)
+      if (WITH_TRACE_ANY_P)
 	{
 	  int cpu_nr;
 	  char *chp = arg;
@@ -386,7 +378,7 @@ trace_option_handler (SIM_DESC sd, sim_cpu *cpu, int opt,
       break;
 
     case OPTION_TRACE_FUNCTION :
-      if (WITH_TRACE)
+      if (WITH_TRACE_ANY_P)
 	{
 	  /*wip: need to compute function range given name*/
 	}
@@ -403,7 +395,7 @@ trace_option_handler (SIM_DESC sd, sim_cpu *cpu, int opt,
       break;
 
     case OPTION_TRACE_FILE :
-      if (! WITH_TRACE)
+      if (!WITH_TRACE_ANY_P)
 	sim_io_eprintf (sd, "Tracing not compiled in, `--trace-file' ignored\n");
       else
 	{
