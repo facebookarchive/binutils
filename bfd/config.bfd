@@ -981,6 +981,12 @@ case "${targ}" in
     targ_selvecs=microblaze_elf32_le_vec
     ;;
 
+  minidump)
+    targ_defvec=minidump_generic_le_vec
+    targ_selvecs=minidump_generic_be_vec
+    targ_archs=
+    ;;
+
   mips*-big-*)
     targ_defvec=mips_ecoff_be_vec
     targ_selvecs=mips_ecoff_le_vec

@@ -409,6 +409,7 @@ BFD32_BACKENDS = \
 	mach-o.lo \
 	mach-o-i386.lo \
 	mipsbsd.lo \
+	minidump.lo \
 	newsos3.lo \
 	nlm.lo \
 	nlm32-i386.lo \
@@ -600,6 +601,7 @@ BFD32_BACKENDS_CFILES = \
 	mach-o.c \
 	mach-o-i386.c \
 	mipsbsd.c \
+	minidump.c \
 	newsos3.c \
 	nlm.c \
 	nlm32-i386.c \

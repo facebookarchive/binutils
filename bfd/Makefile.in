@@ -713,6 +713,7 @@ BFD32_BACKENDS = \
 	mach-o.lo \
 	mach-o-i386.lo \
 	mipsbsd.lo \
+	minidump.lo \
 	newsos3.lo \
 	nlm.lo \
 	nlm32-i386.lo \
@@ -904,6 +905,7 @@ BFD32_BACKENDS_CFILES = \
 	mach-o.c \
 	mach-o-i386.c \
 	mipsbsd.c \
+	minidump.c \
 	newsos3.c \
 	nlm.c \
 	nlm32-i386.c \
@@ -1542,6 +1544,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mach-o-x86-64.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mach-o.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/merge.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/minidump.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mipsbsd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mmo.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/newsos3.Plo@am__quote@

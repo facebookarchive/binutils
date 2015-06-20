@@ -785,6 +785,7 @@ with_gnu_ld
 enable_libtool_lock
 enable_plugins
 enable_largefile
+enable_minidump
 enable_64_bit_bfd
 enable_targets
 with_mmap
@@ -1439,6 +1440,7 @@ Optional Features:
   --disable-libtool-lock  avoid locking (might break parallel builds)
   --enable-plugins        Enable support for plugins
   --disable-largefile     omit support for large files
+  --enable-minidump       Minidump file format support
   --enable-64-bit-bfd     64-bit support (on hosts with narrower word sizes)
   --enable-targets        alternative target configurations
   --enable-secureplt      Default to creating read-only plt entries
@@ -11423,7 +11425,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11426 "configure"
+#line 11428 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11529,7 +11531,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11532 "configure"
+#line 11534 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12104,6 +12106,17 @@ fi
 
 if test "$plugins" = "yes"; then
   enable_targets="$enable_targets plugin"
+fi
+
+# Check whether --enable-minidump was given.
+if test "${enable_minidump+set}" = set; then :
+  enableval=$enable_minidump; case "${enableval}" in
+  yes)  want_minidump=true  ;;
+  no)   want_minidump=false ;;
+  *)    as_fn_error "bad value ${enableval} for minidump option" "$LINENO" 5 ;;
+esac
+else
+  want_minidump=true
 fi
 
 # Check whether --enable-64-bit-bfd was given.
@@ -15131,6 +15144,10 @@ fi
 
 # target stuff:
 
+if test $want_minidump = true; then
+  enable_targets="$enable_targets minidump"
+fi
+
 # Canonicalize the secondary target names.
 if test -n "$enable_targets" ; then
     for targ in `echo $enable_targets | sed 's/,/ /g'`
@@ -15384,6 +15401,8 @@ do
     metag_elf32_vec)		 tb="$tb elf32-metag.lo elf32.lo $elf" ;;
     microblaze_elf32_vec)	 tb="$tb elf32-microblaze.lo elf32.lo $elf" ;;
     microblaze_elf32_le_vec)	 tb="$tb elf32-microblaze.lo elf32.lo $elf" ;;
+    minidump_generic_le_vec)	 tb="$tb minidump.lo" ;;
+    minidump_generic_be_vec)	 tb="$tb minidump.lo" ;;
     mips_ecoff_be_vec)		 tb="$tb coff-mips.lo ecoff.lo $ecoff" ;;
     mips_ecoff_le_vec)		 tb="$tb coff-mips.lo ecoff.lo $ecoff" ;;
     mips_ecoff_bele_vec)	 tb="$tb coff-mips.lo ecoff.lo $ecoff" ;;

@@ -923,6 +923,10 @@ extern const bfd_target core_ptrace_vec;
 extern const bfd_target core_sco5_vec;
 extern const bfd_target core_trad_vec;
 
+/* All of the xvecs for minidump files.  */
+extern const bfd_target minidump_generic_le_vec;
+extern const bfd_target minidump_generic_be_vec;
+
 static const bfd_target * const _bfd_target_vector[] =
 {
 #ifdef SELECT_VECS
@@ -1186,6 +1190,9 @@ static const bfd_target * const _bfd_target_vector[] =
 	&metag_elf32_vec,
 
 	&microblaze_elf32_vec,
+
+	minidump_generic_le_vec,
+	minidump_generic_be_vec,
 
 #if 0
 	/* No one seems to use this.  */

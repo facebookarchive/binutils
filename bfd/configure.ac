@@ -51,6 +51,14 @@ if test "$plugins" = "yes"; then
   enable_targets="$enable_targets plugin"
 fi
 
+AC_ARG_ENABLE(minidump,
+[  --enable-minidump       Minidump file format support],
+[case "${enableval}" in
+  yes)  want_minidump=true  ;;
+  no)   want_minidump=false ;;
+  *)    AC_MSG_ERROR(bad value ${enableval} for minidump option) ;;
+esac],[want_minidump=true])dnl
+
 AC_ARG_ENABLE(64-bit-bfd,
 [  --enable-64-bit-bfd     64-bit support (on hosts with narrower word sizes)],
 [case "${enableval}" in
@@ -597,6 +605,10 @@ AC_SUBST(SHARED_LIBADD)
 
 # target stuff:
 
+if test $want_minidump = true; then
+  enable_targets="$enable_targets minidump"
+fi
+
 # Canonicalize the secondary target names.
 if test -n "$enable_targets" ; then
     for targ in `echo $enable_targets | sed 's/,/ /g'`
@@ -850,6 +862,8 @@ do
     metag_elf32_vec)		 tb="$tb elf32-metag.lo elf32.lo $elf" ;;
     microblaze_elf32_vec)	 tb="$tb elf32-microblaze.lo elf32.lo $elf" ;;
     microblaze_elf32_le_vec)	 tb="$tb elf32-microblaze.lo elf32.lo $elf" ;;
+    minidump_generic_le_vec)	 tb="$tb minidump.lo" ;;
+    minidump_generic_be_vec)	 tb="$tb minidump.lo" ;;
     mips_ecoff_be_vec)		 tb="$tb coff-mips.lo ecoff.lo $ecoff" ;;
     mips_ecoff_le_vec)		 tb="$tb coff-mips.lo ecoff.lo $ecoff" ;;
     mips_ecoff_bele_vec)	 tb="$tb coff-mips.lo ecoff.lo $ecoff" ;;
