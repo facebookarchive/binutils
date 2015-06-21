@@ -710,7 +710,7 @@ swap_abort (void)
 const bfd_target minidump_generic_le_vec =
   {
     "minidump-generic-le",
-    bfd_target_unknown_flavour,
+    bfd_target_minidump_flavour,
     BFD_ENDIAN_LITTLE,		/* target byte order */
     BFD_ENDIAN_LITTLE,		/* target headers byte order */
     (HAS_RELOC | EXEC_P |	/* object flags */
@@ -763,7 +763,7 @@ const bfd_target minidump_generic_le_vec =
 const bfd_target minidump_generic_be_vec =
   {
     "minidump-generic-be",
-    bfd_target_unknown_flavour,
+    bfd_target_minidump_flavour,
     BFD_ENDIAN_BIG,		/* target byte order */
     BFD_ENDIAN_BIG,		/* target headers byte order */
     (HAS_RELOC | EXEC_P |	/* object flags */

@@ -362,6 +362,8 @@ MS-DOS.
 openVMS.
 @item bfd_target_mmo_flavour
 Donald Knuth's MMIXware object format.
+@item bfd_target_minidump_flavour
+Windows Minidump core-like format.
 @end table
 
 @item byteorder

@@ -6605,7 +6605,6 @@ struct bfd
       struct bfd_pef_data_struct *pef_data;
       struct bfd_pef_xlib_data_struct *pef_xlib_data;
       struct bfd_sym_data_struct *sym_data;
-      struct bfd_minidump_struct *minidump_data;
       void *any;
     }
   tdata;
@@ -6909,7 +6908,8 @@ enum bfd_flavour
   bfd_target_mach_o_flavour,
   bfd_target_pef_flavour,
   bfd_target_pef_xlib_flavour,
-  bfd_target_sym_flavour
+  bfd_target_sym_flavour,
+  bfd_target_minidump_flavour
 };
 
 enum bfd_endian { BFD_ENDIAN_BIG, BFD_ENDIAN_LITTLE, BFD_ENDIAN_UNKNOWN };
