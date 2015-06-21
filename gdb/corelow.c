@@ -407,7 +407,17 @@ core_open (const char *arg, int from_tty)
   /* If no main executable is currently open then attempt to
      open the file that was executed to create this inferior.  */
   if (get_exec_file (0) == NULL)
-    exec_file_locate_attach (ptid_get_pid (inferior_ptid), from_tty);
+    {
+      TRY
+	{
+	  exec_file_locate_attach (ptid_get_pid (inferior_ptid), from_tty);
+	}
+      CATCH (except, RETURN_MASK_ERROR)
+	{
+	  exception_print (gdb_stderr, except);
+	}
+      END_CATCH
+    }
 
   post_create_inferior (&core_ops, from_tty);
 
