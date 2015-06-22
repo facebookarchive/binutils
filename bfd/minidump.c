@@ -22,7 +22,6 @@ const bfd_target *minidump_core_file_p (bfd *abfd);
 char * minidump_core_file_failing_command (bfd *abfd);
 int minidump_core_file_failing_signal (bfd *abfd);
 #define minidump_core_file_matches_executable_p generic_core_file_matches_executable_p
-#define minidump_core_file_pid _bfd_nocore_core_file_pid
 static void swap_abort (void);
 static char* minidump_strdup (bfd *abfd, const char *str);
 static bfd_boolean parse_memory_descriptor (bfd *, const char *);
@@ -661,22 +660,21 @@ char *
 minidump_core_file_failing_command (bfd *abfd)
 {
   char *ret;
+  file_ptr saved_pos = bfd_tell (abfd);
 
   ret = minidump_read_first_module_name (abfd);
-  if (ret != NULL)
-    return ret;
+  if (ret == NULL)
+    ret = minidump_read_cmdline1 (abfd);
 
-  ret = minidump_read_cmdline1 (abfd);
-  if (ret != NULL)
-    return ret;
-
-  return NULL;
+  bfd_seek (abfd, saved_pos, SEEK_SET);
+  return ret;
 }
 
 int
 minidump_core_file_failing_signal (bfd *abfd)
 {
   int ret = 0;
+  file_ptr saved_pos = bfd_tell (abfd);
   uint32_t thread_id;
   uint32_t padding;
   uint32_t exception_code;
@@ -693,8 +691,74 @@ minidump_core_file_failing_signal (bfd *abfd)
     }
 
  out:
-
+  bfd_seek (abfd, saved_pos, SEEK_SET);
   return ret;
+}
+
+static int
+minidump_pid_via_misc_info (bfd *abfd)
+{
+  asection *asect;
+  uint32_t pid = 0;
+  uint32_t size_of_info;
+  uint32_t flags1;
+
+  asect = minidump_get_section_by_type (abfd, misc_info_stream);
+  if (asect != NULL)
+    {
+      SEEK (asect->filepos);
+      READ (&size_of_info);
+      if (size_of_info < (sizeof (size_of_info) +
+			  sizeof (flags1) +
+			  sizeof (pid)))
+	goto out;
+
+      READ (&flags1);
+      if ((flags1 & 1 /* MINIDUMP_MISC1_PROCESS_ID */) == 0)
+	goto out;
+
+      READ (&pid);
+    }
+
+ out:
+
+  return (int) pid;
+}
+
+static int
+minidump_pid_via_linux_status (bfd *abfd)
+{
+  asection *asect;
+  bfd_byte *status_buffer = NULL;
+  char *status;
+  int pid = 0;
+
+  asect = minidump_get_section_by_type (abfd, linux_proc_status_stream);
+  if (asect != NULL)
+    {
+      if (!bfd_malloc_and_get_section (abfd, asect, &status_buffer))
+	goto out;
+
+      status = strstr ((char *) status_buffer, "\nPid:");
+      if (status != NULL)
+	pid = atoi (status + strlen ("\nPid:"));
+    }
+
+ out:
+  free (status_buffer);
+  return pid;
+}
+
+static int
+minidump_core_file_pid (bfd *abfd)
+{
+  int pid = 0;
+  file_ptr saved_pos = bfd_tell (abfd);
+  pid = minidump_pid_via_misc_info (abfd);
+  if (pid == 0)
+    pid = minidump_pid_via_linux_status (abfd);
+  bfd_seek (abfd, saved_pos, SEEK_SET);
+  return pid;
 }
 
 /* If somebody calls any byte-swapping routines, shoot them.  */
