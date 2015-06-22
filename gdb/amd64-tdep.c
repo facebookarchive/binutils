@@ -2892,6 +2892,122 @@ const struct regset amd64_fpregset =
   };
 
 
+static void
+amd64_grok_minidump_registers (struct gdbarch *gdbarch,
+			       struct regcache *regcache,
+			       const void *regdata,
+			       size_t regsize)
+{
+#define have_amd64           0x000100000
+#define have_amd64_control   (have_amd64 | 0x01)
+#define have_amd64_integer   (have_amd64 | 0x02)
+#define have_amd64_segments  (have_amd64 | 0x04)
+#define have_amd64_float     (have_amd64 | 0x08)
+#define have_amd64_debug     (have_amd64 | 0x10)
+#define have_amd64_xstate    (have_amd64 | 0x40)
+
+  static const struct {
+    int size;
+    int offset;
+    uint32_t mask;
+  } map[] = {
+    {  8,  0x78, have_amd64_integer  }, /* rax */
+    {  8,  0x90, have_amd64_integer  }, /* rbx */
+    {  8,  0x80, have_amd64_integer  }, /* rcx */
+    {  8,  0x88, have_amd64_integer  }, /* rdx */
+    {  8,  0xa8, have_amd64_integer  }, /* rsi */
+    {  8,  0xb0, have_amd64_integer  }, /* rdi */
+    {  8,  0xa0, have_amd64_integer  }, /* rbp */
+    {  8,  0x98, have_amd64_control  }, /* rsp */
+    {  8,  0xb8, have_amd64_integer  }, /* r8 */
+    {  8,  0xc0, have_amd64_integer  }, /* r9 */
+    {  8,  0xc8, have_amd64_integer  }, /* r10 */
+    {  8,  0xd0, have_amd64_integer  }, /* r11 */
+    {  8,  0xd8, have_amd64_integer  }, /* r12 */
+    {  8,  0xe0, have_amd64_integer  }, /* r13 */
+    {  8,  0xe8, have_amd64_integer  }, /* r14 */
+    {  8,  0xf0, have_amd64_integer  }, /* r15 */
+    {  8,  0xf8, have_amd64_control  }, /* rip */
+    {  4,  0x44, have_amd64_control  }, /* eflags */
+    {  2,  0x38, have_amd64_control  }, /* cs */
+    {  2,  0x42, have_amd64_control  }, /* ss */
+    {  2,  0x3a, have_amd64_segments }, /* ds */
+    {  2,  0x3c, have_amd64_segments }, /* es */
+    {  2,  0x3e, have_amd64_segments }, /* fs */
+    {  2,  0x40, have_amd64_segments }, /* gs */
+
+    { 16, 0x120, have_amd64_float    }, /* FloatSave.FloatRegisters[0] */
+    { 16, 0x130, have_amd64_float    }, /* FloatSave.FloatRegisters[1] */
+    { 16, 0x140, have_amd64_float    }, /* FloatSave.FloatRegisters[2] */
+    { 16, 0x150, have_amd64_float    }, /* FloatSave.FloatRegisters[3] */
+    { 16, 0x160, have_amd64_float    }, /* FloatSave.FloatRegisters[4] */
+    { 16, 0x170, have_amd64_float    }, /* FloatSave.FloatRegisters[5] */
+    { 16, 0x180, have_amd64_float    }, /* FloatSave.FloatRegisters[6] */
+    { 16, 0x190, have_amd64_float    }, /* FloatSave.FloatRegisters[7] */
+    {  2, 0x100, have_amd64_float    }, /* FloatSave.ControlWord */
+    {  2, 0x102, have_amd64_float    }, /* FloatSave.StatusWord */
+    {  1, 0x104, have_amd64_float    }, /* FloatSave.TagWord */
+    {  2, 0x10c, have_amd64_float    }, /* FloatSave.ErrorSelector */
+    {  4, 0x108, have_amd64_float    }, /* FloatSave.ErrorOffset */
+    {  2, 0x114, have_amd64_float    }, /* FloatSave.DataSelector */
+    {  4, 0x110, have_amd64_float    }, /* FloatSave.DataOffset */
+    {  2, 0x10c, have_amd64_float    }, /* FloatSave.ErrorSelector */
+    { 16, 0x1a0, have_amd64_float    }, /* Xmm0 */
+    { 16, 0x1b0, have_amd64_float    }, /* Xmm1 */
+    { 16, 0x1c0, have_amd64_float    }, /* Xmm2 */
+    { 16, 0x1d0, have_amd64_float    }, /* Xmm3 */
+    { 16, 0x1e0, have_amd64_float    }, /* Xmm4 */
+    { 16, 0x1f0, have_amd64_float    }, /* Xmm5 */
+    { 16, 0x200, have_amd64_float    }, /* Xmm6 */
+    { 16, 0x210, have_amd64_float    }, /* Xmm7 */
+    { 16, 0x220, have_amd64_float    }, /* Xmm8 */
+    { 16, 0x230, have_amd64_float    }, /* Xmm9 */
+    { 16, 0x240, have_amd64_float    }, /* Xmm10 */
+    { 16, 0x250, have_amd64_float    }, /* Xmm11 */
+    { 16, 0x260, have_amd64_float    }, /* Xmm12 */
+    { 16, 0x270, have_amd64_float    }, /* Xmm13 */
+    { 16, 0x280, have_amd64_float    }, /* Xmm14 */
+    { 16, 0x290, have_amd64_float    }, /* Xmm15 */
+    {  4, 0x118, have_amd64_float    }  /* FloatSave.MxCsr */
+  };
+
+  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+  const uint8_t *pos = regdata;
+  const uint8_t *end = pos + regsize;
+  uint32_t flags;
+  int regnum;
+
+  if (regsize > ((size_t)-1)/4)
+    return; /* Sanity check.  */
+
+  if (end - pos < (ptrdiff_t) sizeof (flags))
+    return;
+
+  flags = extract_unsigned_integer (pos, sizeof (flags), byte_order);
+
+  for (regnum = 0; regnum < ARRAY_SIZE (map); ++regnum)
+    {
+      if ((flags & map[regnum].mask) != map[regnum].mask)
+	continue;
+
+      if (pos +	map[regnum].offset + map[regnum].size > end)
+	continue;
+
+      regcache_raw_supply (regcache, regnum, pos + map[regnum].offset);
+    }
+
+#undef have_amd64
+#undef have_amd64_control
+#undef have_amd64_integer
+#undef have_amd64_segments
+#undef have_amd64_float
+#undef have_amd64_debug
+#undef have_amd64_extreg
+#undef have_amd64_xstate
+}
+
+
+
 /* Figure out where the longjmp will land.  Slurp the jmp_buf out of
    %rdi.  We expect its value to be a pointer to the jmp_buf structure
    from which we extract the address that we will land at.  This
@@ -3082,6 +3198,9 @@ amd64_init_abi (struct gdbarch_info info, struct gdbarch *gdbarch)
   set_gdbarch_insn_is_call (gdbarch, amd64_insn_is_call);
   set_gdbarch_insn_is_ret (gdbarch, amd64_insn_is_ret);
   set_gdbarch_insn_is_jump (gdbarch, amd64_insn_is_jump);
+
+  set_gdbarch_grok_minidump_registers (gdbarch,
+				       amd64_grok_minidump_registers);
 }
 
 

@@ -1119,6 +1119,10 @@ m:const char *:gnu_triplet_regexp:void:::default_gnu_triplet_regexp::0
 # each address in memory.
 m:int:addressable_memory_unit_size:void:::default_addressable_memory_unit_size::0
 
+# Translate the register information contained in a minidump
+# file.
+M:void:grok_minidump_registers:struct regcache *regcache, const void *regdata, size_t regsize:regcache,regdata,regsize
+
 EOF
 }
 

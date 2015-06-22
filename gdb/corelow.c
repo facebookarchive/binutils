@@ -45,6 +45,7 @@
 #include "gdb_bfd.h"
 #include "completer.h"
 #include "filestuff.h"
+#include "minidump.h"
 
 #ifndef O_LARGEFILE
 #define O_LARGEFILE 0
@@ -84,7 +85,7 @@ static void core_close (struct target_ops *self);
 
 static void core_close_cleanup (void *ignore);
 
-static void add_to_thread_list (bfd *, asection *, void *);
+static void add_to_thread_list_core (bfd *, asection *, void *);
 
 static void init_core_ops (void);
 
@@ -225,19 +226,12 @@ core_close_cleanup (void *ignore)
    extract the list of threads in a core file.  */
 
 static void
-add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
+add_to_thread_list (int tid, int main)
 {
   ptid_t ptid;
-  int core_tid;
-  int pid, lwpid;
-  asection *reg_sect = (asection *) reg_sect_arg;
-  int fake_pid_p = 0;
   struct inferior *inf;
-
-  if (!startswith (bfd_section_name (abfd, asect), ".reg/"))
-    return;
-
-  core_tid = atoi (bfd_section_name (abfd, asect) + 5);
+  int pid, lwpid;
+  int fake_pid_p = 0;
 
   pid = bfd_core_file_pid (core_bfd);
   if (pid == 0)
@@ -246,7 +240,7 @@ add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
       pid = CORELOW_PID;
     }
 
-  lwpid = core_tid;
+  lwpid = tid;
 
   inf = current_inferior ();
   if (inf->pid == 0)
@@ -259,11 +253,38 @@ add_to_thread_list (bfd *abfd, asection *asect, void *reg_sect_arg)
 
   add_thread (ptid);
 
-/* Warning, Will Robinson, looking at BFD private data! */
+  if (main)
+    inferior_ptid = ptid; /* Make it current. */
+}
 
+static void
+add_to_thread_list_core (bfd *abfd, asection *asect, void *reg_sect_arg)
+{
+  int core_tid;
+  asection *reg_sect = (asection *) reg_sect_arg;
+  int is_main = 0;
+
+  if (!startswith (bfd_section_name (abfd, asect), ".reg/"))
+    return;
+
+  core_tid = atoi (bfd_section_name (abfd, asect) + 5);
+
+  /* Warning, Will Robinson, looking at BFD private data! */
   if (reg_sect != NULL
       && asect->filepos == reg_sect->filepos)	/* Did we find .reg?  */
-    inferior_ptid = ptid;			/* Yes, make it current.  */
+    is_main = 1;
+
+  add_to_thread_list (core_tid, is_main);
+}
+
+static void
+add_to_thread_list_minidump (
+  bfd *abfd,
+  const struct minidump_thread_info *ti,
+  void *data)
+{
+  /* XXX: figure out how this "is_main" business works.  */
+  add_to_thread_list (ti->thread_id, 0);
 }
 
 /* This routine opens and sets up the core file bfd.  */
@@ -363,7 +384,7 @@ core_open (const char *arg, int from_tty)
   discard_cleanups (old_chain);
 
   /* Do this before acknowledging the inferior, so if
-     post_create_inferior throws (can happen easilly if you're loading
+     post_create_inferior throws (can happen easily if you're loading
      a core file with the wrong exec), we aren't left with threads
      from the previous inferior.  */
   init_thread_list ();
@@ -381,8 +402,11 @@ core_open (const char *arg, int from_tty)
   /* Build up thread list from BFD sections, and possibly set the
      current thread to the .reg/NN section matching the .reg
      section.  */
-  bfd_map_over_sections (core_bfd, add_to_thread_list,
-			 bfd_get_section_by_name (core_bfd, ".reg"));
+  if (minidump_p (core_bfd))
+    minidump_enumerate_threads (core_bfd, add_to_thread_list_minidump, NULL);
+  else
+    bfd_map_over_sections (core_bfd, add_to_thread_list_core,
+			   bfd_get_section_by_name (core_bfd, ".reg"));
 
   if (ptid_equal (inferior_ptid, null_ptid))
     {
@@ -617,20 +641,16 @@ get_core_registers_cb (const char *sect_name, int size,
    part, typically implemented in the xm-file for each
    architecture.  */
 
-/* We just get all the registers, so we don't use regno.  */
-
 static void
-get_core_registers (struct target_ops *ops,
-		    struct regcache *regcache, int regno)
+get_core_registers_core (struct regcache *regcache)
 {
-  int i;
   struct gdbarch *gdbarch;
 
   if (!(core_gdbarch && gdbarch_iterate_over_regset_sections_p (core_gdbarch))
       && (core_vec == NULL || core_vec->core_read_registers == NULL))
     {
-      fprintf_filtered (gdb_stderr,
-		     "Can't fetch registers from this type of core file\n");
+      warning (
+	_ ("Can't fetch registers from this type of core file"));
       return;
     }
 
@@ -646,8 +666,64 @@ get_core_registers (struct target_ops *ops,
       get_core_register_section (regcache, NULL,
 				 ".reg2", 0, 2, "floating-point", 0);
     }
+}
 
-  /* Mark all registers not found in the core as unavailable.  */
+struct get_core_registers_minidump_context {
+  struct gdbarch *gdbarch;
+  struct regcache *regcache;
+};
+
+static void
+get_core_registers_minidump_cb (
+  bfd *abfd,
+  const struct minidump_thread_info *ti,
+  void *data)
+{
+  long inferior_lwp = ptid_get_lwp (inferior_ptid);
+  struct get_core_registers_minidump_context *context = data;
+  if (inferior_lwp == ti->thread_id)
+    gdbarch_grok_minidump_registers (
+      context->gdbarch,
+      context->regcache,
+      ti->regdata,
+      ti->regsize);
+}
+
+static void
+get_core_registers_minidump (struct regcache *regcache)
+{
+  struct get_core_registers_minidump_context context;
+
+  if (!(core_gdbarch && gdbarch_grok_minidump_registers_p (core_gdbarch)
+	&& ((context.gdbarch = get_regcache_arch (regcache)))
+	&& gdbarch_grok_minidump_registers_p (context.gdbarch)))
+    {
+      warning (
+	_ ("Can't fetch registers from minidump for this architecture"));
+      return;
+    }
+
+  context.regcache = regcache;
+  minidump_enumerate_threads (
+    core_bfd,
+    get_core_registers_minidump_cb,
+    &context);
+}
+
+static void
+get_core_registers (struct target_ops *ops,
+		    struct regcache *regcache, int regno)
+{
+  int i;
+
+  /* We just get all the registers, so we don't use regno.  */
+
+  if (minidump_p (core_bfd))
+    get_core_registers_minidump (regcache);
+  else
+    get_core_registers_core (regcache);
+
+    /* Mark all registers not found in the core as unavailable.  */
   for (i = 0; i < gdbarch_num_regs (get_regcache_arch (regcache)); i++)
     if (regcache_register_status (regcache, i) == REG_UNKNOWN)
       regcache_raw_supply (regcache, i, NULL);

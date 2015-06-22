@@ -9853,6 +9853,52 @@ arm_register_reggroup_p (struct gdbarch *gdbarch, int regnum,
     return default_register_reggroup_p (gdbarch, regnum, group);
 }
 
+static void
+arm_grok_minidump_registers (struct gdbarch *gdbarch,
+			     struct regcache *regcache,
+			     const void *regdata,
+			     size_t regsize)
+{
+  static const uint32_t have_integers = 0x40000002;
+  static const uint32_t have_floats = 0x40000004;
+
+  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+  const uint8_t *pos = regdata;
+  const uint8_t *end = pos + regsize;
+  uint32_t flags;
+  int regnum;
+
+  if (end - pos < sizeof (flags))
+    return;
+
+  flags = extract_unsigned_integer (pos, sizeof (flags), byte_order);
+  pos += sizeof (flags);
+
+  if ((flags & have_integers) != have_integers)
+    return; /* When would we not have integers, but have floats?  */
+
+  regnum = 0;
+  while (regnum < 16 && sizeof (uint32_t) <= end - pos)
+    {
+      regcache_raw_supply (regcache, regnum++, pos);
+      pos += sizeof (uint32_t);
+    }
+
+  if (sizeof (uint32_t) <= end - pos)
+    {
+      regcache_raw_supply (regcache, ARM_PS_REGNUM, pos);
+      pos += sizeof (uint32_t);
+    }
+
+  if ((flags & have_floats) == have_floats)
+    {
+      /* Breakpad never actually stored ARM floats correctly, but in
+       the stock version (as opposed to Facebook's), Breakpad _claims_
+       to have stored floats.  Ignore floats for now.  */
+      warning (_ ("ARM float support unimplemented"));
+    }
+}
+
 
 /* For backward-compatibility we allow two 'g' packet lengths with
    the remote protocol depending on whether FPA registers are
@@ -10381,6 +10427,7 @@ arm_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_num_regs (gdbarch, ARM_NUM_REGS);
   set_gdbarch_register_type (gdbarch, arm_register_type);
   set_gdbarch_register_reggroup_p (gdbarch, arm_register_reggroup_p);
+  set_gdbarch_grok_minidump_registers (gdbarch, arm_grok_minidump_registers);
 
   /* This "info float" is FPA-specific.  Use the generic version if we
      do not have FPA.  */

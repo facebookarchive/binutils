@@ -831,6 +831,7 @@ SFILES = ada-exp.y ada-lang.c ada-typeprint.c ada-valprint.c ada-tasks.c \
 	c-exp.y c-lang.c c-typeprint.c c-valprint.c c-varobj.c \
 	charset.c common/cleanups.c cli-out.c coffread.c coff-pe-read.c \
 	complaints.c completer.c continuations.c corefile.c corelow.c \
+	minidump.c \
 	cp-abi.c cp-support.c cp-namespace.c cp-valprint.c \
 	d-exp.y d-lang.c d-valprint.c \
 	cp-name-parser.y \
@@ -904,7 +905,7 @@ common/gdb_signals.h nat/gdb_thread_db.h common/gdb_vecs.h \
 common/x86-xstate.h nat/linux-ptrace.h nat/mips-linux-watch.h \
 proc-utils.h aarch64-tdep.h arm-tdep.h ax-gdb.h ppcfbsd-tdep.h \
 ppcnbsd-tdep.h cli-out.h gdb_expat.h breakpoint.h infcall.h obsd-tdep.h \
-exec.h m32r-tdep.h osabi.h gdbcore.h amd64bsd-nat.h \
+exec.h m32r-tdep.h osabi.h gdbcore.h minidump.h amd64bsd-nat.h \
 i386bsd-nat.h xml-support.h xml-tdesc.h alphabsd-tdep.h gdb_obstack.h \
 ia64-tdep.h ada-lang.h varobj.h varobj-iter.h frv-tdep.h \
 nto-tdep.h serial.h \
@@ -1019,6 +1020,7 @@ COMMON_OBS = $(DEPFILES) $(CONFIG_OBS) $(YYOBJ) \
 	break-catch-syscall.o \
 	findvar.o regcache.o cleanups.o \
 	charset.o continuations.o corelow.o disasm.o dummy-frame.o dfp.o \
+	minidump.o \
 	source.o value.o eval.o valops.o valarith.o valprint.o printcmd.o \
 	block.o symtab.o psymtab.o symfile.o symfile-debug.o symmisc.o \
 	linespec.o dictionary.o \

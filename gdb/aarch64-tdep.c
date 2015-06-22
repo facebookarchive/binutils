@@ -2588,6 +2588,67 @@ aarch64_software_single_step (struct frame_info *frame)
   return 1;
 }
 
+static void
+aarch64_grok_minidump_registers (struct gdbarch *gdbarch,
+				 struct regcache *regcache,
+				 const void *regdata,
+				 size_t regsize)
+{
+  static const uint32_t have_integers = 0x80000002;
+  static const uint32_t have_floats = 0x80000004;
+
+  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+  const uint8_t *pos = regdata;
+  const uint8_t *end = pos + regsize;
+  uint64_t flags;
+  int regnum;
+
+  if (end - pos < sizeof (flags))
+    return;
+
+  flags = extract_unsigned_integer (pos, sizeof (flags), byte_order);
+  pos += sizeof (flags);
+
+  if ((flags & have_integers) != have_integers)
+    return; /* When would we not have integers, but have floats?  */
+
+  regnum = AARCH64_X0_REGNUM;
+  while (regnum < AARCH64_X0_REGNUM+33 && sizeof (uint64_t) <= end - pos)
+    {
+      regcache_raw_supply (regcache, regnum++, pos);
+      pos += sizeof (uint64_t);
+    }
+
+  if (sizeof (uint32_t) <= end - pos)
+    {
+      regcache_raw_supply (regcache, AARCH64_CPSR_REGNUM, pos);
+      pos += sizeof (uint32_t);
+    }
+
+  if ((flags & have_floats) == have_floats)
+    {
+      if (sizeof (uint32_t) <= end - pos)
+	{
+	  regcache_raw_supply (regcache, AARCH64_AARCH64_FPSR_REGNUM, pos);
+	  pos += sizeof (uint32_t);
+	}
+
+      if (sizeof (uint32_t) <= end - pos)
+	{
+	  regcache_raw_supply (regcache, AARCH64_AARCH64_FPCR_REGNUM, pos);
+	  pos += sizeof (uint32_t);
+	}
+
+      regnum = AARCH64_V0_REGNUM;
+      while (regnum <= AARCH64_V31_REGNUM && 16 <= end - pos)
+	{
+	  regcache_raw_supply (regcache, regnum++, pos);
+	  pos += 16;
+	}
+    }
+}
+
+
 /* Initialize the current architecture based on INFO.  If possible,
    re-use an architecture from ARCHES, which is a list of
    architectures already created during this debugging session.
@@ -2708,6 +2769,9 @@ aarch64_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
   set_gdbarch_sp_regnum (gdbarch, AARCH64_SP_REGNUM);
   set_gdbarch_pc_regnum (gdbarch, AARCH64_PC_REGNUM);
   set_gdbarch_num_regs (gdbarch, num_regs);
+
+  set_gdbarch_grok_minidump_registers (gdbarch,
+				       aarch64_grok_minidump_registers);
 
   set_gdbarch_num_pseudo_regs (gdbarch, num_pseudo_regs);
   set_gdbarch_pseudo_register_read_value (gdbarch, aarch64_pseudo_read_value);

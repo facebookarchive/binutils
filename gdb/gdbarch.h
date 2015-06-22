@@ -1474,6 +1474,15 @@ typedef int (gdbarch_addressable_memory_unit_size_ftype) (struct gdbarch *gdbarc
 extern int gdbarch_addressable_memory_unit_size (struct gdbarch *gdbarch);
 extern void set_gdbarch_addressable_memory_unit_size (struct gdbarch *gdbarch, gdbarch_addressable_memory_unit_size_ftype *addressable_memory_unit_size);
 
+/* Translate the register information contained in a minidump
+   file. */
+
+extern int gdbarch_grok_minidump_registers_p (struct gdbarch *gdbarch);
+
+typedef void (gdbarch_grok_minidump_registers_ftype) (struct gdbarch *gdbarch, struct regcache *regcache, const void *regdata, size_t regsize);
+extern void gdbarch_grok_minidump_registers (struct gdbarch *gdbarch, struct regcache *regcache, const void *regdata, size_t regsize);
+extern void set_gdbarch_grok_minidump_registers (struct gdbarch *gdbarch, gdbarch_grok_minidump_registers_ftype *grok_minidump_registers);
+
 /* Definition for an unknown syscall, used basically in error-cases.  */
 #define UNKNOWN_SYSCALL (-1)
 

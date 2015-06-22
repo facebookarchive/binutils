@@ -330,6 +330,7 @@ struct gdbarch
   gdbarch_gcc_target_options_ftype *gcc_target_options;
   gdbarch_gnu_triplet_regexp_ftype *gnu_triplet_regexp;
   gdbarch_addressable_memory_unit_size_ftype *addressable_memory_unit_size;
+  gdbarch_grok_minidump_registers_ftype *grok_minidump_registers;
 };
 
 /* Create a new ``struct gdbarch'' based on information provided by
@@ -666,6 +667,7 @@ verify_gdbarch (struct gdbarch *gdbarch)
   /* Skip verify of gcc_target_options, invalid_p == 0 */
   /* Skip verify of gnu_triplet_regexp, invalid_p == 0 */
   /* Skip verify of addressable_memory_unit_size, invalid_p == 0 */
+  /* Skip verify of grok_minidump_registers, has predicate.  */
   buf = ui_file_xstrdup (log, &length);
   make_cleanup (xfree, buf);
   if (length > 0)
@@ -1007,6 +1009,12 @@ gdbarch_dump (struct gdbarch *gdbarch, struct ui_file *file)
   fprintf_unfiltered (file,
                       "gdbarch_dump: gnu_triplet_regexp = <%s>\n",
                       host_address_to_string (gdbarch->gnu_triplet_regexp));
+  fprintf_unfiltered (file,
+                      "gdbarch_dump: gdbarch_grok_minidump_registers_p() = %d\n",
+                      gdbarch_grok_minidump_registers_p (gdbarch));
+  fprintf_unfiltered (file,
+                      "gdbarch_dump: grok_minidump_registers = <%s>\n",
+                      host_address_to_string (gdbarch->grok_minidump_registers));
   fprintf_unfiltered (file,
                       "gdbarch_dump: half_bit = %s\n",
                       plongest (gdbarch->half_bit));
@@ -4751,6 +4759,30 @@ set_gdbarch_addressable_memory_unit_size (struct gdbarch *gdbarch,
                                           gdbarch_addressable_memory_unit_size_ftype addressable_memory_unit_size)
 {
   gdbarch->addressable_memory_unit_size = addressable_memory_unit_size;
+}
+
+int
+gdbarch_grok_minidump_registers_p (struct gdbarch *gdbarch)
+{
+  gdb_assert (gdbarch != NULL);
+  return gdbarch->grok_minidump_registers != NULL;
+}
+
+void
+gdbarch_grok_minidump_registers (struct gdbarch *gdbarch, struct regcache *regcache, const void *regdata, size_t regsize)
+{
+  gdb_assert (gdbarch != NULL);
+  gdb_assert (gdbarch->grok_minidump_registers != NULL);
+  if (gdbarch_debug >= 2)
+    fprintf_unfiltered (gdb_stdlog, "gdbarch_grok_minidump_registers called\n");
+  gdbarch->grok_minidump_registers (gdbarch, regcache,regdata,regsize);
+}
+
+void
+set_gdbarch_grok_minidump_registers (struct gdbarch *gdbarch,
+                                     gdbarch_grok_minidump_registers_ftype grok_minidump_registers)
+{
+  gdbarch->grok_minidump_registers = grok_minidump_registers;
 }
 
 

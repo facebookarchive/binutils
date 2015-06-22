@@ -3842,6 +3842,107 @@ i386_iterate_over_regset_sections (struct gdbarch *gdbarch,
   if (tdep->sizeof_fpregset)
     cb (".reg2", tdep->sizeof_fpregset, tdep->fpregset, NULL, cb_data);
 }
+
+static void
+i386_grok_minidump_registers (struct gdbarch *gdbarch,
+			      struct regcache *regcache,
+			      const void *regdata,
+			      size_t regsize)
+{
+#define have_x86           0x00010000
+#define have_x86_control   (have_x86 | 0x01)
+#define have_x86_integer   (have_x86 | 0x02)
+#define have_x86_segments  (have_x86 | 0x04)
+#define have_x86_float     (have_x86 | 0x08)
+#define have_x86_debug     (have_x86 | 0x10)
+#define have_x86_extreg    (have_x86 | 0x20)
+#define have_x86_xstate    (have_x86 | 0x40)
+
+  static const struct {
+    int size;
+    int offset;
+    uint32_t mask;
+  } map[] = {
+    {  4, 176, have_x86_integer  }, /* eax */
+    {  4, 172, have_x86_integer  }, /* ecx */
+    {  4, 168, have_x86_integer  }, /* edx */
+    {  4, 164, have_x86_integer  }, /* ebx */
+    {  4, 196, have_x86_control  }, /* esp */
+    {  4, 180, have_x86_control  }, /* ebp */
+    {  4, 160, have_x86_integer  }, /* esi */
+    {  4, 156, have_x86_integer  }, /* edi */
+    {  4, 184, have_x86_control  }, /* eip */
+    {  4, 192, have_x86_control  }, /* eflags */
+    {  4, 188, have_x86_control  }, /* cs */
+    {  4, 200, have_x86_control  }, /* ss */
+    {  4, 152, have_x86_segments }, /* ds */
+    {  4, 148, have_x86_segments }, /* es */
+    {  4, 144, have_x86_segments }, /* fs */
+    {  4, 140, have_x86_segments }, /* gs */
+    { 10,  56, have_x86_float    }, /* FloatSave.RegisterArea[0 * 10] */
+    { 10,  66, have_x86_float    }, /* FloatSave.RegisterArea[1 * 10] */
+    { 10,  76, have_x86_float    }, /* FloatSave.RegisterArea[2 * 10] */
+    { 10,  86, have_x86_float    }, /* FloatSave.RegisterArea[3 * 10] */
+    { 10,  96, have_x86_float    }, /* FloatSave.RegisterArea[4 * 10] */
+    { 10, 106, have_x86_float    }, /* FloatSave.RegisterArea[5 * 10] */
+    { 10, 116, have_x86_float    }, /* FloatSave.RegisterArea[6 * 10] */
+    { 10, 126, have_x86_float    }, /* FloatSave.RegisterArea[7 * 10] */
+    {  4,  28, have_x86_float    }, /* FloatSave.ControlWord */
+    {  4,  32, have_x86_float    }, /* FloatSave.StatusWord */
+    {  4,  36, have_x86_float    }, /* FloatSave.TagWord */
+    {  4,  44, have_x86_float    }, /* FloatSave.ErrorSelector */
+    {  4,  40, have_x86_float    }, /* FloatSave.ErrorOffset */
+    {  4,  52, have_x86_float    }, /* FloatSave.DataSelector */
+    {  4,  48, have_x86_float    }, /* FloatSave.DataOffset */
+    {  4,  44, have_x86_float    }, /* FloatSave.ErrorSelector */
+    /* XMM0-7 */
+    { 16, 364, have_x86_extreg   }, /* ExtendedRegisters[10*16] */
+    { 16, 380, have_x86_extreg   }, /* ExtendedRegisters[11*16] */
+    { 16, 396, have_x86_extreg   }, /* ExtendedRegisters[12*16] */
+    { 16, 412, have_x86_extreg   }, /* ExtendedRegisters[13*16] */
+    { 16, 428, have_x86_extreg   }, /* ExtendedRegisters[14*16] */
+    { 16, 444, have_x86_extreg   }, /* ExtendedRegisters[15*16] */
+    { 16, 460, have_x86_extreg   }, /* ExtendedRegisters[16*16] */
+    { 16, 476, have_x86_extreg   }, /* ExtendedRegisters[17*16] */
+    /* MXCSR */
+    { 16, 228, have_x86_extreg   } /* ExtendedRegisters[24] */
+  };
+
+  enum bfd_endian byte_order = gdbarch_byte_order (gdbarch);
+  const uint8_t *pos = regdata;
+  const uint8_t *end = pos + regsize;
+  uint32_t flags;
+  int regnum;
+
+  if (regsize > ((size_t)-1)/4)
+    return; /* Sanity check.  */
+
+  if (end - pos < (ptrdiff_t) sizeof (flags))
+    return;
+
+  flags = extract_unsigned_integer (pos, sizeof (flags), byte_order);
+
+  for (regnum = 0; regnum < ARRAY_SIZE (map); ++regnum)
+    {
+      if ((flags & map[regnum].mask) != map[regnum].mask)
+	continue;
+
+      if (pos +	map[regnum].offset + map[regnum].size > end)
+	continue;
+
+      regcache_raw_supply (regcache, regnum, pos + map[regnum].offset);
+    }
+
+#undef have_x86
+#undef have_x86_control
+#undef have_x86_integer
+#undef have_x86_segments
+#undef have_x86_float
+#undef have_x86_debug
+#undef have_x86_extreg
+#undef have_x86_xstate
+}
+
 
 
 /* Stuff for WIN32 PE style DLL's but is pretty generic really.  */
@@ -8582,6 +8683,9 @@ i386_gdbarch_init (struct gdbarch_info info, struct gdbarch_list *arches)
       && !gdbarch_iterate_over_regset_sections_p (gdbarch))
     set_gdbarch_iterate_over_regset_sections
       (gdbarch, i386_iterate_over_regset_sections);
+
+  set_gdbarch_grok_minidump_registers (gdbarch,
+				       i386_grok_minidump_registers);
 
   set_gdbarch_fast_tracepoint_valid_at (gdbarch,
 					i386_fast_tracepoint_valid_at);
