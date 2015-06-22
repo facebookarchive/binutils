@@ -9895,7 +9895,6 @@ arm_grok_minidump_registers (struct gdbarch *gdbarch,
       /* Breakpad never actually stored ARM floats correctly, but in
        the stock version (as opposed to Facebook's), Breakpad _claims_
        to have stored floats.  Ignore floats for now.  */
-      warning (_ ("ARM float support unimplemented"));
     }
 }
 

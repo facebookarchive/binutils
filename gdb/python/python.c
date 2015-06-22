@@ -155,7 +155,7 @@ static char* gdbpy_invoke_solib_find_hook
    const char *hook_spec,
    const char *name,
    int flags,
-   struct so_list *so);
+   const struct so_search_hints *hints);
 static char *gdbpy_invoke_find_source_hook
 ( const struct extension_language_defn *extlang,
   const char *filename,
@@ -1643,50 +1643,24 @@ gdbpy_set_solib_find_hook (PyObject *self, PyObject *args)
   Py_RETURN_NONE;
 }
 
-struct lm_info_desc_ctx {
-  PyObject* dict;
-  int error;
-};
-
 static void
-gdbpy_describe_lm_info_callback (
-  void *opaque,
-  const char *name,
-  enum describe_lm_info_type type,
-  ...)
+gdbpy_add_search_hint_core_addr (PyObject *py_so,
+				 const char *name,
+				 CORE_ADDR core_addr)
 {
-  va_list args;
-  PyObject* value;
-  CORE_ADDR core_addr;
-  struct lm_info_desc_ctx* ctx = opaque;
+  PyObject *value;
+  struct cleanup *cleanup;
 
-  if (ctx->error)
-    return;
+  value = PyLong_FromUnsignedLongLong ((unsigned long long) core_addr);
+  if (value == NULL)
+    gdbpy_top_error ();
 
-  switch (type) {
-  case describe_lm_info_core_addr:
-    va_start (args, type);
-    core_addr = va_arg (args, CORE_ADDR);
-    va_end (args);
-    value = PyLong_FromUnsignedLongLong ((unsigned long long) core_addr);
-    if (value == NULL)
-      {
-	ctx->error = 1;
-	return;
-      }
+  cleanup = make_cleanup_py_decref (value);
 
-    make_cleanup_py_decref (value);
-    if (PyDict_SetItemString (ctx->dict, name, value) == -1)
-      {
-	ctx->error = 1;
-	return;
-      }
+  if (PyDict_SetItemString (py_so, name, value) == -1)
+    gdbpy_top_error ();
 
-    break;
-
-  default:
-    error (_ ("Unknown lm_info description type %d"), (int) type);
-  }
+  do_cleanups (cleanup);
 }
 
 static char *
@@ -1695,10 +1669,8 @@ gdbpy_invoke_solib_find_hook
    const char *hook_spec,
    const char *name,
    int flags,
-   struct so_list *so)
+   const struct so_search_hints *hints)
 {
-  const struct target_so_ops *ops;
-  struct lm_info_desc_ctx ctx;
   PyObject *py_so;
   PyObject *py_ret;
   struct cleanup *cleanup;
@@ -1709,29 +1681,17 @@ gdbpy_invoke_solib_find_hook
 
   cleanup = ensure_python_env (get_current_arch (), current_language);
 
-  ops = solib_ops (target_gdbarch ());
-  if (!ops)
-    goto done;
-
   py_so = PyDict_New ();
   if (py_so == NULL)
       gdbpy_top_error ();
 
   make_cleanup_py_decref (py_so);
 
-  memset (&ctx, 0, sizeof (ctx));
-  ctx.dict = py_so;
-  if (so && so->lm_info && ops->describe_lm_info)
-    ops->describe_lm_info (
-      gdbpy_describe_lm_info_callback,
-      &ctx,
-      so->lm_info);
+  if (hints != NULL && hints->base_addr_valid)
+    gdbpy_add_search_hint_core_addr (py_so, "base_addr", hints->base_addr);
 
-  if (ctx.error)
-    {
-      gdbpy_print_stack_check_interrupt ();
-      error (_ ("Error while describing lm_info."));
-    }
+  if (hints != NULL && hints->l_ld_valid)
+    gdbpy_add_search_hint_core_addr (py_so, "l_ld", hints->l_ld);
 
   py_ret = PyObject_CallFunction (
     solib_find_hook, "ssiO", hook_spec, name, flags, py_so);
@@ -1747,8 +1707,6 @@ gdbpy_invoke_solib_find_hook
       if (ret == NULL)
 	gdbpy_top_error ();
     }
-
- done:
 
   do_cleanups (cleanup);
   return ret;
@@ -1811,7 +1769,6 @@ gdbpy_invoke_find_source_hook
   struct objfile *objfile)
 {
   const struct target_so_ops *ops;
-  struct lm_info_desc_ctx ctx;
   PyObject *py_ret;
   struct cleanup *cleanup;
   char* ret = NULL;

@@ -82,6 +82,7 @@ set_solib_ops (struct gdbarch *gdbarch, const struct target_so_ops *new_ops)
 
   *ops = new_ops;
 }
+
 
 
 /* external data declarations */
@@ -157,7 +158,10 @@ show_solib_search_path (struct ui_file *file, int from_tty,
 */
 
 static char *
-solib_find_1 (char *in_pathname, int *fd, int is_solib, struct so_list *so)
+solib_find_1 (char *in_pathname,
+	      int *fd,
+	      int is_solib,
+	      const struct so_search_hints *hints)
 {
   const struct target_so_ops *ops = solib_ops (target_gdbarch ());
   int found_file = -1;
@@ -175,7 +179,7 @@ solib_find_1 (char *in_pathname, int *fd, int is_solib, struct so_list *so)
 	(is_solib
 	 ? FIND_HOOK_IS_SOLIB
 	 : 0),
-	so);
+	hints);
     }
 
   old_chain = make_cleanup (null_cleanup, NULL);
@@ -404,19 +408,20 @@ solib_find_1 (char *in_pathname, int *fd, int is_solib, struct so_list *so)
 /* Return the full pathname of the main executable, or NULL if not
    found.  The returned pathname is malloc'ed and must be freed by the
    caller.  If FD is non-NULL, *FD is set to either -1 or an open file
-   handle for the main executable.  SO is an optional pointer to a
-   so_list structure (not necessarily a real DSO) used to provide
-   hints to any extension loading plugins.
+   handle for the main executable.  HINTS is an optional pointer to a
+   structure that provides additional information on the DSO to load.
 
    The search algorithm used is described in solib_find_1's comment
    above.  */
 char *
-exec_file_find2 (char *in_pathname, int *fd, struct so_list* so)
+exec_file_find2 (char *in_pathname,
+		 int *fd,
+		 const struct so_search_hints *hints)
 {
   char *result = NULL;
 
   if (result == NULL)
-    result = solib_find_1 (in_pathname, fd, 0, so);
+    result = solib_find_1 (in_pathname, fd, 0, hints);
 
   if (result == NULL)
     {
@@ -430,7 +435,7 @@ exec_file_find2 (char *in_pathname, int *fd, struct so_list* so)
 	  strcpy (new_pathname, in_pathname);
 	  strcat (new_pathname, ".exe");
 
-	  result = solib_find_1 (new_pathname, fd, 0, so);
+	  result = solib_find_1 (new_pathname, fd, 0, hints);
 	}
     }
 
@@ -448,15 +453,18 @@ exec_file_find (char *in_pathname, int *fd)
 }
 
 /* Return the full pathname of a shared library file, or NULL if not
-   found.  The returned pathname is malloc'ed and must be freed by
-   the caller.  If FD is non-NULL, *FD is set to either -1 or an open
-   file handle for the shared library.
+   found.  The returned pathname is malloc'ed and must be freed by the
+   caller.  If FD is non-NULL, *FD is set to either -1 or an open file
+   handle for the shared library.  HINTS is an optional pointer to
+   additional information about the library to find.
 
    The search algorithm used is described in solib_find_1's comment
    above.  */
 
 char *
-solib_find (char *in_pathname, struct so_list* so, int *fd)
+solib_find (char *in_pathname,
+	    const struct so_search_hints *hints,
+	    int *fd)
 {
   const char *solib_symbols_extension
     = gdbarch_solib_symbols_extension (target_gdbarch ());
@@ -484,7 +492,7 @@ solib_find (char *in_pathname, struct so_list* so, int *fd)
 	}
     }
 
-  return solib_find_1 (in_pathname, fd, 1, so);
+  return solib_find_1 (in_pathname, fd, 1, hints);
 }
 
 /* Open and return a BFD for the shared library PATHNAME.  If FD is not -1,
@@ -515,12 +523,12 @@ solib_bfd_fopen (char *pathname, int fd)
   return abfd;
 }
 
-/* Find shared library PATHNAME and open a BFD for it.  SO is an
+/* Find shared library PATHNAME and open a BFD for it.  HINTS is an
    optional pointer containing information about the DSO we're trying
    to find.  */
 
 bfd *
-solib_bfd_open2 (char *pathname, struct so_list *so)
+solib_bfd_open2 (char *pathname, const struct so_search_hints *hints)
 {
   char *found_pathname;
   int found_file;
@@ -534,7 +542,7 @@ solib_bfd_open2 (char *pathname, struct so_list *so)
   if (found_pathname == NULL)
     {
       errno = 0;
-      found_pathname = solib_find (pathname, so, &found_file);
+      found_pathname = solib_find (pathname, hints, &found_file);
     }
 
   if (found_pathname == NULL)
@@ -568,6 +576,16 @@ solib_bfd_open2 (char *pathname, struct so_list *so)
   return abfd;
 }
 
+static void
+init_search_hints_from_so (struct so_search_hints *hints,
+			   struct so_list *so)
+{
+  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  memset (hints, 0, sizeof (*hints));
+  if (so != NULL && ops->describe_lm_info != NULL)
+    ops->describe_lm_info (hints, so->lm_info);
+}
+
 /* Given a pointer to one of the shared objects in our list of mapped
    objects, use the recorded name to open a bfd descriptor for the
    object, build a section table, relocate all the section addresses
@@ -588,10 +606,12 @@ solib_map_sections (struct so_list *so)
   struct target_section *p;
   struct cleanup *old_chain;
   bfd *abfd;
+  struct so_search_hints hints;
 
   filename = xstrdup (so->so_name);
   old_chain = make_cleanup (xfree, filename);
-  abfd = ops->bfd_open2 (filename, so);
+  init_search_hints_from_so (&hints, so);
+  abfd = ops->bfd_open2 (filename, &hints);
 
   do_cleanups (old_chain);
 
@@ -1424,12 +1444,14 @@ reload_shared_libraries_1 (int from_tty)
       char *filename, *found_pathname = NULL;
       bfd *abfd;
       int was_loaded = so->symbols_loaded;
+      struct so_search_hints hints;
       const int flags =
 	SYMFILE_DEFER_BP_RESET | (from_tty ? SYMFILE_VERBOSE : 0);
 
       filename = xstrdup (so->so_original_name);
       make_cleanup (xfree, filename);
-      abfd = solib_bfd_open2 (filename, so);
+      init_search_hints_from_so (&hints, so);
+      abfd = solib_bfd_open2 (filename, &hints);
       if (abfd != NULL)
 	{
 	  found_pathname = xstrdup (bfd_get_filename (abfd));

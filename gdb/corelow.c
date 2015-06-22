@@ -226,7 +226,7 @@ core_close_cleanup (void *ignore)
    extract the list of threads in a core file.  */
 
 static void
-add_to_thread_list (int tid, int main)
+add_to_thread_list (int tid, int is_main)
 {
   ptid_t ptid;
   struct inferior *inf;
@@ -253,7 +253,7 @@ add_to_thread_list (int tid, int main)
 
   add_thread (ptid);
 
-  if (main)
+  if (is_main)
     inferior_ptid = ptid; /* Make it current. */
 }
 
@@ -283,11 +283,30 @@ add_to_thread_list_minidump (
   const struct minidump_thread_info *ti,
   void *data)
 {
-  /* XXX: figure out how this "is_main" business works.  */
-  add_to_thread_list (ti->thread_id, 0);
+  int *faulting_thread_id = data;
+  add_to_thread_list (ti->thread_id,
+		      (*faulting_thread_id != 0 &&
+		       *faulting_thread_id == ti->thread_id));
 }
 
 /* This routine opens and sets up the core file bfd.  */
+
+static int
+get_minidump_faulting_thread (bfd *abfd)
+{
+  int faulting_thread = 0;
+  TRY
+    {
+      faulting_thread =	minidump_read_exception_info (abfd).thread_id;
+    }
+  CATCH (except, RETURN_MASK_ERROR)
+    {
+      /* Noop.  */
+    }
+  END_CATCH;
+
+  return faulting_thread;
+}
 
 static void
 core_open (const char *arg, int from_tty)
@@ -403,10 +422,17 @@ core_open (const char *arg, int from_tty)
      current thread to the .reg/NN section matching the .reg
      section.  */
   if (minidump_p (core_bfd))
-    minidump_enumerate_threads (core_bfd, add_to_thread_list_minidump, NULL);
+    {
+      int faulting_thread = get_minidump_faulting_thread (core_bfd);
+      minidump_enumerate_threads (core_bfd,
+				  add_to_thread_list_minidump,
+				  &faulting_thread);
+    }
   else
-    bfd_map_over_sections (core_bfd, add_to_thread_list_core,
-			   bfd_get_section_by_name (core_bfd, ".reg"));
+    {
+      bfd_map_over_sections (core_bfd, add_to_thread_list_core,
+			     bfd_get_section_by_name (core_bfd, ".reg"));
+    }
 
   if (ptid_equal (inferior_ptid, null_ptid))
     {
@@ -800,6 +826,21 @@ core_xfer_partial (struct target_ops *ops, enum target_object object,
 		   const gdb_byte *writebuf, ULONGEST offset,
 		   ULONGEST len, ULONGEST *xfered_len)
 {
+  if (minidump_p (core_bfd))
+    {
+      enum target_xfer_status status = minidump_query (
+	core_bfd,
+	object,
+	annex,
+	readbuf,
+	offset,
+	len,
+	xfered_len);
+
+      if (status != TARGET_XFER_UNAVAILABLE)
+	return status;
+    }
+
   switch (object)
     {
     case TARGET_OBJECT_MEMORY:

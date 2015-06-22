@@ -273,12 +273,12 @@ enum invoke_solib_find_hook_flags {
   FIND_HOOK_WANT_SEPARATE_DEBUG_INFORMATION = 4,
 };
 
-struct so_list;
+struct so_search_hints;
 extern char *invoke_solib_find_hook (
   const char *hook_spec,
   const char *name,
   int flags,
-  struct so_list *so);
+  const struct so_search_hints *hints);
 
 extern struct type *get_xmethod_result_type (struct xmethod_worker *,
 					     struct value *object,

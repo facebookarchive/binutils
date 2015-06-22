@@ -1052,9 +1052,9 @@ extension_prefixed_p (const char *str)
        a local file (named by NAME) and want to find a separate debug
        information file for it.
 
-   SO is an optional pointer to information about the shared library
-   we are trying to load.  We use describe_lm_info to pass information
-   about the loaded DSO to extensions.
+   HINTS is an optional pointer to information about the shared
+   library we are trying to load.  We use describe_lm_info to pass
+   information about the loaded DSO to extensions.
 
    Return NULL if no extension was able to satisfy the request or a
    heap-allocated absolute-local or "target:"-prefixed path to the
@@ -1064,7 +1064,7 @@ invoke_solib_find_hook (
   const char *hook_spec,
   const char *name,
   int flags,
-  struct so_list *so)
+  const struct so_search_hints *hints)
 {
   int i;
   const struct extension_language_defn *extlang;
@@ -1075,7 +1075,7 @@ invoke_solib_find_hook (
       if (extlang->ops->invoke_solib_find_hook)
 	{
 	  new_name = extlang->ops->invoke_solib_find_hook (
-	    extlang, hook_spec, name, flags, so);
+	    extlang, hook_spec, name, flags, hints);
 
 	  if (new_name != NULL)
 	    return new_name;

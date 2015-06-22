@@ -328,7 +328,7 @@ struct extension_language_ops
      const char *hook,
      const char *name,
      int flags,
-     struct so_list *so);
+     const struct so_search_hints *hints);
 
   /* Try to find real source file for the given inputs.
      See find_and_open_source.  On success, return a malloced string

@@ -77,16 +77,20 @@ struct so_list
     CORE_ADDR addr_low, addr_high;
   };
 
-enum describe_lm_info_type {
-  describe_lm_info_int32,
-  describe_lm_info_core_addr,
-};
+struct so_search_hints {
+  /* Which of the fields below are valid.  When adding new fields, do
+     not forget to update extension interfaces that consume them.  */
+  unsigned base_addr_valid : 1;
+  unsigned l_ld_valid : 1;
 
-typedef void (*describe_lm_info_callback)
-  (void *opaque,
-   const char *name,
-   enum describe_lm_info_type type,
-   ...);
+  /* Our best guess as to the true base address of the module.  */
+  CORE_ADDR base_addr;
+
+  /* On SVR4-ish systems, the l_ld value from link_map.  Does not
+     point to the start of the mapped module, but may provide a hint
+     for looking up the base address via target mappings.  */
+  CORE_ADDR l_ld;
+};
 
 struct target_so_ops
   {
@@ -140,7 +144,8 @@ struct target_so_ops
     /* Find and open shared library binary file.
        Optional variant that accepts an so_list
        describing the file to load. */
-    bfd *(*bfd_open2) (char *pathname, struct so_list *so);
+    bfd *(*bfd_open2) (char *pathname,
+                       const struct so_search_hints *hints);
 
     /* Optional extra hook for finding and opening a solib.
        If TEMP_PATHNAME is non-NULL: If the file is successfully opened a
@@ -184,8 +189,7 @@ struct target_so_ops
 
     /* Describe an otherwise-opaque lm_info structure
        for the benefit of extension solib-loading hooks.  */
-    void (*describe_lm_info) (describe_lm_info_callback cb,
-                              void *opaque,
+    void (*describe_lm_info) (struct so_search_hints *hints,
                               struct lm_info *lm_info);
 
     /* Target-specific hook for exec_file_find.  */
@@ -204,11 +208,11 @@ extern char *exec_file_find (char *in_pathname, int *fd);
    DSO-searching machinery.  */
 extern char *exec_file_find2 (char *in_pathname,
                               int *fd,
-                              struct so_list *so);
+                              const struct so_search_hints *hints);
 
 /* Find shared library binary file.  */
 extern char *solib_find (char *in_pathname,
-                         struct so_list *so,
+                         const struct so_search_hints *hints,
                          int *fd);
 
 /* Open BFD for shared library file.  */
@@ -216,7 +220,8 @@ extern bfd *solib_bfd_fopen (char *pathname, int fd);
 
 /* Find solib binary file and open it, with
    additional context.  */
-extern bfd *solib_bfd_open2 (char *in_pathname, struct so_list *so);
+extern bfd *solib_bfd_open2 (char *in_pathname,
+                             const struct so_search_hints *hints);
 
 /* Handler for library-specific global symbol lookup in solib.c.  */
 struct symbol *solib_global_lookup (struct objfile *objfile,

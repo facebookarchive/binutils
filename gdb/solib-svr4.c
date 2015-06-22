@@ -50,6 +50,8 @@ static struct link_map_offsets *svr4_fetch_link_map_offsets (void);
 static int svr4_have_link_map_offsets (void);
 static void svr4_relocate_main_executable (void);
 static void svr4_free_library_list (void *p_list);
+static void svr4_describe_lm_info (struct so_search_hints *hints,
+				   struct lm_info *lm_info);
 
 /* Link map info to include in an allocated so_list entry.  */
 
@@ -64,14 +66,6 @@ struct lm_info
        iff L_ADDR_P.  */
     CORE_ADDR l_addr, l_addr_inferior;
     unsigned int l_addr_p : 1;
-    /* If FAKE_P, everything but l_addr is invalid, probably because
-       we made this lm_info up out of thin air to act as a stand-in
-       for an object whose address we know, but that isn't really a
-       DSO.  We create these fake entries in some cases when we need
-       to communicate the base addresses of the executable proper and
-       the program interpreter to loader extensions during early
-       program startup.  */
-    unsigned int fake_p : 1;
 
     /* The target location of lm.  */
     CORE_ADDR lm_addr;
@@ -2159,34 +2153,6 @@ cmp_name_and_sec_flags (asymbol *sym, void *data)
 	  && (sym->section->flags & (SEC_CODE | SEC_DATA)) != 0);
 }
 
-__attribute__((unused))
-static void
-do_cleanup_free_fake_so (void* x)
-{
-  struct so_list *fake = x;
-  free (fake->lm_info);
-  free (fake);
-}
-
-/* Helper funtion for making synthetic so_list entries.  */
-static struct so_list*
-make_fake_so (const char* filename, CORE_ADDR addr)
-{
-  struct so_list *fake = xzalloc (sizeof (*fake));
-  fake->lm_info = xzalloc (sizeof (*fake->lm_info));
-  make_cleanup (do_cleanup_free_fake_so, fake);
-  xsnprintf (fake->so_original_name,
-	     sizeof (fake->so_original_name),
-	     "%s", filename);
-  xsnprintf (fake->so_name,
-	     sizeof (fake->so_name),
-	     "%s", filename);
-  fake->lm_info->l_addr_p = 1;
-  fake->lm_info->fake_p = 1;
-  fake->lm_info->l_addr = addr;
-  return fake;
-}
-
 /* Arrange for dynamic linker to hit breakpoint.
 
    Both the SunOS and the SVR4 dynamic linkers have, as part of their
@@ -2316,24 +2282,23 @@ enable_break (struct svr4_info *info, int from_tty)
       struct so_list *so;
       bfd *tmp_bfd = NULL;
       struct target_ops *tmp_bfd_target;
-      struct so_list *loader_so;
-      struct cleanup *loader_so_cleanup;
+      struct so_search_hints find_loader_hints;
+
+      memset (&find_loader_hints, 0, sizeof (find_loader_hints));
 
       sym_addr = 0;
-      loader_so_cleanup = make_cleanup (null_cleanup, NULL);
 
       /* Try to scan the loaded shared library list for the dynamic
 	 linker.  Having the so available early helps solib_bfd_open2
 	 below find the right DSO.  If we're too early in process
 	 initialization, we might not be able to find the interpreter
 	 here.  */
-      loader_so = NULL;
       so = master_so_list ();
       while (so)
 	{
 	  if (svr4_same_1 (interp_name, so->so_original_name))
 	    {
-	      loader_so = so;
+	      svr4_describe_lm_info (&find_loader_hints, so->lm_info);
 	      break;
 	    }
 	  so = so->next;
@@ -2346,9 +2311,11 @@ enable_break (struct svr4_info *info, int from_tty)
 	 when we query AT_BASE again --- here, we're just giving a
 	 hint to the solib_bfd_open2 machinery, which is allowed to
 	 fail.  */
-      if (loader_so == NULL)
-	  if (target_auxv_search (&current_target, AT_BASE, &load_addr) > 0)
-	    loader_so = make_fake_so (interp_name, load_addr);
+      if (!find_loader_hints.base_addr_valid &&
+	  target_auxv_search (&current_target,
+			      AT_BASE,
+			      &find_loader_hints.base_addr) > 0)
+	find_loader_hints.base_addr_valid = 1;
 
       /* Now we need to figure out where the dynamic linker was
          loaded so that we can load its symbols and place a breakpoint
@@ -2361,14 +2328,12 @@ enable_break (struct svr4_info *info, int from_tty)
 
       TRY
         {
-	  tmp_bfd = solib_bfd_open2 (interp_name, loader_so);
+	  tmp_bfd = solib_bfd_open2 (interp_name, &find_loader_hints);
 	}
       CATCH (ex, RETURN_MASK_ALL)
 	{
 	}
       END_CATCH
-
-      do_cleanups (loader_so_cleanup);
 
       if (tmp_bfd == NULL)
 	goto bkpt_at_symbol;
@@ -3311,36 +3276,24 @@ elf_lookup_lib_symbol (struct objfile *objfile,
   return lookup_global_symbol_from_objfile (objfile, name, domain);
 }
 
-static void
-svr4_describe_lm_info (describe_lm_info_callback cb,
-		       void *opaque,
-		       struct lm_info *lm_info);
-
 void
-svr4_describe_lm_info (describe_lm_info_callback cb,
-		       void *opaque,
+svr4_describe_lm_info (struct so_search_hints *hints,
 		       struct lm_info *lm_info)
 {
-    if (lm_info->l_addr_p)
-	cb (opaque, "l_addr", describe_lm_info_core_addr, lm_info->l_addr);
+  if (lm_info != NULL)
+    {
+      if (lm_info->l_addr_inferior != 0)
+	{
+	  hints->base_addr = lm_info->l_addr_inferior;
+	  hints->base_addr_valid = 1;
+	}
 
-    if (!lm_info->fake_p)
-      {
-	cb (opaque, "l_addr_inferior",
-	    describe_lm_info_core_addr,
-	    lm_info->l_addr_inferior);
-
-	cb (opaque, "l_ld", describe_lm_info_core_addr,
-	    lm_info->l_ld);
-	cb (opaque, "l_next", describe_lm_info_core_addr,
-	    lm_info->l_next);
-	cb (opaque, "l_prev", describe_lm_info_core_addr,
-	    lm_info->l_prev);
-	cb (opaque, "l_name", describe_lm_info_core_addr,
-	    lm_info->l_name);
-	cb (opaque, "lm_addr", describe_lm_info_core_addr,
-	    lm_info->lm_addr);
-      }
+      if (lm_info->l_ld != 0)
+	{
+	  hints->l_ld = lm_info->l_ld;
+	  hints->l_ld_valid = 1;
+	}
+    }
 }
 
 /* This routine is like a light, exec_bfd-less version of
@@ -3458,20 +3411,12 @@ static char * svr4_exec_file_find (char *in_pathname, int *fd);
 char *
 svr4_exec_file_find (char *in_pathname, int *fd)
 {
-  struct so_list *exe_so = NULL;
-  CORE_ADDR exe_base;
-  struct cleanup *back_to;
-  char *ret;
+  struct so_search_hints hints;
 
-  back_to = make_cleanup (null_cleanup, NULL);
-  if (find_program_base (&exe_base))
-    {
-      exe_so = make_fake_so (in_pathname, exe_base);
-    }
-
-  ret = exec_file_find2 (in_pathname, fd, exe_so);
-  do_cleanups (back_to);
-  return ret;
+  memset (&hints, 0, sizeof (hints));
+  if (find_program_base (&hints.base_addr))
+    hints.base_addr_valid = 1;
+  return exec_file_find2 (in_pathname, fd, &hints);
 }
 
 extern initialize_file_ftype _initialize_svr4_solib; /* -Wmissing-prototypes */
