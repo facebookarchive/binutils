@@ -1663,6 +1663,32 @@ gdbpy_add_search_hint_core_addr (PyObject *py_so,
   do_cleanups (cleanup);
 }
 
+static void
+gdbpy_add_search_hint_bytes (PyObject *py_so,
+			     const char *name,
+			     const void *bytes,
+			     size_t length)
+{
+  PyObject *value;
+  struct cleanup *cleanup;
+
+  if (length > SSIZE_MAX)
+    length = SSIZE_MAX;
+
+  value = PyBytes_FromStringAndSize (
+    (const char*) bytes,
+    length);
+  if (value == NULL)
+    gdbpy_top_error ();
+
+  cleanup = make_cleanup_py_decref (value);
+
+  if (PyDict_SetItemString (py_so, name, value) == -1)
+    gdbpy_top_error ();
+
+  do_cleanups (cleanup);
+}
+
 static char *
 gdbpy_invoke_solib_find_hook
   (const struct extension_language_defn *extlang,
@@ -1692,6 +1718,12 @@ gdbpy_invoke_solib_find_hook
 
   if (hints != NULL && hints->l_ld_valid)
     gdbpy_add_search_hint_core_addr (py_so, "l_ld", hints->l_ld);
+
+  if (hints != NULL && hints->minidump_id_valid)
+    gdbpy_add_search_hint_bytes (
+      py_so, "minidump_id",
+      hints->minidump_id.bytes,
+      hints->minidump_id.length);
 
   py_ret = PyObject_CallFunction (
     solib_find_hook, "ssiO", hook_spec, name, flags, py_so);
