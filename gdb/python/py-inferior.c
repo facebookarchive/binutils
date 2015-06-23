@@ -493,6 +493,17 @@ infpy_get_was_attached (PyObject *self, void *closure)
   Py_RETURN_FALSE;
 }
 
+static PyObject *
+infpy_get_have_execution (PyObject *self, void *closure)
+{
+  inferior_object *inf = (inferior_object *) self;
+
+  INFPY_REQUIRE_VALID (inf);
+  if (target_has_execution)
+    Py_RETURN_TRUE;
+  Py_RETURN_FALSE;
+}
+
 static int
 build_inferior_list (struct inferior *inf, void *arg)
 {
@@ -949,6 +960,9 @@ static PyGetSetDef inferior_object_getset[] =
     NULL },
   { "was_attached", infpy_get_was_attached, NULL,
     "True if the inferior was created using 'attach'.", NULL },
+  { "have_execution", infpy_get_have_execution,
+    NULL,
+    "True if inferior is actually executing.", NULL },
   { NULL }
 };
 
