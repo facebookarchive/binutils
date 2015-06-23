@@ -4,6 +4,7 @@
 #include "bfd.h"
 #include "gdb_bfd.h"
 #include "target.h"
+#include "solist.h"
 
 /* Determine whether ABFD represents a minidump.  */
 int minidump_p (bfd *abfd);
@@ -41,5 +42,7 @@ struct minidump_exception_info {
 };
 
 struct minidump_exception_info minidump_read_exception_info (bfd *abfd);
+
+extern struct target_so_ops minidump_so_ops;
 
 #endif

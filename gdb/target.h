@@ -421,6 +421,8 @@ typedef void async_callback_ftype (enum inferior_event_type event_type,
 #define TARGET_DEFAULT_RETURN(ARG)
 #define TARGET_DEFAULT_FUNC(ARG)
 
+struct target_so_ops;
+
 struct target_ops
   {
     struct target_ops *beneath;	/* To the target under this one.  */
@@ -1210,6 +1212,10 @@ struct target_ops
     /* Cleanup after generating a core file.  */
     void (*to_done_generating_core) (struct target_ops *)
       TARGET_DEFAULT_IGNORE ();
+
+    /* Return so operations for this target.  */
+    const struct target_so_ops* (*to_so_ops) (struct target_ops *)
+      TARGET_DEFAULT_RETURN (solib_ops (target_gdbarch ()));
 
     int to_magic;
     /* Need sub-structure for target machine related rather than comm related?
@@ -2408,5 +2414,8 @@ extern void target_prepare_to_generate_core (void);
 
 /* See to_done_generating_core.  */
 extern void target_done_generating_core (void);
+
+/* See to_get_solib_override.  */
+extern const struct target_so_ops *target_so_ops (void);
 
 #endif /* !defined (TARGET_H) */

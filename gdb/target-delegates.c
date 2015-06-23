@@ -3874,6 +3874,33 @@ debug_done_generating_core (struct target_ops *self)
   fputs_unfiltered (")\n", gdb_stdlog);
 }
 
+static const struct target_so_ops*
+delegate_so_ops (struct target_ops *self)
+{
+  self = self->beneath;
+  return self->to_so_ops (self);
+}
+
+static const struct target_so_ops*
+tdefault_so_ops (struct target_ops *self)
+{
+  return solib_ops (target_gdbarch ());
+}
+
+static const struct target_so_ops*
+debug_so_ops (struct target_ops *self)
+{
+  const struct target_so_ops* result;
+  fprintf_unfiltered (gdb_stdlog, "-> %s->to_so_ops (...)\n", debug_target.to_shortname);
+  result = debug_target.to_so_ops (&debug_target);
+  fprintf_unfiltered (gdb_stdlog, "<- %s->to_so_ops (", debug_target.to_shortname);
+  target_debug_print_struct_target_ops_p (&debug_target);
+  fputs_unfiltered (") = ", gdb_stdlog);
+  target_debug_print_const_struct_target_so_opsp (result);
+  fputs_unfiltered ("\n", gdb_stdlog);
+  return result;
+}
+
 static void
 install_delegators (struct target_ops *ops)
 {
@@ -4163,6 +4190,8 @@ install_delegators (struct target_ops *ops)
     ops->to_prepare_to_generate_core = delegate_prepare_to_generate_core;
   if (ops->to_done_generating_core == NULL)
     ops->to_done_generating_core = delegate_done_generating_core;
+  if (ops->to_so_ops == NULL)
+    ops->to_so_ops = delegate_so_ops;
 }
 
 static void
@@ -4311,6 +4340,7 @@ install_dummy_methods (struct target_ops *ops)
   ops->to_get_tailcall_unwinder = tdefault_get_tailcall_unwinder;
   ops->to_prepare_to_generate_core = tdefault_prepare_to_generate_core;
   ops->to_done_generating_core = tdefault_done_generating_core;
+  ops->to_so_ops = tdefault_so_ops;
 }
 
 static void
@@ -4459,4 +4489,5 @@ init_debug_target (struct target_ops *ops)
   ops->to_get_tailcall_unwinder = debug_get_tailcall_unwinder;
   ops->to_prepare_to_generate_core = debug_prepare_to_generate_core;
   ops->to_done_generating_core = debug_done_generating_core;
+  ops->to_so_ops = debug_so_ops;
 }

@@ -82,6 +82,7 @@ struct so_search_hints {
      not forget to update extension interfaces that consume them.  */
   unsigned base_addr_valid : 1;
   unsigned l_ld_valid : 1;
+  unsigned minidump_id_valid : 1;
 
   /* Our best guess as to the true base address of the module.  */
   CORE_ADDR base_addr;
@@ -90,6 +91,13 @@ struct so_search_hints {
      point to the start of the mapped module, but may provide a hint
      for looking up the base address via target mappings.  */
   CORE_ADDR l_ld;
+
+  /* Caller-owned memory providing any explicit ID provided via a
+     loaded minidump module list.  */
+  struct {
+    const void *bytes;
+    size_t length;
+  } minidump_id;
 };
 
 struct target_so_ops

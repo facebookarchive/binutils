@@ -1159,6 +1159,17 @@ core_info_proc (struct target_ops *ops, const char *args,
     gdbarch_core_info_proc (gdbarch, args, request);
 }
 
+/* Implement the to_so_ops method.  */
+
+static const struct target_so_ops *
+core_so_ops (struct target_ops *ops)
+{
+  if (core_bfd && minidump_p (core_bfd))
+    return &minidump_so_ops;
+
+  return ops->beneath->to_so_ops (ops->beneath);
+}
+
 /* Fill in core_ops with its defined operations and properties.  */
 
 static void
@@ -1185,6 +1196,7 @@ init_core_ops (void)
   core_ops.to_has_stack = core_has_stack;
   core_ops.to_has_registers = core_has_registers;
   core_ops.to_info_proc = core_info_proc;
+  core_ops.to_so_ops = core_so_ops;
   core_ops.to_magic = OPS_MAGIC;
 
   if (core_target)

@@ -163,7 +163,7 @@ solib_find_1 (char *in_pathname,
 	      int is_solib,
 	      const struct so_search_hints *hints)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
   int found_file = -1;
   char *temp_pathname = NULL;
   const char *fskind = effective_target_file_system_kind ();
@@ -445,7 +445,7 @@ exec_file_find2 (char *in_pathname,
 char *
 exec_file_find (char *in_pathname, int *fd)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
   if (ops->exec_file_find)
     return ops->exec_file_find (in_pathname, fd);
 
@@ -580,7 +580,7 @@ static void
 init_search_hints_from_so (struct so_search_hints *hints,
 			   struct so_list *so)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
   memset (hints, 0, sizeof (*hints));
   if (so != NULL && ops->describe_lm_info != NULL)
     ops->describe_lm_info (hints, so->lm_info);
@@ -601,7 +601,7 @@ init_search_hints_from_so (struct so_search_hints *hints,
 static int
 solib_map_sections (struct so_list *so)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
   char *filename;
   struct target_section *p;
   struct cleanup *old_chain;
@@ -676,7 +676,7 @@ solib_map_sections (struct so_list *so)
 static void
 clear_so (struct so_list *so)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
 
   if (so->sections)
     {
@@ -716,7 +716,7 @@ clear_so (struct so_list *so)
 void
 free_so (struct so_list *so)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
 
   clear_so (so);
   ops->free_so (so);
@@ -831,7 +831,7 @@ solib_used (const struct so_list *const known)
 static void
 update_solib_list (int from_tty, struct target_ops *target)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
   struct so_list *inferior = ops->current_sos();
   struct so_list *gdb, **gdb_link;
 
@@ -1108,7 +1108,7 @@ solib_add (const char *pattern, int from_tty,
 
     if (loaded_any_symbols)
       {
-	const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+	const struct target_so_ops *ops = target_so_ops ();
 
 	/* Getting new symbols may change our opinion about what is
 	   frameless.  */
@@ -1294,7 +1294,7 @@ solib_original_name_from_address (struct program_space *pspace,
 int
 solib_keep_data_in_core (CORE_ADDR vaddr, unsigned long size)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
 
   if (ops->keep_data_in_core)
     return ops->keep_data_in_core (vaddr, size);
@@ -1307,7 +1307,7 @@ solib_keep_data_in_core (CORE_ADDR vaddr, unsigned long size)
 void
 clear_solib (void)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
 
   /* This function is expected to handle ELF shared libraries.  It is
      also used on Solaris, which can run either ELF or a.out binaries
@@ -1354,7 +1354,7 @@ clear_solib (void)
 void
 solib_create_inferior_hook (int from_tty)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
 
   ops->solib_create_inferior_hook (from_tty);
 }
@@ -1365,7 +1365,7 @@ solib_create_inferior_hook (int from_tty)
 int
 in_solib_dynsym_resolve_code (CORE_ADDR pc)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
 
   return ops->in_dynsym_resolve_code (pc);
 }
@@ -1401,7 +1401,7 @@ no_shared_libraries (char *ignored, int from_tty)
 void
 update_solib_breakpoints (void)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
 
   if (ops->update_breakpoints != NULL)
     ops->update_breakpoints ();
@@ -1412,7 +1412,7 @@ update_solib_breakpoints (void)
 void
 handle_solib_event (void)
 {
-  const struct target_so_ops *ops = solib_ops (target_gdbarch ());
+  const struct target_so_ops *ops = target_so_ops ();
 
   if (ops->handle_event != NULL)
     ops->handle_event ();
@@ -1511,7 +1511,7 @@ reload_shared_libraries (char *ignored, int from_tty,
 
   reload_shared_libraries_1 (from_tty);
 
-  ops = solib_ops (target_gdbarch ());
+  ops = target_so_ops ();
 
   /* Creating inferior hooks here has two purposes.  First, if we reload
      shared libraries then the address of solib breakpoint we've computed

@@ -3704,6 +3704,14 @@ target_done_generating_core (void)
   current_target.to_done_generating_core (&current_target);
 }
 
+/* See target.h.  */
+
+const struct target_so_ops *
+target_so_ops (void)
+{
+  return current_target.to_so_ops (&current_target);
+}
+
 static void
 setup_target_debug (void)
 {

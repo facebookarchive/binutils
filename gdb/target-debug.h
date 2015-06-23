@@ -193,4 +193,12 @@ target_debug_print_signals (unsigned char *sigs)
   fputs_unfiltered (" }", gdb_stdlog);
 }
 
+static void
+target_debug_print_const_struct_target_so_opsp (
+  const struct target_so_ops *ops)
+{
+  /* XXX: implement me */
+}
+
+
 #endif /* TARGET_DEBUG_H */
