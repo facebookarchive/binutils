@@ -95,6 +95,34 @@ struct minidump_memory_descriptor {
   struct minidump_location_descriptor memory;
 };
 
+struct minidump_fixed_file_info {
+  uint32_t signature;
+  uint32_t struct_version;
+  uint32_t file_version_hi;
+  uint32_t file_version_lo;
+  uint32_t product_version_hi;
+  uint32_t product_version_lo;
+  uint32_t file_flags_mask;
+  uint32_t file_flags;
+  uint32_t file_os;
+  uint32_t file_type;
+  uint32_t file_subtype;
+  uint32_t file_date_hi;
+  uint32_t file_date_lo;
+};
+
+struct minidump_module {
+  uint64_t base_of_image;
+  uint32_t size_of_image;
+  uint32_t checksum;
+  uint32_t time_date_stamp;
+  rva module_name_rva;
+  struct minidump_fixed_file_info version_info;
+  struct minidump_location_descriptor cv_record;
+  struct minidump_location_descriptor misc_record;
+  uint32_t unused[4];
+};
+
 struct minidump_thread {
   uint32_t thread_id;
   uint32_t suspend_count;
@@ -104,6 +132,11 @@ struct minidump_thread {
   struct minidump_memory_descriptor stack;
   struct minidump_location_descriptor thread_context;
 };
+
+typedef void (*minidump_int_module_enumerator)(
+  struct bfd *abfd,
+  struct minidump_module *module,
+  void *data);
 
 struct minidump_system_info {
   uint16_t processor_architecture;
@@ -116,6 +149,12 @@ struct minidump_system_info {
   uint32_t build_number;
   uint32_t platform_id;
 };
+
+static void
+minidump_int_enumerate_modules (
+  bfd *abfd,
+  minidump_int_module_enumerator enumerator,
+  void *data);
 
 static asection *
 minidump_get_section_by_type (bfd *abfd, enum minidump_stream_type type)
@@ -208,6 +247,72 @@ minidump_enumerate_threads (
     }
 }
 
+static void
+read_fixed_file_info (bfd *abfd,
+		      struct minidump_fixed_file_info *ffi)
+{
+  READ (&ffi->signature);
+  READ (&ffi->struct_version);
+  READ (&ffi->file_version_hi);
+  READ (&ffi->file_version_lo);
+  READ (&ffi->product_version_hi);
+  READ (&ffi->product_version_lo);
+  READ (&ffi->file_flags_mask);
+  READ (&ffi->file_flags);
+  READ (&ffi->file_os);
+  READ (&ffi->file_type);
+  READ (&ffi->file_subtype);
+  READ (&ffi->file_date_hi);
+  READ (&ffi->file_date_lo);
+}
+
+static void
+minidump_int_enumerate_modules_1 (
+  bfd *abfd,
+  minidump_int_module_enumerator enumerator,
+  void *data)
+{
+  struct minidump_module module;
+  file_ptr saved_pos;
+
+  READ (&module.base_of_image);
+  READ (&module.size_of_image);
+  READ (&module.checksum);
+  READ (&module.time_date_stamp);
+  READ (&module.module_name_rva);
+  read_fixed_file_info (abfd, &module.version_info);
+  read_location_descriptor (abfd, &module.cv_record);
+  read_location_descriptor (abfd, &module.misc_record);
+  READ (&module.unused[0]);
+  READ (&module.unused[1]);
+  READ (&module.unused[2]);
+  READ (&module.unused[3]);
+
+  saved_pos = bfd_tell (abfd);
+  enumerator (abfd, &module, data);
+  SEEK (saved_pos);
+}
+
+void
+minidump_int_enumerate_modules (
+  bfd *abfd,
+  minidump_int_module_enumerator enumerator,
+  void *data)
+{
+  asection *asect = minidump_get_section_by_type (abfd, module_list_stream);
+  uint32_t number_of_modules;
+  uint32_t i;
+
+  if (asect == NULL)
+    return;
+
+  SEEK (asect->filepos);
+  READ (&number_of_modules);
+
+  for (i = 0; i < number_of_modules; ++i)
+    minidump_int_enumerate_modules_1 (abfd, enumerator, data);
+}
+
 enum target_xfer_status
 minidump_query (
   bfd *abfd,
@@ -220,6 +325,11 @@ minidump_query (
 {
   switch (object)
     {
+    case TARGET_OBJECT_LIBRARIES_SVR4: {
+      (void) minidump_int_enumerate_modules;
+      return TARGET_XFER_UNAVAILABLE;
+    }
+
     case TARGET_OBJECT_AUXV: {
       static asection *section;
       bfd_size_type size;
