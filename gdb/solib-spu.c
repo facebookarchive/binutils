@@ -344,7 +344,7 @@ spu_bfd_fopen (char *name, CORE_ADDR addr)
 
 /* Open shared library BFD.  */
 static bfd *
-spu_bfd_open (char *pathname, struct so_list *so)
+spu_bfd_open2 (char *pathname, const struct so_search_hints *hints)
 {
   char *original_name = strrchr (pathname, '@');
   bfd *abfd;
@@ -354,7 +354,7 @@ spu_bfd_open (char *pathname, struct so_list *so)
 
   /* Handle regular SVR4 libraries.  */
   if (!original_name)
-    return svr4_so_ops.bfd_open2 (pathname, so);
+    return svr4_so_ops.bfd_open2 (pathname, hints);
 
   /* Decode object ID.  */
   if (sscanf (original_name, "@0x%llx <%d>", &addr, &fd) != 2)

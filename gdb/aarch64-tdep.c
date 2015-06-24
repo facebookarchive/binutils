@@ -2629,13 +2629,13 @@ aarch64_grok_minidump_registers (struct gdbarch *gdbarch,
     {
       if (sizeof (uint32_t) <= end - pos)
 	{
-	  regcache_raw_supply (regcache, AARCH64_AARCH64_FPSR_REGNUM, pos);
+	  regcache_raw_supply (regcache, AARCH64_FPSR_REGNUM, pos);
 	  pos += sizeof (uint32_t);
 	}
 
       if (sizeof (uint32_t) <= end - pos)
 	{
-	  regcache_raw_supply (regcache, AARCH64_AARCH64_FPCR_REGNUM, pos);
+	  regcache_raw_supply (regcache, AARCH64_FPCR_REGNUM, pos);
 	  pos += sizeof (uint32_t);
 	}
 

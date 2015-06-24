@@ -1192,8 +1192,8 @@ static const bfd_target * const _bfd_target_vector[] =
 
 	&microblaze_elf32_vec,
 
-	minidump_generic_le_vec,
-	minidump_generic_be_vec,
+	&minidump_generic_le_vec,
+	&minidump_generic_be_vec,
 
 #if 0
 	/* No one seems to use this.  */
