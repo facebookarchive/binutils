@@ -1,3 +1,109 @@
+2015-06-24  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.c (trace_one_insn): Delete.
+	* sim-trace.h (trace_one_insn): Delete.
+
+2015-06-24  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.c (debug_printf): Rename to ...
+	(sim_debug_printf): ... this.
+	* sim-trace.h (debug_printf): Delete define.
+	(debug_printf): Rename to ...
+	(sim_debug_printf): ... this.
+
+2015-06-24  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.c (OPTION_TRACE_REGISTER): New enum.
+	(trace_options): Add trace-register option.
+	(trace_option_handler): Handle OPTION_TRACE_REGISTER case.
+	(trace_idx_to_str): Handle TRACE_REGISTER_IDX case and re-indent.
+	* sim-trace.h (TRACE_REGISTER_IDX): New enum.
+	(TRACE_register, WITH_TRACE_REGISTER_P, STRACE_REGISTER_P,
+	TRACE_REGISTER_P, TRACE_REGISTER): Define.
+
+2015-06-24  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.h (STRACE, STRACE_INSN, STRACE_DECODE, STRACE_EXTRACT,
+	STRACE_LINENUM, STRACE_MEMORY, STRACE_MODEL, STRACE_ALU, STRACE_CORE,
+	STRACE_EVENTS, STRACE_FPU, STRACE_VPU, STRACE_BRANCH, STRACE_SYSCALL,
+	STRACE_DEBUG): Define.
+
+2015-06-24  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-trace.c (trace_options): Update help text for trace-alu,
+	trace-fpu, trace-vpu, and trace-semantics.
+	* sim-trace.h (TRACE_ALU_IDX): Update comment text.
+	(TRACE_FPU_IDX, TRACE_VPU_IDX): Likewise.
+
+2015-06-24  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-assert.h (SIM_FILTER_PATH): Delete.
+	[!SIM_ASSERT, WITH_ASSERT]: Include libiberty.h.
+	(SIM_ASSERT): Replace SIM_FILTER_PATH with lbasename.
+	[!ASSERT, WITH_ASSERT]: Include libiberty.h.
+	(ASSERT): Replace SIM_FILTER_PATH with lbasename.
+	* sim-events.c: Include libiberty.h.
+	(ETRACE): Replace SIM_FILTER_PATH with lbasename.
+
+2015-06-23  Mike Frysinger  <vapier@gentoo.org>
+
+	* acinclude.m4 (AC_ARG_ENABLE(sim-bswap)): Call AS_HELP_STRING.
+	(AC_ARG_ENABLE(sim-cflags)): Likewise.
+	(AC_ARG_ENABLE(sim-debug)): Likewise.
+	(AC_ARG_ENABLE(sim-stdio)): Likewise.
+	(AC_ARG_ENABLE(sim-trace)): Likewise.
+	(AC_ARG_ENABLE(sim-profile)): Likewise.
+	(AC_ARG_ENABLE(sim-environment)): Likewise.
+	(AC_ARG_ENABLE(sim-alignment)): Likewise.
+	(AC_ARG_ENABLE(sim-assert)): Likewise.
+	(AC_ARG_ENABLE(sim-bitsize)): Likewise.
+	(AC_ARG_ENABLE(sim-endian)): Likewise.
+	(AC_ARG_ENABLE(sim-hostendian)): Likewise.
+	(AC_ARG_ENABLE(sim-float)): Likewise.
+	(AC_ARG_ENABLE(sim-scache)): Likewise.
+	(AC_ARG_ENABLE(sim-default-model)): Likewise.
+	(AC_ARG_ENABLE(sim-inline)): Likewise.
+	(AC_ARG_ENABLE(sim-packages)): Likewise.
+	(AC_ARG_ENABLE(sim-regparm)): Likewise.
+	(AC_ARG_ENABLE(sim-reserved-bits)): Likewise.
+	(AC_ARG_ENABLE(sim-smp)): Likewise.
+	(AC_ARG_ENABLE(sim-stdcall)): Likewise.
+	(AC_ARG_ENABLE(sim-xor-endian)): Likewise.
+	(AC_ARG_ENABLE(cgen-maint)): Likewise.
+	* configure: Regenerate.
+
+2015-06-23  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-config.h (WITH_TRACE): Define to ~TRACE_debug.
+
+2015-06-23  Mike Frysinger  <vapier@gentoo.org>
+
+	* cgen-trace.c [!__STDC__]: Delete.
+	* sim-trace.h [!__STDC__]: Likewise.
+
+2015-06-21  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-model.c (sim_model_init): Assert model is not NULL.
+
+2015-06-21  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-types.h: Move SIM_TYPES_H define to top of file.  Include
+	stdint.h.  Replace all signed/unsigned typedefs with int#_t and
+	uint#_t.
+
+2015-06-21  Mike Frysinger  <vapier@gentoo.org>
+
+	* sim-alu.h (_SIM_ALU_H_): Rename to ...
+	(SIM_ALU_H): ... this.
+	* sim-assert.h (_SIM_ASSERT_H_): Rename to ...
+	(SIM_ASSERT_H): ... this.
+	* sim-basics.h (_SIM_BASICS_H_): Rename to ...
+	(SIM_BASICS_H): ... this.
+	* sim-bits.h (_SIM_BITS_H_): Rename to ...
+	(SIM_BITS_H): ... this.
+	* sim-endian.h (_SIM_ENDIAN_H_): Rename to ...
+	(SIM_ENDIAN_H): ... this.
+
 2015-06-18  Mike Frysinger  <vapier@gentoo.org>
 
 	* sim-syscall.c (sim_syscall_multi): Change unknown_syscall to a

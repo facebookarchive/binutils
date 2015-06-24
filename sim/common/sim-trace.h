@@ -50,7 +50,7 @@ enum {
   /* Include model performance data in tracing output.  */
   TRACE_MODEL_IDX,
 
-  /* Trace ALU operations.  */
+  /* Trace ALU (Arithmetic Logic Unit) operations.  */
   TRACE_ALU_IDX,
 
   /* Trace memory core operations.  */
@@ -59,10 +59,10 @@ enum {
   /* Trace events.  */
   TRACE_EVENTS_IDX,
 
-  /* Trace fpu operations.  */
+  /* Trace FPU (Floating Point Unit) operations.  */
   TRACE_FPU_IDX,
 
-  /* Trace vpu operations.  */
+  /* Trace VPU (Vector Processing Unit) operations.  */
   TRACE_VPU_IDX,
 
   /* Trace branching.  */
@@ -70,6 +70,10 @@ enum {
 
   /* Trace syscalls.  */
   TRACE_SYSCALL_IDX,
+
+  /* Trace cpu register accesses.  Registers that are part of hardware devices
+     should use the HW_TRACE macros instead.  */
+  TRACE_REGISTER_IDX,
 
   /* Add information useful for debugging the simulator to trace output.  */
   TRACE_DEBUG_IDX,
@@ -105,6 +109,7 @@ enum {
 #define TRACE_vpu      (1 << TRACE_VPU_IDX)
 #define TRACE_branch   (1 << TRACE_BRANCH_IDX)
 #define TRACE_syscall  (1 << TRACE_SYSCALL_IDX)
+#define TRACE_register (1 << TRACE_REGISTER_IDX)
 #define TRACE_debug    (1 << TRACE_DEBUG_IDX)
 
 /* Return non-zero if tracing of idx is enabled (compiled in).  */
@@ -125,6 +130,7 @@ enum {
 #define WITH_TRACE_VPU_P	WITH_TRACE_P (TRACE_VPU_IDX)
 #define WITH_TRACE_BRANCH_P	WITH_TRACE_P (TRACE_BRANCH_IDX)
 #define WITH_TRACE_SYSCALL_P	WITH_TRACE_P (TRACE_SYSCALL_IDX)
+#define WITH_TRACE_REGISTER_P	WITH_TRACE_P (TRACE_REGISTER_IDX)
 #define WITH_TRACE_DEBUG_P	WITH_TRACE_P (TRACE_DEBUG_IDX)
 
 /* Tracing install handler.  */
@@ -210,7 +216,30 @@ typedef struct _trace_data {
 #define STRACE_VPU_P(sd)	STRACE_P (sd, TRACE_VPU_IDX)
 #define STRACE_BRANCH_P(sd)	STRACE_P (sd, TRACE_BRANCH_IDX)
 #define STRACE_SYSCALL_P(sd)	STRACE_P (sd, TRACE_SYSCALL_IDX)
+#define STRACE_REGISTER_P(sd)	STRACE_P (sd, TRACE_REGISTER_IDX)
 #define STRACE_DEBUG_P(sd)	STRACE_P (sd, TRACE_DEBUG_IDX)
+
+/* Helper functions for printing messages.  */
+#define STRACE(sd, idx, fmt, args...) \
+  do { \
+    if (STRACE_P (sd, idx)) \
+      trace_generic (sd, NULL, idx, fmt, ## args); \
+  } while (0)
+#define STRACE_INSN(sd, fmt, args...)		STRACE (sd, TRACE_INSN_IDX, fmt, ## args)
+#define STRACE_DECODE(sd, fmt, args...)		STRACE (sd, TRACE_DECODE_IDX, fmt, ## args)
+#define STRACE_EXTRACT(sd, fmt, args...)	STRACE (sd, TRACE_EXTRACT_IDX, fmt, ## args)
+#define STRACE_LINENUM(sd, fmt, args...)	STRACE (sd, TRACE_LINENUM_IDX, fmt, ## args)
+#define STRACE_MEMORY(sd, fmt, args...)		STRACE (sd, TRACE_MEMORY_IDX, fmt, ## args)
+#define STRACE_MODEL(sd, fmt, args...)		STRACE (sd, TRACE_MODEL_IDX, fmt, ## args)
+#define STRACE_ALU(sd, fmt, args...)		STRACE (sd, TRACE_ALU_IDX, fmt, ## args)
+#define STRACE_CORE(sd, fmt, args...)		STRACE (sd, TRACE_CORE_IDX, fmt, ## args)
+#define STRACE_EVENTS(sd, fmt, args...)		STRACE (sd, TRACE_EVENTS_IDX, fmt, ## args)
+#define STRACE_FPU(sd, fmt, args...)		STRACE (sd, TRACE_FPU_IDX, fmt, ## args)
+#define STRACE_VPU(sd, fmt, args...)		STRACE (sd, TRACE_VPU_IDX, fmt, ## args)
+#define STRACE_BRANCH(sd, fmt, args...)		STRACE (sd, TRACE_BRANCH_IDX, fmt, ## args)
+#define STRACE_SYSCALL(sd, fmt, args...)	STRACE (sd, TRACE_SYSCALL_IDX, fmt, ## args)
+#define STRACE_REGISTER(sd, fmt, args...)	STRACE (sd, TRACE_REGISTER_IDX, fmt, ## args)
+#define STRACE_DEBUG(sd, fmt, args...)		STRACE (sd, TRACE_DEBUG_IDX, fmt, ## args)
 
 /* CPU tracing support.  */
 
@@ -235,6 +264,7 @@ typedef struct _trace_data {
 #define TRACE_VPU_P(cpu)	TRACE_P (cpu, TRACE_VPU_IDX)
 #define TRACE_BRANCH_P(cpu)	TRACE_P (cpu, TRACE_BRANCH_IDX)
 #define TRACE_SYSCALL_P(cpu)	TRACE_P (cpu, TRACE_SYSCALL_IDX)
+#define TRACE_REGISTER_P(cpu)	TRACE_P (cpu, TRACE_REGISTER_IDX)
 #define TRACE_DEBUG_P(cpu)	TRACE_P (cpu, TRACE_DEBUG_IDX)
 
 /* Helper functions for printing messages.  */
@@ -256,6 +286,7 @@ typedef struct _trace_data {
 #define TRACE_VPU(cpu, fmt, args...)		TRACE (cpu, TRACE_VPU_IDX, fmt, ## args)
 #define TRACE_BRANCH(cpu, fmt, args...)		TRACE (cpu, TRACE_BRANCH_IDX, fmt, ## args)
 #define TRACE_SYSCALL(cpu, fmt, args...)	TRACE (cpu, TRACE_SYSCALL_IDX, fmt, ## args)
+#define TRACE_REGISTER(cpu, fmt, args...)	TRACE (cpu, TRACE_REGISTER_IDX, fmt, ## args)
 #define TRACE_DEBUG(cpu, fmt, args...)		TRACE (cpu, TRACE_DEBUG_IDX, fmt, ## args)
 
 /* Tracing functions.  */
@@ -587,19 +618,6 @@ do { \
 } while (0)
 
 
-/* The function trace_one_insn has been replaced by the function pair
-   trace_prefix() + trace_generic() */
-extern void trace_one_insn (SIM_DESC sd,
-			    sim_cpu * cpu,
-			    address_word cia,
-			    int print_linenum_p,
-			    const char *file_name,
-			    int line_nr,
-			    const char *unit,
-			    const char *fmt,
-			    ...)
-     __attribute__((format (printf, 8, 9)));
-
 extern void trace_printf (SIM_DESC, sim_cpu *, const char *, ...)
      __attribute__((format (printf, 3, 4)));
 
@@ -617,10 +635,7 @@ extern void trace_vprintf (SIM_DESC, sim_cpu *, const char *, va_list);
 /* Non-zero if "--debug-insn" specified.  */
 #define DEBUG_INSN_P(cpu) DEBUG_P (cpu, DEBUG_INSN_IDX)
 
-/* GDB also has a debug_printf, so we shadow ours.  */
-#define debug_printf sim_debug_printf
-
-extern void debug_printf (sim_cpu *, const char *, ...)
+extern void sim_debug_printf (sim_cpu *, const char *, ...)
      __attribute__((format (printf, 2, 3)));
 
 #endif /* SIM_TRACE_H */

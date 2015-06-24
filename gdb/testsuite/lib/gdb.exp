@@ -1996,6 +1996,17 @@ gdb_caching_proc support_complex_tests {
     return $result
 }
 
+# Return 1 if GDB can get a type for siginfo from the target, otherwise
+# return 0.
+
+proc supports_get_siginfo_type {} {
+    if { [istarget "*-*-linux*"] } {
+	return 1
+    } else {
+	return 0
+    }
+}
+
 # Return 1 if target hardware or OS supports single stepping to signal
 # handler, otherwise, return 0.
 
@@ -2556,7 +2567,8 @@ proc skip_hw_breakpoint_tests {} {
     if { [istarget "i?86-*-*"] 
 	 || [istarget "x86_64-*-*"]
 	 || [istarget "ia64-*-*"] 
-	 || [istarget "arm*-*-*"]} {
+	 || [istarget "arm*-*-*"]
+	 || [istarget "aarch64*-*-*"]} {
 	return 0
     }
 
@@ -2576,6 +2588,7 @@ proc skip_hw_watchpoint_tests {} {
 	 || [istarget "x86_64-*-*"]
 	 || [istarget "ia64-*-*"] 
 	 || [istarget "arm*-*-*"]
+	 || [istarget "aarch64*-*-*"]
 	 || [istarget "powerpc*-*-linux*"]
 	 || [istarget "s390*-*-*"] } {
 	return 0
