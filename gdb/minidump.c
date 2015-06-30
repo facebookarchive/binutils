@@ -1027,6 +1027,40 @@ minidump_read_string (bfd *abfd)
 
 
 
+/* Read the Linux mapping data included in the core dump.  If it's
+   there, return a heap-allocated string containing the entire mapping
+   blob, which is literally /proc/pid/maps.  Otherwise, return
+   NULL.  */
+char *
+minidump_read_linux_mappings (bfd *abfd)
+{
+  asection *asect;
+  char *mappings;
+  size_t mappings_length;
+  struct cleanup *cleanup;
+
+  asect = minidump_get_section_by_type (abfd, linux_maps_stream);
+  if (asect == NULL)
+    return NULL;
+
+  mappings_length = bfd_get_section_size (asect);
+  if (mappings_length == (size_t) -1)
+    error (_("malformed maps section: too long"));
+
+  mappings = xmalloc (mappings_length + 1);
+  cleanup = make_cleanup (xfree, mappings);
+
+  if (! bfd_get_section_contents (abfd, asect, mappings,
+				  (file_ptr) 0, mappings_length))
+    throw_bfd_error ();
+
+  mappings[mappings_length] = '\0';
+  discard_cleanups (cleanup);
+  return mappings;
+}
+
+
+
 extern initialize_file_ftype _initialize_minidump;
 
 void

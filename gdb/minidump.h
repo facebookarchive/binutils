@@ -43,6 +43,8 @@ struct minidump_exception_info {
 
 struct minidump_exception_info minidump_read_exception_info (bfd *abfd);
 
+char *minidump_read_linux_mappings (bfd *abfd);
+
 extern struct target_so_ops minidump_so_ops;
 
 #endif

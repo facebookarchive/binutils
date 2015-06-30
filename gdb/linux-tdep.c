@@ -37,6 +37,7 @@
 #include "infcall.h"
 #include "gdbcmd.h"
 #include "gdb_regex.h"
+#include "minidump.h"
 
 #include <ctype.h>
 
@@ -194,6 +195,8 @@ struct linux_info
      if we tried looking it up but failed.  */
   int vsyscall_range_p;
 };
+
+static void linux_print_mapping_data (struct gdbarch *, char *);
 
 /* Frees whatever allocated space there is to be freed and sets INF's
    linux cache data pointer to NULL.  */
@@ -678,6 +681,59 @@ dump_mapping_p (enum filterflags filterflags, const struct smaps_vmflags *v,
 /* Implement the "info proc" command.  */
 
 static void
+linux_print_mapping_data (struct gdbarch *gdbarch, char *data)
+{
+  char *line;
+
+  printf_filtered (_("Mapped address spaces:\n\n"));
+  if (gdbarch_addr_bit (gdbarch) == 32)
+    {
+      printf_filtered ("\t%10s %10s %10s %10s %s\n",
+		       "Start Addr",
+		       "  End Addr",
+		       "      Size", "    Offset", "objfile");
+    }
+  else
+    {
+      printf_filtered ("  %18s %18s %10s %10s %s\n",
+		       "Start Addr",
+		       "  End Addr",
+		       "      Size", "    Offset", "objfile");
+    }
+
+  for (line = strtok (data, "\n"); line; line = strtok (NULL, "\n"))
+    {
+      ULONGEST addr, endaddr, offset, inode;
+      const char *permissions, *device, *filename;
+      size_t permissions_len, device_len;
+
+      read_mapping (line, &addr, &endaddr,
+		    &permissions, &permissions_len,
+		    &offset, &device, &device_len,
+		    &inode, &filename);
+
+      if (gdbarch_addr_bit (gdbarch) == 32)
+	{
+	  printf_filtered ("\t%10s %10s %10s %10s %s\n",
+			   paddress (gdbarch, addr),
+			   paddress (gdbarch, endaddr),
+			   hex_string (endaddr - addr),
+			   hex_string (offset),
+			   *filename? filename : "");
+	}
+      else
+	{
+	  printf_filtered ("  %18s %18s %10s %10s %s\n",
+			   paddress (gdbarch, addr),
+			   paddress (gdbarch, endaddr),
+			   hex_string (endaddr - addr),
+			   hex_string (offset),
+			   *filename? filename : "");
+	}
+    }
+}
+
+static void
 linux_info_proc (struct gdbarch *gdbarch, const char *args,
 		 enum info_proc_what what)
 {
@@ -762,55 +818,7 @@ linux_info_proc (struct gdbarch *gdbarch, const char *args,
       if (data)
 	{
 	  struct cleanup *cleanup = make_cleanup (xfree, data);
-	  char *line;
-
-	  printf_filtered (_("Mapped address spaces:\n\n"));
-	  if (gdbarch_addr_bit (gdbarch) == 32)
-	    {
-	      printf_filtered ("\t%10s %10s %10s %10s %s\n",
-			   "Start Addr",
-			   "  End Addr",
-			   "      Size", "    Offset", "objfile");
-            }
-	  else
-            {
-	      printf_filtered ("  %18s %18s %10s %10s %s\n",
-			   "Start Addr",
-			   "  End Addr",
-			   "      Size", "    Offset", "objfile");
-	    }
-
-	  for (line = strtok (data, "\n"); line; line = strtok (NULL, "\n"))
-	    {
-	      ULONGEST addr, endaddr, offset, inode;
-	      const char *permissions, *device, *filename;
-	      size_t permissions_len, device_len;
-
-	      read_mapping (line, &addr, &endaddr,
-			    &permissions, &permissions_len,
-			    &offset, &device, &device_len,
-			    &inode, &filename);
-
-	      if (gdbarch_addr_bit (gdbarch) == 32)
-	        {
-	          printf_filtered ("\t%10s %10s %10s %10s %s\n",
-				   paddress (gdbarch, addr),
-				   paddress (gdbarch, endaddr),
-				   hex_string (endaddr - addr),
-				   hex_string (offset),
-				   *filename? filename : "");
-		}
-	      else
-	        {
-	          printf_filtered ("  %18s %18s %10s %10s %s\n",
-				   paddress (gdbarch, addr),
-				   paddress (gdbarch, endaddr),
-				   hex_string (endaddr - addr),
-				   hex_string (offset),
-				   *filename? filename : "");
-	        }
-	    }
-
+	  linux_print_mapping_data (gdbarch, data);
 	  do_cleanups (cleanup);
 	}
       else
@@ -968,6 +976,25 @@ linux_info_proc (struct gdbarch *gdbarch, const char *args,
     }
 }
 
+/* Implement "info proc mappings" for a minidump.  */
+static void
+linux_minidump_info_proc_mappings (struct gdbarch *gdbarch, const char *args)
+{
+  char *mappings;
+  struct cleanup *cleanup;
+
+  mappings = minidump_read_linux_mappings (core_bfd);
+  if (mappings == NULL)
+    {
+      warning (_("minidump does not contain mapping information"));
+      return;
+    }
+
+  cleanup = make_cleanup (xfree, mappings);
+  linux_print_mapping_data (gdbarch, mappings);
+  do_cleanups (cleanup);
+}
+
 /* Implement "info proc mappings" for a corefile.  */
 
 static void
@@ -1092,7 +1119,12 @@ linux_core_info_proc (struct gdbarch *gdbarch, const char *args,
     }
 
   if (mappings_f)
-    linux_core_info_proc_mappings (gdbarch, args);
+    {
+      if (minidump_p (core_bfd))
+	linux_minidump_info_proc_mappings (gdbarch, args);
+      else
+	linux_core_info_proc_mappings (gdbarch, args);
+    }
 
   if (!exe_f && !mappings_f)
     error (_("unable to handle request"));
