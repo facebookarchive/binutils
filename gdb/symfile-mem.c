@@ -217,6 +217,10 @@ add_vsyscall_page (struct target_ops *target, int from_tty)
 		     "try using the \"file\" command first."));
 	  return;
 	}
+
+      if (bfd_get_flavour (bfd) != bfd_target_elf_flavour)
+	return;
+
       args.bfd = bfd;
       args.sysinfo_ehdr = vsyscall_range.start;
       args.size = vsyscall_range.length;
