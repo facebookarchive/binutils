@@ -197,6 +197,7 @@ static void minidump_enumerate_modules (
   void *data);
 
 static char* minidump_read_string (bfd *abfd);
+static struct so_list * minidump_current_sos (void);
 
 static asection *
 minidump_get_section_by_type (bfd *abfd, enum minidump_stream_type type)
@@ -722,6 +723,25 @@ minidump_describe_lm_info (struct so_search_hints *hints,
     *hints = lm_info->hints;
 }
 
+static char *
+minidump_exec_file_find (char *in_pathname, int *fd)
+{
+  const struct so_search_hints *main_exe_hints = NULL;
+  struct so_list *so;
+  struct cleanup *so_cleanup;
+  char *ret;
+
+  so = minidump_current_sos ();
+  so_cleanup = make_cleanup (do_cleanup_so_list, &so);
+  if (so != NULL)
+    main_exe_hints = &so->lm_info->hints;
+
+  ret = exec_file_find2 (in_pathname, fd, main_exe_hints);
+  do_cleanups (so_cleanup);
+  return ret;
+}
+
+
 static void
 minidump_current_sos_enumerator (
   struct bfd *abfd,
@@ -1022,6 +1042,7 @@ _initialize_minidump (void)
   minidump_so_ops.in_dynsym_resolve_code = minidump_in_dynsym_resolve_code;
   minidump_so_ops.bfd_open2 = solib_bfd_open2;
   minidump_so_ops.describe_lm_info = minidump_describe_lm_info;
+  minidump_so_ops.exec_file_find = minidump_exec_file_find;
 
   gdbarch_register_osabi_sniffer (bfd_arch_unknown /* wildcard */,
 				  bfd_target_minidump_flavour,
