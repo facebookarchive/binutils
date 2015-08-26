@@ -1,3 +1,29 @@
+2015-07-08  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (Selection): Update documentation for 'frame'
+	command.
+
+2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
+
+        * gdb.texinfo (Maintenance Commands): Document "maint btrace"
+	commands.
+
+2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* gdb.texinfo (Process Record and Replay): Spell out that variables
+	and registers are not available during btrace replay.
+	Describe the new "record btrace pt" command.
+	Describe the new "set|show record btrace pt buffer-size" options.
+	(General Query Packets): Describe the new Qbtrace:pt and
+	Qbtrace-conf:pt:size packets.
+	Expand "bts" to "Branch Trace Store".
+	Update the branch trace DTD.
+
+2015-06-26  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* gdb.texinfo (Command History): Document the new option
+	"history remove-duplicates".
+
 2015-06-19  Doug Evans  <dje@google.com>
 
 	* stabs.texinfo (ELF Linker Relocation): Mention Sun stabs is no

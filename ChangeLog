@@ -1,3 +1,9 @@
+2015-06-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac (ospace_frag): Enable for i?86*-*-elfiamcu
+	target.
+	* configure: Regenerate.
+
 2015-05-13  John David Anglin  <dave.anglin@bell.net>
 
 	* configure.ac: Disable configuration of GDB for HPUX targets.
@@ -20,6 +26,13 @@
 	use that in the getver call instead of $tool.
 	(sim_release): Pass gdb as fifth parameter to tar_compress.
 	(SIM_SUPPORT_DIRS): Add gdb/common/create-version.sh.
+
+2015-04-14  Max Ostapenko  <m.ostapenko@partner.samsung.com>
+
+	* Makefile.tpl (EXTRA_HOST_EXPORTS): New variables.
+	(EXTRA_BOOTSTRAP_FLAGS): Likewise.
+	(check-[+module+]): Add EXTRA_HOST_EXPORTS and EXTRA_BOOTSTRAP_FLAGS.
+	* Makefile.in: Regenerate.
 
 2015-04-01  H.J. Lu  <hongjiu.lu@intel.com>
 

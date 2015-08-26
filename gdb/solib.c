@@ -202,14 +202,7 @@ solib_find_1 (char *in_pathname,
 
   if (sysroot != NULL)
     {
-      int prefix_len = strlen (sysroot);
-
-      /* Remove trailing slashes from absolute prefix.  */
-      while (prefix_len > 0
-	     && IS_DIR_SEPARATOR (sysroot[prefix_len - 1]))
-	prefix_len--;
-
-      sysroot = savestring (sysroot, prefix_len);
+      sysroot = xstrdup (sysroot);
       make_cleanup (xfree, sysroot);
     }
 

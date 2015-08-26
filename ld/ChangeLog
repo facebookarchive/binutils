@@ -1,3 +1,34 @@
+2015-07-10  Alan Modra  <amodra@gmail.com>
+
+	* ldexp.c (align_dot_val): New function.
+	(fold_unary <ALIGN_K, NEXT>): Use it.
+
+2015-07-03   Kai Tietz  <ktietz@redhat.com>
+
+	PR ld/11539
+	* scripttempl/pep.sc: Mark .idata*, .CRT*, .tls*,
+	.rsrc*, .init, .ctor*, .dtor*, .fini, .jcr,
+	.eh_frame, .pdata. .xdata, and .gcc_except_table sections
+	as KEEP.
+	* scripttempl/pe.sc: Likewise.
+	* ld.texinfo: Document that --gc-sections has experimental support
+	for COFF and PE targets.
+	* NEWS: Mention experimental support.
+
+2015-07-03  Alan Modra  <amodra@gmail.com>
+
+	* Makefile.am (eelf32or1k.c, eelf32or1k_linux.c): Depend on ELF_DEPS.
+	* Makefile.in: Regenerate.
+
+2015-06-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* emultempl/elf32.em  (gld${EMULATION_NAME}_handle_option):
+	Replace COMPRESS_DEBUG_ZLIB with COMPRESS_DEBUG_GNU_ZLIB.
+
+2015-06-26  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* emulparams/elf_iamcu.sh (COMPILE_IN): New.
+
 2015-06-15  Nick Clifton  <nickc@redhat.com>
 
 	PR ld/18466

@@ -469,6 +469,13 @@ enum elf_target_id
   GENERIC_ELF_DATA
 };
 
+struct elf_sym_strtab
+{
+  Elf_Internal_Sym sym;
+  unsigned long dest_index;
+  unsigned long destshndx_index;
+};
+
 /* ELF linker hash table.  */
 
 struct elf_link_hash_table
@@ -511,6 +518,17 @@ struct elf_link_hash_table
   /* The string table of dynamic symbols, which becomes the .dynstr
      section.  */
   struct elf_strtab_hash *dynstr;
+
+  /* The number of symbol strings found in the link which must be put
+     into the .strtab section.  */
+  bfd_size_type strtabcount;
+
+  /* The array size of the symbol string table, which becomes the
+     .strtab section.  */
+  bfd_size_type strtabsize;
+
+  /* The array of strings, which becomes the .strtab section.  */
+  struct elf_sym_strtab *strtab;
 
   /* The number of buckets in the hash table in the .hash section.
      This is based on the number of dynamic symbols.  */
@@ -1531,7 +1549,7 @@ typedef struct obj_attribute
 typedef struct obj_attribute_list
 {
   struct obj_attribute_list *next;
-  int tag;
+  unsigned int tag;
   obj_attribute attr;
 } obj_attribute_list;
 
@@ -1980,8 +1998,6 @@ extern Elf_Internal_Sym *bfd_sym_from_r_symndx
   (struct sym_cache *, bfd *, unsigned long);
 extern asection *bfd_section_from_elf_index
   (bfd *, unsigned int);
-extern struct bfd_strtab_hash *_bfd_elf_stringtab_init
-  (void);
 
 extern struct elf_strtab_hash * _bfd_elf_strtab_init
   (void);
@@ -2396,22 +2412,22 @@ extern bfd *_bfd_elf64_bfd_from_remote_memory
 
 extern bfd_vma bfd_elf_obj_attr_size (bfd *);
 extern void bfd_elf_set_obj_attr_contents (bfd *, bfd_byte *, bfd_vma);
-extern int bfd_elf_get_obj_attr_int (bfd *, int, int);
-extern void bfd_elf_add_obj_attr_int (bfd *, int, int, unsigned int);
+extern int bfd_elf_get_obj_attr_int (bfd *, int, unsigned int);
+extern void bfd_elf_add_obj_attr_int (bfd *, int, unsigned int, unsigned int);
 #define bfd_elf_add_proc_attr_int(BFD, TAG, VALUE) \
   bfd_elf_add_obj_attr_int ((BFD), OBJ_ATTR_PROC, (TAG), (VALUE))
-extern void bfd_elf_add_obj_attr_string (bfd *, int, int, const char *);
+extern void bfd_elf_add_obj_attr_string (bfd *, int, unsigned int, const char *);
 #define bfd_elf_add_proc_attr_string(BFD, TAG, VALUE) \
   bfd_elf_add_obj_attr_string ((BFD), OBJ_ATTR_PROC, (TAG), (VALUE))
-extern void bfd_elf_add_obj_attr_int_string (bfd *, int, int, unsigned int,
-					     const char *);
+extern void bfd_elf_add_obj_attr_int_string (bfd *, int, unsigned int,
+					     unsigned int, const char *);
 #define bfd_elf_add_proc_attr_int_string(BFD, TAG, INTVAL, STRVAL) \
   bfd_elf_add_obj_attr_int_string ((BFD), OBJ_ATTR_PROC, (TAG), \
 				   (INTVAL), (STRVAL))
 
 extern char *_bfd_elf_attr_strdup (bfd *, const char *);
 extern void _bfd_elf_copy_obj_attributes (bfd *, bfd *);
-extern int _bfd_elf_obj_attrs_arg_type (bfd *, int, int);
+extern int _bfd_elf_obj_attrs_arg_type (bfd *, int, unsigned int);
 extern void _bfd_elf_parse_attributes (bfd *, Elf_Internal_Shdr *);
 extern bfd_boolean _bfd_elf_merge_object_attributes (bfd *, bfd *);
 extern bfd_boolean _bfd_elf_merge_unknown_attribute_low (bfd *, bfd *, int);

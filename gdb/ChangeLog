@@ -1,3 +1,658 @@
+2015-07-10  Kevin Buettner  <kevinb@redhat.com>
+
+	* rx-tdep.c (rx_get_opcode_byte): Use target_read_code instead
+	of target_read_memory.
+
+2015-07-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* tui/tui-win.c (tui_set_win_height): Use a cleanup to free the
+	string copy.
+	(parse_scrolling_args): Likewise.
+
+2015-07-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* tui/tui-win.c (focus_completer): Don't duplicate the tui window
+	names in this function.
+
+2015-07-10  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* tui/tui-data.h (SRC_NAME): Convert to lower case.
+	(CMD_NAME): Likewise.
+	(DATA_NAME): Likewise.
+	(DISASSEM_NAME): Likewise.
+	* tui/tui-win.c (tui_set_focus): Window names are now lower case.
+	(tui_set_win_height): Likewise.
+	(parse_scrolling_args): Likewise.
+
+2015-07-10  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* record-btrace.c (record_btrace_goto_begin)
+	(record_btrace_goto_end, record_btrace_goto): Move call to
+	print_stack_frame ...
+	(record_btrace_set_replay): ... here.  Set stop_pc.
+	* record-full.c (record_full_goto_entry): Set stop_pc.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* NEWS: Mention support for tracepoints on aarch64-linux.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* linux-aarch64-low.c (aarch64_supports_tracepoints): New
+	function.  Return 1.
+	(the_low_target): Install it.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* gdb.trace/backtrace.exp: Set registers for aarch64 target.
+	* gdb.trace/collection.exp: Likewise.
+	* gdb.trace/mi-trace-frame-collected.exp: Likewise.
+	* gdb.trace/mi-trace-unavailable.exp: Likewise.
+	* gdb.trace/report.exp: Likewise.
+	* gdb.trace/trace-break.exp: Likewise.
+	* gdb.trace/unavailable.exp: Likewise.
+	* gdb.trace/while-dyn.exp: Likewise.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* aarch64-tdep.c: Add ax.h and ax-gdb.h includes.
+	(aarch64_gen_return_address): New function.
+	(aarch64_gdbarch_init): Hook it.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* aarch64-tdep.c (aarch64_make_stub_cache): Set available_p and
+	swallow NOT_AVAILABLE_ERROR.
+	(aarch64_stub_this_id): Call frame_id_build_unavailable_stack if
+	available_p is not set.
+	(aarch64_stub_frame_unwind_stop_reason): New function.
+	(aarch64_stub_unwind): Install it.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* aarch64-tdep.c (aarch64_prologue_cache) <available_p>: New
+	field.
+	(aarch64_make_prologue_cache_1): New function, factored out from
+	aarch64_make_prologue_cache.  Do not allocate cache.  Set
+	available_p.
+	(aarch64_make_prologue_cache): Reimplement wrapping
+	aarch64_make_prologue_cache_1, and swallowing
+	NOT_AVAILABLE_ERROR.
+	(aarch64_prologue_frame_unwind_stop_reason): New function.
+	Return UNWIND_UNAVAILABLE if available_p is not set.
+	(aarch64_prologue_unwind): Install it.
+	(aarch64_prologue_this_id): Move prev_pc and prev_sp limit
+	checks into aarch64_prologue_frame_unwind_stop_reason.  Call
+	frame_id_build_unavailable_stack if available_p is not set.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* aarch64-tdep.c (aarch64_prologue_cache) <func, prev_pc>: New
+	fields.
+	(aarch64_scan_prologue): Set prev_pc.
+	(aarch64_make_prologue_cache): Set func.
+	(aarch64_make_stub_cache): Set prev_pc.
+	(aarch64_prologue_this_id): Remove local variables id, pc and
+	func.  Read prev_pc and func from cache.
+	(aarch64_stub_this_id): Read prev_pc from cache.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* aarch64-tdep.c (aarch64_make_stub_cache): Update comment.  New
+	argument this_cache.  Remove unused local variables reg and
+	unwound_fp.  Return early if this_cache is already set.  Set
+	this_cache.
+	(aarch64_stub_this_id): Update call to aarch64_make_stub_cache.
+
+2015-07-09  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* aarch64-tdep.c (aarch64_make_prologue_cache): Update comment.
+	New argument this_cache.  Return early if this_cache is already
+	set.  Set this_cache.
+	(aarch64_prologue_this_id): Update call to
+	aarch64_make_prologue_cache.
+	(aarch64_prologue_prev_register): Likewise.
+	(aarch64_normal_frame_base): Likewise.
+
+2015-07-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* c-valprint.c (c_val_print): Factor out memberptr printing code
+	from c_val_print to ...
+	(c_val_print_memberptr): ... this new function.
+
+2015-07-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* c-valprint.c (c_val_print): Factor out int printing code to ...
+	(c_val_print_int): ... this new function.
+
+2015-07-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* c-valprint.c (c_val_print): Factor out struct and union
+	printing code to ...
+	(c_val_print_struct): ... this new function ...
+	(c_val_print_union): ... and this new function.
+
+2015-07-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* c-valprint.c (c_val_print): Factor out pointer printing code
+	to ...
+	(c_val_print_ptr): ... this new function.
+
+2015-07-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* c-valprint.c (c_valprint): Factor our array printing code from
+	c_val_print to ...
+	(c_val_print_array): ... this new function.
+
+2015-07-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* c-valprint.c (c_val_print): Factor out pointer printing code
+	to ...
+	(print_unpacked_pointer): ... this new function.
+
+2015-07-09  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* c-valprint.c (c_val_print): Remove an assignment to i and move
+	its declaration.
+
+2015-07-09  Yao Qi  <yao.qi@linaro.org>
+
+	* aarch64-linux-nat.c (aarch64_linux_get_debug_reg_capacity): Add
+	argument ptid.  Update comments.  Caller update.
+
+2015-07-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* btrace.c (pt_print_packet): Print stop, vmcs, tma, mtc, cyc, and
+	mnt packets.
+
+2015-07-09  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* btrace.c (btrace_pt_readmem_callback): Change type of PC argument.
+
+2015-07-08  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* progspace.c (delete_program_space): Add missing spaces.
+
+2015-07-08  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* inferior.c (delete_inferior_1): Rename to ...
+	(delete_inferior): ..., remove 'silent' parameter, delete
+	program space when unused and remove call to prune_program_spaces.
+	Remove the old, unused, delete_inferior.
+	(delete_inferior_silent): Remove.
+	(prune_inferiors): Change call from delete_inferior_1 to
+	delete_inferior and remove 'silent' parameter. Remove call to
+	prune_program_spaces.
+	(remove_inferior_command): Idem.
+	* inferior.h (delete_inferior_1): Rename to...
+	(delete_inferior): ..., remove 'silent' parameter and remove the
+	original delete_inferior.
+	(delete_inferior_silent): Remove.
+	* mi/mi-main.c (mi_cmd_remove_inferior): Change call from
+	delete_inferior_1 to delete_inferior and remove 'silent'
+	parameter.
+	* progspace.c (prune_program_spaces): Remove.
+	(pspace_empty_p): Rename to...
+	(program_space_empty_p): ... and make non-static.
+	(delete_program_space): New.
+	* progspace.h (prune_program_spaces): Remove declaration.
+	(program_space_empty_p): New declaration.
+	(delete_program_space): New declaration.
+	* monitor.c (monitor_close): Replace call to
+	delete_thread_silent and delete_inferior_silent with
+	discard_all_inferiors.
+
+2015-07-08  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* defs.h (deprecated_register_changed_hook): Remove prototype.
+	* interps.c (clear_iterpreter_hooks): Remove reference to
+	deprecated_register_changed_hook.
+	* top.c (deprecated_register_changed_hook): Remove prototype.
+	* valops.c (value_assign): Remove reference to
+	deprecated_register_changed_hook.
+	* tui/tui-hooks.c (tui_register_changed): Add parameter "frame".
+	Add comment documenting the function.
+	(tui_register_changed_observer): Define.
+	(tui_install_hooks): Remove reference to
+	deprecated_register_changed_hook.  Set
+	tui_register_changed_observer.
+	(tui_remove_hooks): Remove reference to
+	deprecated_register_changed_hook.  Unset
+	tui_register_changed_observer.
+
+2015-07-08  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	PR compile/18484
+	* compile/compile-c-types.c (insert_type): Change gdb_assert to error.
+
+2015-07-08  Robert O'Callahan  <robert@ocallahan.org>
+
+	PR exp/18617
+	* ax-gdb.c (gen_conversion): Extend to 'to' bits, not 'from'.
+
+2015-07-08  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* MAINTAINERS (Write After Approval): Add Markus T. Metzger.
+
+2015-07-08  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* nat/linux-btrace.c (kernel_supports_bts, kernel_supports_pt):
+	Use safe_strerror() instead of strerror().
+
+2015-07-07  Yao Qi  <yao.qi@linaro.org>
+
+	* features/arm-with-m-fpa-layout.xml: Set architecture to arm.
+	* features/arm-with-m-fpa-layout.c: Regenerated.
+	* features/arm-with-m-vfp-d16.xml: Likewise.
+	* features/arm-with-m-vfp-d16.c: Regenerated.
+	* features/arm-with-m.xml: Likewise.
+	* features/arm-with-m.c: Regenerated.
+	* features/arm-with-neon.xml: Likewise.
+	* features/arm-with-neon.c: Regenerated.
+	* features/arm-with-vfpv2.xml: Likewise.
+	* features/arm-with-vfpv2.c: Regenerated.
+	* features/arm-with-vfpv3.xml: Likewise.
+	* features/arm-with-vfpv3.c: Regenerated.
+
+2015-07-07  Yao Qi  <yao.qi@linaro.org>
+
+	* aarch32-linux-nat.h (VFP_REGS_SIZE): New macro, moved from
+	arm-linux-nat.c.
+	* aarch64-linux-nat.c: Include aarch32-linux-nat.h and
+	elf/external.h.
+	(fetch_gregs_from_thread): Call aarch32_gp_regcache_supply
+	if target is 32-bit.
+	(store_gregs_to_thread): Call aarch32_gp_regcache_collect
+	if target is 32-bit.
+	(fetch_fpregs_from_thread): Call aarch32_vfp_regcache_supply
+	if target is 32-bit.
+	(store_fpregs_to_thread): Call aarch32_vfp_regcache_collect
+	if target is 32-bit.
+	(tdesc_arm_with_vfpv3, tdesc_arm_with_neon): Declare.
+	(aarch64_linux_read_description): Return the right target
+	description.
+	* arm-linux-nat.c (VFP_REGS_SIZE): Moved to aarch32-linux-nat.h.
+	* config/aarch64/linux.mh (NATDEPFILES): Add aarch32-linux-nat.o.
+	* configure.tgt (aarch64*-*-linux*): Add arm-tdep.o and
+	arm-linux-tdep.o.
+
+2015-07-07  Yao Qi  <yao.qi@linaro.org>
+
+	* aarch32-linux-nat.c: New file.
+	* aarch32-linux-nat.h: New file.
+	* arm-linux-nat.c: Include aarch32-linux-nat.h.
+	(fetch_regs): Move code to aarch32-linux-nat.c.  Call
+	aarch32_gp_regcache_supply.
+	(store_regs): Move code to aarch32-linux-nat.c.  Call
+	aarch32_gp_regcache_collect.
+	(fetch_vfp_regs): Move code to aarch32-linux-nat.c.  Call
+	aarch32_vfp_regcache_supply.
+	(store_vfp_regs): Move code to aarch32-linux-nat.c.  Call
+	aarch32_vfp_regcache_collect.
+	* config/arm/linux.mh (NATDEPFILES): Add aarch32-linux-nat.o.
+
+2015-07-07  Yao Qi  <yao.qi@linaro.org>
+
+	* arm-linux-nat.c (store_fpregister): Remove.
+	(store_register): Likewise.
+	(fetch_fpregister): Likewise.
+	(fetch_register): Likewise.
+	(arm_linux_store_inferior_registers): Call store_regs and
+	store_fpregs instead.
+	(arm_linux_fetch_inferior_registers): Call fetch_fpregs and
+	fetch_regs instead.
+
+2015-07-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* doc/gdb.texinfo (TUI): Restructure documentation on TUI layout
+	and focus commands.
+
+2015-07-06  Joel Brobecker  <brobecker@adacore.com>
+
+	* NEWS: Create a new section for the next release branch.
+	Rename the section of the current branch, now that it has
+	been cut.
+
+2015-07-06  Joel Brobecker  <brobecker@adacore.com>
+
+	GDB 7.10 branch created (66c4b3e8a628a207bc6aafef6af0c4128195f56e):
+	* version.in: Bump version to 7.10.50.DATE-cvs.
+
+2015-07-06  Luis Machado  <lgustavo@codesourcery.com>
+
+	* breakpoint.c (remove_breakpoint_1): Don't handle permanent
+	breakpoints in a special way.
+	(remove_breakpoint): Likewise.
+	(mark_breakpoints_out): Likewise.
+
+2015-07-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* doc/gdb.texinfo (TUI): Add comma after @xref.
+
+2015-07-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* tui/tui-win.c (tui_set_focus): Use structure member 'generic'
+	instead of casting the structure type.
+
+2015-07-06  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* valops.c (search_struct_field): Remove OFFSET parameter.
+	(value_cast_structs): Adjust calls to search_struct_field.
+	(value_struct_elt): Same.
+	(find_overload_match): Same.
+
+2015-07-06  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* value.c (value_fetch_lazy): Update comment, change return
+	value to void.
+	* value.h (value_fetch_lazy): Change return value to void.
+
+2015-07-06  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* tui/tui-data.c (tui_partial_win_by_name): Window name is const.
+	(tui_win_name): Make parameter and result const.
+	* tui/tui-data.h (tui_win_name): Make parameter and result const.
+
+2015-07-06  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* i386-tdep.c (i386_mpx_info_bounds): Don't call error, instead
+	use printf_unfiltered.
+	(set_mpx_cmd): Add missing trailing space to command string
+	literal.
+	(_initialize_i386_tdep): Give the "mpx" prefix command its
+	correct name.
+
+2015-07-02  Kevin Buettner  <kevinb@redhat.com>
+
+	* rx-tdep.c (RX_USP_REGNUM, RX_BPC_REGNUM): New constants.
+	(enum rx_frame_type): New.
+	(struct rx_prologue): Add new field `frame_type'.
+	(rx_analyze_prologue): Add `frame_type' parameter. Cache this
+	parameter in the prologue struct.  Add code for recording
+	locations of PC and PSW for fast interrupt and exception frames.
+	(rx_skip_prologue): Adjust call to rx_analyze_prologue.
+	(rx_analyze_frame_prologue): Add `frame_type' parameter.
+	(rx_frame_type): New function.
+	(rx_frame_base): Fetch frame type and pass it to rx_analyze_prologue.
+	(rx_frame_this_id): Rename parameter `this_prologue_cache' to
+	`this_cache'.
+	(rx_frame_prev_register): Rename parameter `this_prologue_cache' to
+	`this_cache'.  Add cases for RX_FRAME_TYPE_EXCEPTION and 
+	RX_FRAME_TYPE_FAST_INTERRUPT.
+	(normal_frame_p, exception_frame_p, rx_frame_sniffer_common)
+	(rx_frame_sniffer, rx_exception_sniffer): New functions.
+	(rx_frame_unwind): Use rx_frame_sniffer instead of
+	default_frame_sniffer.
+	(rx_frame_unwind): New unwinder.
+	(rx_gdbarch_init): Register new unwinder.
+
+2015-07-02  Kevin Buettner  <kevinb@redhat.com>
+
+	* rx-tdep.c (RX_BPSW_REGNUM, RX_FPSW_REGNUM): New constants.
+	(struct gdbarch_tdep): Add fields rx_psw_type and rx_fpsw_type.
+	(rx_register_type): Add cases for RX_PSW_REGNUM, RX_BPSW_REGNUM,
+	and RX_FPSW_REGNUM.
+	(rx_gdbarch_init): Initialize PSW, BPSW, and FPSW flags types.
+
+2015-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Fix GCC false warning.
+	* s390-linux-tdep.c (s390_handle_arg): Initialize VAL.
+
+2015-07-02  Yao Qi  <yao.qi@linaro.org>
+
+	* aarch64-linux-nat.c (aarch64_linux_insert_hw_breakpoint): Fix
+	typo in the debugging message.
+
+2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* btrace.c: Include gdbcmd.h, cli/cli-utils.h, and ctype.h.
+	(maint_btrace_cmdlist, maint_btrace_set_cmdlist)
+	(maint_btrace_show_cmdlist, maint_btrace_pt_set_cmdlist)
+	(maint_btrace_pt_show_cmdlist, maint_btrace_pt_skip_pad)
+	(btrace_maint_clear): New.
+	(btrace_fetch, btrace_clear): Call btrace_maint_clear.
+	(pt_print_packet, btrace_maint_decode_pt)
+	(btrace_maint_update_pt_packets, btrace_maint_update_packets)
+	(btrace_maint_print_packets, get_uint, get_context_size, no_chunk)
+	(maint_btrace_packet_history_cmd)
+	(maint_btrace_clear_packet_history_cmd, maint_btrace_clear_cmd)
+	(maint_btrace_cmd, maint_btrace_set_cmd, maint_btrace_show_cmd)
+	(maint_btrace_pt_set_cmd, maint_btrace_pt_show_cmd)
+	(maint_info_btrace_cmd, _initialize_btrace): New.
+	* btrace.h (btrace_pt_packet, btrace_pt_packet_s)
+	(btrace_maint_packet_history, btrace_maint_info): New.
+	(btrace_thread_info) <maint>: New.
+	* NEWS: Announce it.
+
+2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* btrace.c (btrace_fetch): Append the new trace data.
+	(btrace_clear): Clear the stored trace data.
+	* btrace.h (btrace_thread_info) <data>: New.
+	* common/btrace-common.h (btrace_data_clear)
+	(btrace_data_append): New.
+	* common/btrace-common.c (btrace_data_clear)
+	(btrace_data_append): New.
+
+2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* nat/linux-btrace.c (linux_enable_bts): Check for
+	PERF_ATTR_SIZE_VER5.
+	Check for data_offset and data_size fields.  Use them.
+
+2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* NEWS: Announce new commands "record btrace pt" and "record pt".
+	Announce new options "set|show record btrace pt buffer-size".
+	* btrace.c: Include "rsp-low.h".
+	Include "inttypes.h".
+	(btrace_add_pc): Add forward declaration.
+	(pt_reclassify_insn, ftrace_add_pt, btrace_pt_readmem_callback)
+	(pt_translate_cpu_vendor, btrace_finalize_ftrace_pt)
+	(btrace_compute_ftrace_pt): New.
+	(btrace_compute_ftrace): Support BTRACE_FORMAT_PT.
+	(check_xml_btrace_version): Update version check.
+	(parse_xml_raw, parse_xml_btrace_pt_config_cpu)
+	(parse_xml_btrace_pt_raw, parse_xml_btrace_pt)
+	(btrace_pt_config_cpu_attributes, btrace_pt_config_children)
+	(btrace_pt_children): New.
+	(btrace_children): Add support for "pt".
+	(parse_xml_btrace_conf_pt, btrace_conf_pt_attributes): New.
+	(btrace_conf_children): Add support for "pt".
+	* btrace.h: Include "intel-pt.h".
+	(btrace_pt_error): New.
+	* common/btrace-common.c (btrace_format_string, btrace_data_fini)
+	(btrace_data_empty): Support BTRACE_FORMAT_PT.
+	* common/btrace-common.h (btrace_format): Add BTRACE_FORMAT_PT.
+	(struct btrace_config_pt): New.
+	(struct btrace_config)<pt>: New.
+	(struct btrace_data_pt_config, struct btrace_data_pt): New.
+	(struct btrace_data)<pt>: New.
+	* features/btrace-conf.dtd (btrace-conf)<pt>: New.
+	(pt): New.
+	* features/btrace.dtd (btrace)<pt>: New.
+	(pt, pt-config, cpu): New.
+	* nat/linux-btrace.c (perf_event_read, perf_event_read_all)
+	(perf_event_pt_event_type, kernel_supports_pt)
+	(linux_supports_pt): New.
+	(linux_supports_btrace): Support BTRACE_FORMAT_PT.
+	(linux_enable_bts): Free tinfo on error.
+	(linux_enable_pt): New.
+	(linux_enable_btrace): Support BTRACE_FORMAT_PT.
+	(linux_disable_pt): New.
+	(linux_disable_btrace): Support BTRACE_FORMAT_PT.
+	(linux_fill_btrace_pt_config, linux_read_pt): New.
+	(linux_read_btrace): Support BTRACE_FORMAT_PT.
+	* nat/linux-btrace.h (struct btrace_tinfo_pt): New.
+	(struct btrace_target_info)<pt>: New.
+	* record-btrace.c (set_record_btrace_pt_cmdlist)
+	(show_record_btrace_pt_cmdlist): New.
+	(record_btrace_print_pt_conf): New.
+	(record_btrace_print_conf): Support BTRACE_FORMAT_PT.
+	(btrace_ui_out_decode_error): Support BTRACE_FORMAT_PT.
+	(cmd_record_btrace_pt_start): New.
+	(cmd_record_btrace_start): Support BTRACE_FORMAT_PT.
+	(cmd_set_record_btrace_pt, cmd_show_record_btrace_pt): New.
+	(_initialize_record_btrace): Add new commands.
+	* remote.c (PACKET_Qbtrace_pt, PACKET_Qbtrace_conf_pt_size): New.
+	(remote_protocol_features): Add "Qbtrace:pt".
+	Add "Qbtrace-conf:pt:size".
+	(remote_supports_btrace): Support BTRACE_FORMAT_PT.
+	(btrace_sync_conf): Support PACKET_Qbtrace_conf_pt_size.
+	(remote_enable_btrace): Support BTRACE_FORMAT_PT.
+	(_initialize_remote): Add new commands.
+
+2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* configure.ac: check for libipt
+	* configure: Regenerate.
+	* config.in: Regenerate.
+	* Makefile.in (LIBIPT): New.
+	(CLIBS): Add $LIBIPT.
+	* NEWS: document new configure options
+
+2015-07-02  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* compile/compile-object-load.c (compile_object_load): Replace debug
+	message "lookup undefined ELF symbol" by 3 more specific messages.
+
+2015-07-01  Kevin Buettner  <kevinb@redhat.com>
+
+	* rl78-tdep.c (struct gdbarch_tdep): Add new field, rl78_psw_type.
+	(rl78_register_type): Add case for RL78_PSW_REGNUM.
+	(rl78_gdbarch_init): Initialize rl78_psw_type.
+
+2015-07-01  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-hooks.c (tui_refresh_frame_and_register_information):
+	Update commentary.  Always refresh the registers when frame
+	information has changed.
+	* tui/tui-stack.c (tui_show_frame_info): Update commentary.
+	Change return type to int.  Return 1 if frame information has
+	changed, 0 otherwise.
+	(tui_before_prompt): Update commentary.
+	* tui/tui-stack.h (tui_show_frame_info): Change return type to
+	int.
+
+2015-06-30  Patrick Palka  <patrick@parcs.ath.cx>
+
+	PR tui/13378
+	* frame.c (select_frame): Remove reference to
+	deprecated_selected_frame_level_changed_hook.
+	* frame.h (deprecated_selected_frame_level_changed_hook): Remove
+	declaration.
+	* stack.c (deprecated_selected_frame_level_changed_hook):
+	Likewise.
+	* tui/tui-hooks.c (tui_selected_frame_level_changed_hook):
+	Rename to ...
+	(tui_refresh_frame_and_register_information): ... this.  Bail
+	out if there is no stack.  Don't update register information
+	unless registers_too_p is true.
+	(tui_print_frame_info_listing_hook): Rename to ...
+	(tui_dummy_print_frame_info_listing_hook): ... this.
+	(tui_before_prompt): New function.
+	(tui_normal_stop): New function.
+	(tui_before_prompt_observer): New observer.
+	(tui_normal_stop_observer): New observer.
+	(tui_install_hooks): Set
+	deprecated_print_frame_info_listing_hook to
+	tui_dummy_print_frame_info_listing_hook.  Register
+	tui_before_prompt_observer to call tui_before_prompt and
+	tui_normal_stop_observer to call tui_normal_stop.  Remove
+	reference to deprecated_selected_frame_level_changed_hook.
+	(tui_remove_hooks): Detach and unset tui_before_prompt_observer
+	and tui_normal_stop_observer.  Remove reference to
+	deprecated_selected_frame_level_changed_hook.
+
+2015-06-30  Patrick Palka  <patrick@parcs.ath.cx>
+
+	PR tui/13378
+	* tui/tui-stack.c (tui_set_locator_info): Change prototype to
+	return an int instead of void.  Return whether the locator
+	window has changed.
+	(tui_show_frame_info): If the locator info has not changed, then
+	bail out early to avoid refreshing the windows.
+
+2015-06-30  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-stack.c (tui_set_locator_info): Explicitly pass
+	LOCATOR_WIN to tui_alloc_content.
+
+2015-06-30  Yao Qi  <yao.qi@linaro.org>
+
+	PR tdep/18605
+	* arm-tdep.c (arm_get_next_pc_raw): Break for media
+	instructions.
+
+2015-06-29  Kevin Buettner  <kevinb@redhat.com>
+
+	* rx-tdep.c (RX_PSW_REGNUM): New enum constant.
+	(rx_dwarf_reg_to_regnum): New function.
+	(rx_gdbarch_init): Register rx_dwarf_reg_to_regnum.  Use dwarf2
+	unwinding.
+
+2015-06-29  Pedro Alves  <palves@redhat.com>
+
+	PR threads/18127
+	* infcall.c (run_inferior_call): On infcall success, if the thread
+	was marked stopped before, reset it back to stopped.
+	* infrun.c (resume): Don't suppress the set_running calls when
+	doing an infcall.
+	(normal_stop): Only discard the finish_thread_state cleanup if the
+	infcall succeeded.
+
+2015-06-29  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* MAINTAINERS (Write After Approval): Update my email address.
+
+2015-06-26  Keith Seitz  <keiths@redhat.com>
+	    Doug Evans  <dje@google.com>
+
+	PR 16253
+	* block.c (block_lookup_symbol): For non-function blocks,
+	continue to search for a symbol with an exact domain match
+	Otherwise, return any previously found "best domain" symbol.
+	(block_lookup_symbol_primary): Likewise.
+
+2015-06-26  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* NEWS: Mention the new option "history remove-duplicates".
+	* top.c (history_remove_duplicates): New static variable.
+	(show_history_remove_duplicates): New static function.
+	(gdb_add_history): Conditionally remove duplicate history
+	entries.
+	(init_main): Add "history remove-duplicates" option.
+
+2015-06-26  Patrick Palka  <patrick@parcs.ath.cx>
+
+	* tui/tui-win.c (focus_completer): New static function.
+	(_initialize_tui_win): Set the completion function of the
+	"focus" command to focus_completer.
+
+2015-06-26  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* linespec.c (minsym_found): Reset sal.PC for COMPUNIT_LOCATIONS_VALID
+	and language_asm..
+	* symtab.c (find_function_start_sal): Likewise.
+
+2015-06-25  Gary Benson  <gbenson@redhat.com>
+
+	* solib.c (solib_find_1): Set local variable sysroot to NULL if
+	it is the empty string after trailing slashes have been stripped.
+
+2015-06-25  Gary Benson  <gbenson@redhat.com>
+
+	* exec.c (exec_file_locate_attach): Remove gdb_sysroot NULL check.
+	* infrun.c (follow_exec): Likewise.
+	* remote.c (remote_filesystem_is_local): Likewise.
+	* solib.c (solib_find_1): Likewise.
+
+2015-06-24  Keith Seitz  <keiths@redhat.com>
+
+	* build-id.c (build_id_to_debug_bfd): Add cleanup to free
+	return value from lrealpath.
+
 2015-06-24  Mike Frysinger  <vapier@gentoo.org>
 
 	* remote-sim.c (gdbsim_open): Move sysroot update to the top.
