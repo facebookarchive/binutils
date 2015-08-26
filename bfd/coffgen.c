@@ -1381,7 +1381,7 @@ coff_write_symbols (bfd *abfd)
 
 	  else if (! c_symbol->native->is_sym)
 	    maxlen = bfd_coff_force_symnames_in_strings (abfd) ? 0 : SYMNMLEN;
-	    
+
 	  else if (bfd_coff_symname_in_debug (abfd,
 					      &c_symbol->native->u.syment))
 	    /* This symbol name is in the XCOFF .debug section.
@@ -1782,7 +1782,7 @@ coff_get_normalized_symtab (bfd *abfd)
   if (internal == NULL && size != 0)
     return NULL;
   internal_end = internal + obj_raw_syment_count (abfd);
-  
+
   raw_src = (char *) obj_coff_external_syms (abfd);
 
   /* Mark the end of the symbols.  */
@@ -2257,7 +2257,7 @@ coff_find_nearest_line_with_names (bfd *abfd,
 
       bias = _bfd_dwarf2_find_symbol_bias (symbols,
 					   & coff_data (abfd)->dwarf2_find_line_info);
-      
+
       if (bias
 	  && _bfd_dwarf2_find_nearest_line (abfd, symbols, NULL, section,
 					    offset + bias,
@@ -2486,7 +2486,7 @@ coff_sizeof_headers (bfd *abfd, struct bfd_link_info *info)
 {
   size_t size;
 
-  if (!info->relocatable)
+  if (!bfd_link_relocatable (info))
     size = bfd_coff_filhsz (abfd) + bfd_coff_aoutsz (abfd);
   else
     size = bfd_coff_filhsz (abfd);

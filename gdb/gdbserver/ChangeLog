@@ -1,3 +1,520 @@
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_linux_new_thread): Remove.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* Makefile.in (aarch64-linux.o): New rule.
+	* configure.srv (aarch64*-*-linux*): Append aarch64-linux.o to
+	srv_tgtobj.
+	* linux-aarch64-low.c: Include nat/aarch64-linux.h.
+	(aarch64_init_debug_reg_state): Make it extern.
+	(aarch64_linux_prepare_to_resume): Remove.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_linux_prepare_to_resume): Use
+	lwp_arch_private_info and ptid_of_lwp.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_get_debug_reg_state): Add argument pid.
+	Find proc_info by find_process_pid.  All callers updated.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (struct arch64_dr_update_callback_param):
+	Remove.
+	(debug_reg_change_callback): Remove.
+	(aarch64_notify_debug_reg_change): Remove.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_notify_debug_reg_change):
+	Call current_lwp_ptid.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (debug_reg_change_callback): Use
+	debug_printf.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (debug_reg_change_callback): Use phex.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (debug_reg_change_callback): Remove comments.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (debug_reg_change_callback): Re-indent
+	the code.
+
+2015-08-25  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_dr_update_callback_param) <pid>:
+	Remove.
+	(debug_reg_change_callback): Remove argument entry and add argument
+	lwp.  Remove local variable thread.  Don't print thread id in the
+	debugging output.  Don't check whether pid of thread equals to pid.
+	(aarch64_notify_debug_reg_change): Don't set param.pid.  Call
+	iterate_over_lwps instead find_inferior.
+
+2015-08-24  Pedro Alves  <palves@redhat.com>
+
+	* inferiors.c (get_first_process): New function.
+	* inferiors.h (get_first_process): New declaration.
+	* remote-utils.c (read_ptid): Default to the first process in the
+	list, instead of to the current thread's process.
+
+2015-08-24  Pedro Alves  <palves@redhat.com>
+
+	* debug.c: Include gdb_sys_time.h instead of sys/time.h.
+	* event-loop.c: Likewise.
+	* remote-utils.c: Likewise.
+	* tracepoint.c: Likewise.
+
+2015-08-24  Pedro Alves  <palves@redhat.com>
+
+	* spu-low.c (spu_request_interrupt): Use lwpid_of instead of
+	ptid_get_lwp.
+
+2015-08-21  Pedro Alves  <palves@redhat.com>
+
+	* ax.c (gdb_eval_agent_expr): Return expr_eval_unhandled_opcode
+	instead of literal 1.
+
+2015-08-21  Pedro Alves  <palves@redhat.com>
+
+	* tdesc.c (default_description): Explicitly zero-initialize.
+
+2015-08-21  Pedro Alves  <palves@redhat.com>
+
+	PR gdb/18749
+	* inferiors.c (remove_thread): Discard any pending stop reply for
+	this thread.
+	* server.c (remove_all_on_match_pid): Rename to ...
+	(remove_all_on_match_ptid): ... this.  Work with a filter ptid
+	instead of a pid.
+	(discard_queued_stop_replies): Change parameter to a ptid.  Now
+	extern.
+	(handle_v_kill, kill_inferior_callback, captured_main)
+	(process_serial_event): Adjust.
+	* server.h (discard_queued_stop_replies): Declare.
+
+2015-08-21  Pedro Alves  <palves@redhat.com>
+
+	* linux-low.c (wait_for_sigstop): Always switch to no thread
+	selected if the previously current thread dies.
+	* lynx-low.c (lynx_request_interrupt): Use the first thread's
+	process instead of the current thread's.
+	* remote-utils.c (input_interrupt): Don't check if there's no
+	current thread.
+	* server.c (gdb_read_memory, gdb_write_memory): If setting the
+	current thread to the general thread fails, error out.
+	(handle_qxfer_auxv, handle_qxfer_libraries)
+	(handle_qxfer_libraries_svr4, handle_qxfer_siginfo)
+	(handle_qxfer_spu, handle_qxfer_statictrace, handle_qxfer_fdpic)
+	(handle_query): Check if there's a thread selected instead of
+	checking whether there's any thread in the thread list.
+	(handle_qxfer_threads, handle_qxfer_btrace)
+	(handle_qxfer_btrace_conf): Don't error out early if there's no
+	thread in the thread list.
+	(handle_v_cont, myresume): Don't set the current thread to the
+	continue thread.
+	(process_serial_event) <Hg handling>: Also set thread_id if the
+	previous general thread is still alive.
+	(process_serial_event) <g/G handling>: If setting the current
+	thread to the general thread fails, error out.
+	* spu-low.c (spu_resume, spu_request_interrupt): Use the first
+	thread's lwp instead of the current thread's.
+	* target.c (set_desired_thread): If the desired thread was not
+	found, leave the current thread pointing to NULL.  Return an int
+	(boolean) indicating success.
+	* target.h (set_desired_thread): Change return type to int.
+
+2015-08-20  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* configure.srv (xtensa*-*-linux*): Add srv_linux_thread_db=yes.
+	* linux-xtensa-low.c (arch/xtensa.h gdb_proc_service.h): New
+	#includes.
+	(ps_get_thread_area): New function.
+
+2015-08-19  Gary Benson  <gbenson@redhat.com>
+
+	* hostio.c (handle_pread): Do not attempt to read more data
+	than hostio_reply_with_data can fit in a packet.
+
+2015-08-18  Joel Brobecker  <brobecker@adacore.com>
+
+	* linux-aarch32-low.c (NT_ARM_VFP): Define if not already defined.
+
+2015-08-14  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	* linux-low.c (get_r_debug): Handle DT_MIPS_RLD_MAP_REL.
+
+2015-08-06  Pedro Alves  <palves@redhat.com>
+
+	* tracepoint.c (expr_eval_result): Now an int.
+
+2015-08-06  Pedro Alves  <palves@redhat.com>
+
+	* gdbthread.h (struct regcache): Forward declare.
+	(struct thread_info) <regcache_data>: Now a struct regcache
+	pointer.
+	* inferiors.c (inferior_regcache_data)
+	(set_inferior_regcache_data): Now work with struct regcache
+	pointers.
+	* inferiors.h (struct regcache): Forward declare.
+	(inferior_regcache_data, set_inferior_regcache_data): Now work
+	with struct regcache pointers.
+	* regcache.c (get_thread_regcache, regcache_invalidate_thread)
+	(free_register_cache_thread): Remove struct regcache pointer
+	casts.
+
+2015-08-06  Pedro Alves  <palves@redhat.com>
+
+	* server.c (captured_main): On error, print the exception message
+	to stderr, and if run_once is set, throw a quit.
+
+2015-08-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-low.c (move_out_of_jump_pad_callback): Temporarily switch
+	the current thread.
+
+2015-08-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-low.c (linux_write_memory): Rewrite debug output to avoid
+	reading beyond the passed in buffer length.
+
+2015-08-06  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* tracepoint.c (symbol_list) <required>: Remove.
+
+2015-08-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-low.c (handle_extended_wait): Set the fork child's suspend
+	count if stopping and suspending threads.
+	(check_stopped_by_breakpoint): If stopped by trace, set the LWP's
+	stop reason to TARGET_STOPPED_BY_SINGLE_STEP.
+	(linux_detach): Complete an ongoing step-over.
+	(lwp_suspended_inc, lwp_suspended_decr): New functions.  Use
+	throughout.
+	(resume_stopped_resumed_lwps): Don't resume a suspended thread.
+	(linux_wait_1): If passing a signal to the inferior after
+	finishing a step-over, unsuspend and re-resume all lwps.  If we
+	see a single-step event but the thread should be continuing, don't
+	pass the trap to gdb.
+	(stuck_in_jump_pad_callback, move_out_of_jump_pad_callback): Use
+	internal_error instead of gdb_assert.
+	(enqueue_pending_signal): New function.
+	(check_ptrace_stopped_lwp_gone): Add debug output.
+	(start_step_over): Use internal_error instead of gdb_assert.
+	(complete_ongoing_step_over): New function.
+	(linux_resume_one_thread): Don't resume a suspended thread.
+	(proceed_one_lwp): If the LWP is stepping over a breakpoint, reset
+	it stepping.
+
+2015-08-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-low.c (add_lwp): Set waitstatus to TARGET_WAITKIND_IGNORE.
+	(linux_thread_alive): Use lwp_is_marked_dead.
+	(extended_event_reported): Delete.
+	(linux_wait_1): Check if waitstatus is TARGET_WAITKIND_IGNORE
+	instead of extended_event_reported.
+	(mark_lwp_dead): Don't set the 'dead' flag.  Store the waitstatus
+	as well.
+	(lwp_is_marked_dead): New function.
+	(lwp_running): Use lwp_is_marked_dead.
+	* linux-low.h: Delete 'dead' field, and update 'waitstatus's
+	comment.
+
+2015-08-06  Pedro Alves  <palves@redhat.com>
+
+	* linux-low.c (linux_wait_1): Move fork event output out of the
+	!report_to_gdb check.  Pass event_child->waitstatus to
+	target_waitstatus_to_string instead of ourstatus.
+
+2015-08-04  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_supports_tracepoints): Return 0
+	if current_thread is 32 bit.
+
+2015-08-04  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_supports_z_point_type): Return
+	0 for Z_PACKET_SW_BP if it may be used in multi-arch debugging.
+	* server.c (extended_protocol): Remove "static".
+	* server.h (extended_protocol): Declare it.
+
+2015-08-04  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_get_pc): Get PC register on
+	both aarch64 and aarch32.
+	(aarch64_set_pc): Likewise.
+
+2015-08-04  Yao Qi  <yao.qi@linaro.org>
+
+	* configure.srv (case aarch64*-*-linux*): Append arm-with-neon.o
+	to srv_regobj and append arm-core.xml arm-vfpv3.xml and
+	arm-with-neon.xml to srv_xmlfiles.
+	* linux-aarch64-low.c: Include linux-aarch32-low.h.
+	(is_64bit_tdesc): New function.
+	(aarch64_linux_read_description): New function.
+	(aarch64_arch_setup): Call aarch64_linux_read_description.
+	(regs_info): Rename to regs_info_aarch64.
+	(aarch64_regs_info): Return right regs_info.
+	(initialize_low_arch): Call initialize_low_arch_aarch32.
+
+2015-08-04  Yao Qi  <yao.qi@linaro.org>
+
+	* configure.srv (srv_tgtobj): Add linux-aarch32-low.o.
+	* linux-aarch32-low.c: New file.
+	* linux-aarch32-low.h: New file.
+	* linux-arm-low.c (arm_fill_gregset): Move it to
+	linux-aarch32-low.c.
+	(arm_store_gregset): Likewise.
+	(arm_fill_vfpregset): Call arm_fill_vfpregset_num
+	(arm_store_vfpregset): Call arm_store_vfpregset_num.
+	(arm_arch_setup): Check if PTRACE_GETREGSET works.
+	(regs_info): Rename to regs_info_arm.
+	(arm_regs_info): Return regs_info_aarch32 if
+	have_ptrace_getregset is 1 and target description is
+	arm_with_neon or arm_with_vfpv3.
+	(initialize_low_arch): Don't call init_registers_arm_with_neon.
+	Call initialize_low_arch_aarch32 instead.
+
+2015-08-04  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-x86-low.c (have_ptrace_getregset): Move it to ...
+	* linux-low.c: ... here.
+	* linux-low.h (have_ptrace_getregset): Declare it.
+
+2015-08-04  Pedro Alves  <palves@redhat.com>
+
+	* thread-db.c (struct thread_db): Use new typedefs.
+	(try_thread_db_load_1): Define local TDB_DLSYM macro and use it in
+	CHK calls.
+	(disable_thread_event_reporting): Cast result of dlsym to
+	destination function pointer type.
+	(thread_db_mourn): Use td_ta_delete_ftype.
+
+2015-08-03  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* linux-nios2-low.c (NIOS2_BREAKPOINT): Conditionalize for
+	arch variant.
+	(CDX_BREAKPOINT): Define for R2.
+	(nios2_breakpoint_at): Check for CDX_BREAKPOINT when R2.
+	(the_low_target): Add comments.
+
+2015-07-30  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-arm-low.c (arm_hwcap): Remove it.
+	(arm_read_description): New local variable arm_hwcap.  Don't
+	set arm_hwcap to zero.
+
+2015-07-30  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-arm-low.c (arm_fill_wmmxregset): Don't use arm_hwcap.
+	Use regcache->tdesc instead.
+	(arm_store_wmmxregset): Likewise.
+	(arm_fill_vfpregset): Likewise.
+	(arm_store_vfpregset): Likewise.
+
+2015-07-30  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-arm-low.c: Include arch/arm.h.
+	(arm_fill_gregset): Don't use arm_num_regs and arm_regmap.
+	(arm_store_gregset): Likewise.
+
+2015-07-29  Simon Marchi  <simon.marchi@ericsson.com>
+
+	* linux-mips-low.c (mips_linux_prepare_to_resume): Add NULL as
+	ptrace's 4th parameter.
+
+2015-07-27  Yao Qi  <yao.qi@linaro.org>
+
+	* configure.srv (case aarch64*-*-linux*): Don't set
+	srv_linux_usrregs.
+
+2015-07-24  Pedro Alves  <palves@redhat.c: Likewise.om>
+
+	* linux-aarch64-low.c: Include nat/gdb_ptrace.h instead of
+	sys/ptrace.h.
+	* linux-arm-low.c: Likewise.
+	* linux-cris-low.c: Likewise.
+	* linux-crisv32-low.c: Likewise.
+	* linux-low.c: Likewise.
+	* linux-m68k-low.c: Likewise.
+	* linux-mips-low.c: Likewise.
+	* linux-nios2-low.c: Likewise.
+	* linux-s390-low.c: Likewise.
+	* linux-sparc-low.c: Likewise.
+	* linux-tic6x-low.c: Likewise.
+	* linux-tile-low.c: Likewise.
+	* linux-x86-low.c: Likewise.
+
+2015-07-24  Pedro Alves  <palves@redhat.com>
+
+	* config.in: Regenerate.
+	* configure: Regenerate.
+
+2015-07-24  Pedro Alves  <palves@redhat.com>
+
+	* acinclude.m4: Include ../ptrace.m4.
+	* configure.ac: Call GDB_AC_PTRACE.
+	* config.in, configure: Regenerate.
+
+2015-07-24  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-low.c (linux_create_inferior): Remove setting to
+	proc->priv->new_inferior.
+	(linux_attach): Likewise.
+	(linux_low_filter_event): Likewise.
+	* linux-low.h (struct process_info_private) <new_inferior>: Remove.
+
+2015-07-24  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-low.c (linux_arch_setup): New function.
+	(linux_low_filter_event): If proc->tdesc is NULL and
+	proc->attached is true, call the_low_target.arch_setup.
+	Otherwise, keep status pending, and return.
+	(linux_resume_one_lwp_throw): Don't call get_pc if
+	thread->while_stepping isn't NULL.  Don't call
+	get_thread_regcache if proc->tdesc is NULL.
+	(need_step_over_p): Return 0 if proc->tdesc is NULL.
+	(linux_target_ops): Install arch_setup.
+	* server.c (start_inferior): Call the_target->arch_setup.
+	* target.h (struct target_ops) <arch_setup>: New field.
+	(target_arch_setup): New marco.
+	* lynx-low.c (lynx_target_ops): Update.
+	* nto-low.c (nto_target_ops): Update.
+	* spu-low.c (spu_target_ops): Update.
+	* win32-low.c (win32_target_ops): Update.
+
+2015-07-24  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-low.c (linux_add_process): Don't set
+	proc->priv->new_inferior.
+	(linux_create_inferior): Set proc->priv->new_inferior to 1.
+	(linux_attach): Likewise.
+
+2015-07-24  Yao Qi  <yao.qi@linaro.org>
+
+	* server.c (start_inferior): Code refactor.
+
+2015-07-24  Yao Qi  <yao.qi@linaro.org>
+
+	* server.c (process_serial_event): Set general_thread.
+
+2015-07-21  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_arch_setup): Remove code and call
+	aarch64_linux_get_debug_reg_capacity.
+
+2015-07-17  Yao Qi  <yao.qi@linaro.org>
+
+	* Makefile.in (aarch64-linux-hw-point.o): New rule.
+	* configure.srv (srv_tgtobj): Append aarch64-linux-hw-point.o.
+	* linux-aarch64-low.c: Include nat/aarch64-linux-hw-point.h.
+	(AARCH64_HBP_MAX_NUM): Move to nat/aarch64-linux-hw-point.h.
+	(AARCH64_HWP_MAX_NUM, AARCH64_HBP_ALIGNMENT): Likewise.
+	(AARCH64_HWP_ALIGNMENT): Likewise.
+	(AARCH64_HWP_MAX_LEN_PER_REG): Likewise.
+	(AARCH64_DEBUG_NUM_SLOTS, AARCH64_DEBUG_ARCH): Likewise.
+	(aarch64_num_bp_regs, aarch64_num_wp_regs): Likewise.
+	(AARCH64_DEBUG_ARCH_V8, DR_MARK_ALL_CHANGED): Likewise.
+	(DR_MARK_N_CHANGED, DR_CLEAR_CHANGED): Likewise.
+	(DR_HAS_CHANGED, DR_N_HAS_CHANGE): Likewise.
+	(struct aarch64_debug_reg_state): Likewise.
+	(struct arch_lwp_info):	Likewise.
+	(aarch64_align_watchpoint): Likewise.
+	(DR_CONTROL_ENABLED, DR_CONTROL_LENGTH): Likewise.
+	(aarch64_watchpoint_length): Likewise.
+	(aarch64_point_encode_ctrl_reg): Likewise
+	(aarch64_point_is_aligned): Likewise.
+	(aarch64_align_watchpoint): Likewise.
+	(aarch64_linux_set_debug_regs):
+	(aarch64_dr_state_insert_one_point): Likewise.
+	(aarch64_dr_state_remove_one_point): Likewise.
+	(aarch64_handle_breakpoint): Likewise.
+	(aarch64_handle_aligned_watchpoint): Likewise.
+	(aarch64_handle_unaligned_watchpoint): Likewise.
+	(aarch64_handle_watchpoint): Likewise.
+
+2015-07-17  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_handle_breakpoint): Add argument state
+	and don't aarch64_get_debug_reg_state.  All callers update.
+	(aarch64_handle_aligned_watchpoint): Likewise.
+	(aarch64_handle_unaligned_watchpoint): Likewise.
+	(aarch64_handle_watchpoint): Likewise.
+	(aarch64_insert_point): Call aarch64_get_debug_reg_state earlier.
+	(aarch64_remove_point): Likewise.
+
+2015-07-17  Yao Qi  <yao.qi@linaro.org>
+
+	* linux-aarch64-low.c (aarch64_show_debug_reg_state): Use
+	debug_printf.
+	(aarch64_handle_unaligned_watchpoint): Likewise.
+
+2015-07-15  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Revert the previous 3 commits:
+	Move gdb_regex* to common/
+	Move linux_find_memory_regions_full & co.
+	gdbserver build-id attribute generator
+
+2015-07-15  Aleksandar Ristovski  <aristovski@qnx.com
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	gdbserver build-id attribute generator.
+	* linux-low.c (nat/linux-maps.h, search.h, rsp-low.h): Include.
+	(ElfXX_Ehdr, ElfXX_Phdr, ElfXX_Nhdr): New.
+	(ELFXX_FLD, ELFXX_SIZEOF, ELFXX_ROUNDUP, BUILD_ID_INVALID): New.
+	(find_phdr): New.
+	(get_dynamic): Use find_pdhr to traverse program headers.
+	(struct mapping_entry, mapping_entry_s, free_mapping_entry_vec)
+	(compare_mapping_entry_range, struct find_memory_region_callback_data)
+	(read_build_id, find_memory_region_callback, lrfind_mapping_entry)
+	(get_hex_build_id): New.
+	(linux_qxfer_libraries_svr4): Add optional build-id attribute
+	to reply XML document.
+
+2015-07-15  Aleksandar Ristovski  <aristovski@qnx.com
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* target.c: Include target/target-utils.h and fcntl.h.
+	(target_fileio_read_stralloc_1_pread, target_fileio_read_stralloc_1)
+	(target_fileio_read_stralloc): New functions.
+
+2015-07-15  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* Makefile.in (OBS): Add gdb_regex.o.
+	(gdb_regex.o): New.
+	* config.in: Rebuilt.
+	* configure: Rebuilt.
+
+2015-07-15  Aleksandar Ristovski  <aristovski@qnx.com
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Create empty nat/linux-maps.[ch] and common/target-utils.[ch].
+	* Makefile.in (OBS): Add target-utils.o.
+	(linux-maps.o, target-utils.o): New.
+	* configure.srv (srv_linux_obj): Add linux-maps.o.
+
+2015-07-15  Pierre Langlois  <pierre.langlois@arm.com>
+
+	* linux-aarch64-low.c (aarch64_supports_range_stepping): New
+	function, return 1.
+	(the_low_target): Install it.
+
+2015-07-14  Pedro Alves  <palves@redhat.com>
+
+	* linux-low.c (kill_wait_lwp): Don't assert if waitpid fails.
+	Instead, ignore ECHILD, and throw an error for other errnos.
+
 2015-07-10  Pedro Alves  <palves@redhat.com>
 
 	* event-loop.c (struct callback_event) <data>: Change type to
@@ -535,20 +1052,20 @@
 
 2015-03-04  Pedro Alves  <palves@redhat.com>
 
-        * linux-low.c (check_stopped_by_breakpoint) [USE_SIGTRAP_SIGINFO]:
+	* linux-low.c (check_stopped_by_breakpoint) [USE_SIGTRAP_SIGINFO]:
 	Decide whether a breakpoint triggered based on the SIGTRAP's
 	siginfo.si_code.
-        (thread_still_has_status_pending_p) [USE_SIGTRAP_SIGINFO]: Don't check whether a
-        breakpoint is inserted if relying on SIGTRAP's siginfo.si_code.
+	(thread_still_has_status_pending_p) [USE_SIGTRAP_SIGINFO]: Don't check whether a
+	breakpoint is inserted if relying on SIGTRAP's siginfo.si_code.
 	(linux_low_filter_event): Check for breakpoints before checking
 	watchpoints.
 	(linux_wait_1): Don't re-increment the PC if relying on SIGTRAP's
 	siginfo.si_code.
-        (linux_stopped_by_sw_breakpoint)
-        (linux_supports_stopped_by_sw_breakpoint)
-        (linux_stopped_by_hw_breakpoint)
-        (linux_supports_stopped_by_hw_breakpoint): New functions.
-        (linux_target_ops): Install new target methods.
+	(linux_stopped_by_sw_breakpoint)
+	(linux_supports_stopped_by_sw_breakpoint)
+	(linux_stopped_by_hw_breakpoint)
+	(linux_supports_stopped_by_hw_breakpoint): New functions.
+	(linux_target_ops): Install new target methods.
 
 2015-03-04  Pedro Alves  <palves@redhat.com>
 
@@ -2778,7 +3295,7 @@
 
 	* server.h (struct emit_ops, current_insn_ptr, emit_error):
 	Move ...
-        * ax.h: ... here.
+	* ax.h: ... here.
 
 2013-09-05  Pedro Alves  <palves@redhat.com>
 

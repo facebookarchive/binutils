@@ -155,10 +155,10 @@ btrace_data_append (struct btrace_data *dst,
 	  dst->variant.pt.size = 0;
 
 	  /* fall-through.  */
-	case BTRACE_FORMAT_BTS:
+	case BTRACE_FORMAT_PT:
 	  {
 	    gdb_byte *data;
-	    unsigned long size;
+	    size_t size;
 
 	    size = src->variant.pt.size + dst->variant.pt.size;
 	    data = xmalloc (size);

@@ -25,6 +25,7 @@
 #include "i387-fp.h"
 #include "x86-low.h"
 #include "x86-xstate.h"
+#include "nat/gdb_ptrace.h"
 
 #include "gdb_proc_service.h"
 /* Don't include elf/common.h if linux/elf.h got included by
@@ -122,6 +123,7 @@ static const char *xmltarget_amd64_linux_no_xml = "@<target>\
 #endif
 
 #include <sys/ptrace.h>
+#include "nat/gdb_ptrace.h"
 #include <sys/uio.h>
 
 #ifdef __ANDROID__
@@ -1162,9 +1164,6 @@ int have_ptrace_getfpxregs =
   0
 #endif
 ;
-
-/* Does the current host support PTRACE_GETREGSET?  */
-static int have_ptrace_getregset = -1;
 
 /* Get Linux/x86 target description from running target.  */
 

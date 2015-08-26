@@ -923,7 +923,11 @@ extern void set_gdbarch_max_insn_length (struct gdbarch *gdbarch, ULONGEST max_i
   
    If your architecture doesn't need to adjust instructions before
    single-stepping them, consider using simple_displaced_step_copy_insn
-   here. */
+   here.
+
+   If the instruction cannot execute out of line, return NULL.  The
+   core falls back to stepping past the instruction in-line instead in
+   that case. */
 
 extern int gdbarch_displaced_step_copy_insn_p (struct gdbarch *gdbarch);
 
@@ -1310,8 +1314,8 @@ extern void set_gdbarch_has_shared_address_space (struct gdbarch *gdbarch, gdbar
 
 /* True if a fast tracepoint can be set at an address. */
 
-typedef int (gdbarch_fast_tracepoint_valid_at_ftype) (struct gdbarch *gdbarch, CORE_ADDR addr, int *isize, char **msg);
-extern int gdbarch_fast_tracepoint_valid_at (struct gdbarch *gdbarch, CORE_ADDR addr, int *isize, char **msg);
+typedef int (gdbarch_fast_tracepoint_valid_at_ftype) (struct gdbarch *gdbarch, CORE_ADDR addr, char **msg);
+extern int gdbarch_fast_tracepoint_valid_at (struct gdbarch *gdbarch, CORE_ADDR addr, char **msg);
 extern void set_gdbarch_fast_tracepoint_valid_at (struct gdbarch *gdbarch, gdbarch_fast_tracepoint_valid_at_ftype *fast_tracepoint_valid_at);
 
 /* Return the "auto" target charset. */

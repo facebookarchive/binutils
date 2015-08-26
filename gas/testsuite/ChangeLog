@@ -1,3 +1,226 @@
+2015-08-25  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* gas/sparc/wrpr.s: Test writing to the privileged %pmcdper
+	register.
+	* gas/sparc/wrpr.d: ...and the expected result.
+	* gas/sparc/rdpr.s: Test reading from the privileged %pmcdper
+	register.
+	* gas/sparc/rdpr.d: ...and the expected result.
+
+2015-08-25  Simon Dardis  <Simon.Dardis@imgtec.com>
+
+	* gas/mips/micromips32-move.d: Update expected disassembly.
+	* gas/mips/move.d: Likewise.
+	* gas/mips/move.s: Fix for some MIPS configurations.
+
+2015-08-24  Jan Stancek  <jstancek@redhat.com>
+
+	* gas/i386/intel.s: Add test of disassembly of a potential
+	three byte instuction at the end of a function.
+	* gas/i386/intel.d: Update expected disassembly.
+
+2015-08-21  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/18581
+	* gas/all/byte.d: Disable this test.  Quoted expressions
+	are now allowed in .byte directives.
+	* gas/all/quoted-sym-names.s: New test.
+	* gas/all/quoted-sym-names.d: Expected output.
+	* gas/all/gas.exp: Run the new test.
+
+2015-08-21  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR binutils/18257
+	* gas/i386/disassem.s: Add mask instructions with invalid ModR/M byte.
+	* gas/i386/x86-64-disassem.s: Likewise.
+	* gas/i386/disassem.d: Updated.
+	* gas/i386/x86-64-disassem.d: Likewise.
+
+2015-08-19  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/reloc-dtprel-lo12-ldst8.s: New testcase.
+	* gas/aarch64/reloc-dtprel-lo12_nc-ldst8.s: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12-ldst16.s: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12_nc-ldst16.s: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12-ldst32.s: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12_nc-ldst32.s: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12-ldst64.s: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12_nc-ldst64.s: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12-ldst8.d: New expectation file.
+	* gas/aarch64/reloc-dtprel-lo12_nc-ldst8.d: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12-ldst16.d: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12_nc-ldst16.d: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12-ldst32.d: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12_nc-ldst32.d: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12-ldst64.d: Likewise.
+	* gas/aarch64/reloc-dtprel-lo12_nc-ldst64.d: Likewise.
+
+2015-08-19  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/reloc-dtprel_g0.s: New testcase.
+	* gas/aarch64/reloc-dtprel_g0-ilp32.s: Likewise.
+	* gas/aarch64/reloc-dtprel_g0_nc.s: Likewise.
+	* gas/aarch64/reloc-dtprel_g0_nc-ilp32.s: Likewise.
+	* gas/aarch64/reloc-dtprel_g1.s: Likewise.
+	* gas/aarch64/reloc-dtprel_g1-ilp32.s: Likewise.
+	* gas/aarch64/reloc-dtprel_g1_nc.s: Likewise.
+	* gas/aarch64/reloc-dtprel_g2.s: Likewise.
+	* gas/aarch64/reloc-dtprel_hi12.s: Likewise.
+	* gas/aarch64/reloc-dtprel_hi12-ilp32.s: Likewise.
+	* gas/aarch64/reloc-dtprel_g0.d: New expectation file.
+	* gas/aarch64/reloc-dtprel_g0-ilp32.d: Likewise.
+	* gas/aarch64/reloc-dtprel_g0_nc.d: Likewise.
+	* gas/aarch64/reloc-dtprel_g0_nc-ilp32.d: Likewise.
+	* gas/aarch64/reloc-dtprel_g1.d: Likewise.
+	* gas/aarch64/reloc-dtprel_g1-ilp32.d: Likewise.
+	* gas/aarch64/reloc-dtprel_g1_nc.d: Likewise.
+	* gas/aarch64/reloc-dtprel_g2.d: Likewise.
+	* gas/aarch64/reloc-dtprel_hi12.d: Likewise.
+	* gas/aarch64/reloc-dtprel_hi12-ilp32.d: Likewise.
+
+2015-08-19  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/reloc-dtprel_lo12_nc.s: New testcase.
+	* gas/aarch64/reloc-dtprel_lo12_nc-ilp32.s: Likewise.
+	* gas/aarch64/reloc-dtprel_lo12_nc.d: New expectation file.
+	* gas/aarch64/reloc-dtprel_lo12_nc-ilp32.d: Likewise.
+
+2015-08-13  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* gas/arm/nops.d: New.
+	* gas/arm/nops.s: New.
+	* gas/arm/inst.d: Changed expectation file for 26-bit teq,
+	tst, cmn and cmp.
+
+2015-08-12  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* gas/xtensa/all.exp: Add auto-litpools to the list of xtensa
+	tests.
+	* gas/xtensa/auto-litpools.s: New file: auto-litpools test.
+	* gas/xtensa/auto-litpools.s: New file: auto-litpools test
+	result pattern.
+
+2015-08-12  Simon Dardis  <simon.dardis@imgtec.com>
+
+	* gas/mips/elf-rel23.d: Update test.
+	* gas/mips/elf-rel23.d: Ditto.
+	* gas/mips/elf-rel23a.d: Ditto.
+	* gas/mips/elf-rel23b.d: Ditto.
+	* gas/mips/elf_e_flags1.d: Ditto.
+	* gas/mips/elf_e_flags2.d: Ditto.
+	* gas/mips/elf_e_flags3.d: Ditto.
+	* gas/mips/elf_e_flags4.d: Ditto.
+	* gas/mips/loc-swap-dis.d: Ditto.
+	* gas/mips/micromips-insn32.d: Ditto.
+	* gas/mips/micromips-noinsn32.d: Ditto.
+	* gas/mips/micromips-trap.d: Ditto.
+	* gas/mips/micromips.d: Ditto.
+	* gas/mips/mips-abi32-pic.d: Ditto.
+	* gas/mips/mips-abi32.d: Ditto.
+	* gas/mips/mips-gp32-fp32-pic.d: Ditto.
+	* gas/mips/mips-gp32-fp32.d: Ditto.
+	* gas/mips/mips-gp32-fp64-pic.d: Ditto.
+	* gas/mips/mips-gp32-fp64.d: Ditto.
+	* gas/mips/mips-gp64-fp32-pic.d: Ditto.
+	* gas/mips/mips-gp64-fp32.d: Ditto.
+	* gas/mips/mips-gp64-fp64-pic.d: Ditto.
+	* gas/mips/mips-gp64-fp64.d: Ditto.
+	* gas/mips/mipsr6@loc-swap-dis.d: Ditto.
+	* gas/mips/tls-o32.d: Ditto.
+	* gas/mips/uld2-eb.d: Ditto.
+	* gas/mips/uld2-el.d: Ditto.
+	* gas/mips/ulw2-eb-ilocks.d: Ditto.
+	* gas/mips/ulw2-eb.d: Ditto.
+	* gas/mips/ulw2-el-ilocks.d: Ditto.
+	* gas/mips/ulw2-el.d: Ditto.
+	* gas/mips/move.d: New test.
+	* gas/mips/move.s: Ditto.
+	* gas/mips/micromips32-move.d: Ditto.
+	* gas/mips/micromips32-move.s: Ditto.
+	* gas/mips/mips.exp: Run the new tests.
+
+2015-08-11  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/reloc-dtprel_lo12-1.s: New testcase.
+	* gas/aarch64/reloc-dtprel_lo12-ilp32-1.s: Likewise.
+	* gas/aarch64/reloc-dtprel_lo12-1.d: New expectation file.
+	* gas/aarch64/reloc-dtprel_lo12-ilp32-1.d: Likewise.
+
+2015-08-11  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/reloc-tlsldm_lo12_nc-1.s: New testcase.
+	* gas/aarch64/reloc-tlsldm_lo12_nc-ilp32-1.s: Likewise.
+	* gas/aarch64/reloc-tlsldm_lo12_nc-1.d: New expectation file.
+	* gas/aarch64/reloc-tlsldm_lo12_nc-ilp32-1.d: Likewise.
+
+2015-08-11  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/reloc-tlsldm-page-1.s: New testcase.
+	* gas/aarch64/reloc-tlsldm-page-ilp32-1.s: Likewise.
+	* gas/aarch64/reloc-tlsldm-page-1.d: New expectation file.
+	* gas/aarch64/reloc-tlsldm-page-ilp32-1.d: Likewise.
+
+2015-08-10  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* gas/mips/r6.s: Add tests for "sigrie".
+	* gas/mips/r6.d: Check for "sigrie".
+	* gas/mips/r6-n32.d: Likewise.
+	* gas/mips/r6-n64.d: Likewise.
+
+2015-07-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/13571
+	* gas/i386/i386.exp: Run i386-intel and x86_64-intel.
+	* gas/i386/i386-intel.d: New file.
+	* gas/i386/x86_64-intel.d: Likewise.
+
+2015-07-24  Nick Clifton  <nickc@redhat.com>
+
+	* gas/all/struct.d: Allow for extra symbols in the output.
+	* gas/macros/test1.d: Likewise.
+	* gas/elf/elf.exp: Add an rl78 machine.
+	* gas/elf/sections2e-rl78: New file.
+
+2015-07-22  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR binutils/18631
+	* gas/i386avx512dq-intel.d: Replace "QWORD" with "DWORD" in
+	vcvtt?ps2u?qq instructions disassembly regexes.
+	Add disassembly regex for new test.
+	* gas/i386/avx512dq.d: Likewise.
+	* gas/i386/avx512dq_vl-intel.d: Likewise.
+	* gas/i386/avx512dq_vl.d: Likewise.
+	* gas/i386/x86-64-avx512dq-intel.d: Likewise.
+	* gas/i386/x86-64-avx512dq.d: Likewise.
+	* gas/i386/x86-64-avx512dq_vl-intel.d: Likewise.
+	* gas/i386/x86-64-avx512dq_vl.d: Likewise.
+	* gas/i386/avx512dq.s: Add new test for Intel syntax with memory
+	operand and broadcasting enabled.
+	* gas/i386/avx512dq_vl.s: Likewise.
+	* gas/i386/x86-64-avx512dq.s: Likewise.
+	* gas/i386/x86-64-avx512dq_vl.s: Likewise.
+
+2015-07-20  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* gas/arm/attr-march-armv6kz.d: New.
+	* gas/arm/attr-march-armv6kzt2.d: New.
+
+2015-07-16  Jiong Wang  <jiong.wang@arm.com>
+
+	* gas/aarch64/reloc-tlsldm-1.s: New testcase.
+	* gas/aarch64/reloc-tlsldm-ilp32-1.s: Ditto.
+	* gas/aarch64/reloc-tlsldm-1.d: New expectation file.
+	* gas/aarch64/reloc-tlsldm-ilp32-1.d: Ditto.
+
+2015-07-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gas/arm/arch7em-bad.l: Update expected errors.
+	* gas/arm/arch7m-bad.l: Likewise.
+	* gas/arm/arm-idiv-bad.l: Likewise.
+	* gas/arm/arm7-bad.l: Likewise.
+	* gas/arm/armv1-bad.l: Likewise.
+	* gas/arm/thumb-w-bad.l: Likewise.
+
 2015-07-10  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* gas/i386/dw2-compress-1.d: Updated to accept .debug_* sections.
@@ -831,7 +1054,7 @@
 
 	* gas/arm/neon-addressing-bad.s: Add test for invalid VSHL,
 	VQSHL, and VQSHLU immediates.
-	* gas/arm/neon-addressing-bad.l: Update accordingly. 
+	* gas/arm/neon-addressing-bad.l: Update accordingly.
 
 2015-01-10  Andrew Burgess  <andrew.burgess@embecosm.com>
 

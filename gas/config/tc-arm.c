@@ -2868,10 +2868,9 @@ s_thumb_set (int equiv)
   /* Especial apologies for the random logic:
      This just grew, and could be parsed much more simply!
      Dean - in haste.  */
-  name	    = input_line_pointer;
-  delim	    = get_symbol_end ();
+  delim	    = get_symbol_name (& name);
   end_name  = input_line_pointer;
-  *end_name = delim;
+  (void) restore_line_pointer (delim);
 
   if (*input_line_pointer != ',')
     {
@@ -2951,8 +2950,7 @@ s_syntax (int unused ATTRIBUTE_UNUSED)
 {
   char *name, delim;
 
-  name = input_line_pointer;
-  delim = get_symbol_end ();
+  delim = get_symbol_name (& name);
 
   if (!strcasecmp (name, "unified"))
     unified_syntax = TRUE;
@@ -2963,58 +2961,11 @@ s_syntax (int unused ATTRIBUTE_UNUSED)
       as_bad (_("unrecognized syntax mode \"%s\""), name);
       return;
     }
-  *input_line_pointer = delim;
+  (void) restore_line_pointer (delim);
   demand_empty_rest_of_line ();
 }
 
 /* Directives: sectioning and alignment.  */
-
-/* Same as s_align_ptwo but align 0 => align 2.	 */
-
-static void
-s_align (int unused ATTRIBUTE_UNUSED)
-{
-  int temp;
-  bfd_boolean fill_p;
-  long temp_fill;
-  long max_alignment = 15;
-
-  temp = get_absolute_expression ();
-  if (temp > max_alignment)
-    as_bad (_("alignment too large: %d assumed"), temp = max_alignment);
-  else if (temp < 0)
-    {
-      as_bad (_("alignment negative. 0 assumed."));
-      temp = 0;
-    }
-
-  if (*input_line_pointer == ',')
-    {
-      input_line_pointer++;
-      temp_fill = get_absolute_expression ();
-      fill_p = TRUE;
-    }
-  else
-    {
-      fill_p = FALSE;
-      temp_fill = 0;
-    }
-
-  if (!temp)
-    temp = 2;
-
-  /* Only make a frag if we HAVE to.  */
-  if (temp && !need_pass_2)
-    {
-      if (!fill_p && subseg_text_p (now_seg))
-	frag_align_code (temp, 0);
-      else
-	frag_align (temp, (int) temp_fill, 0);
-    }
-  demand_empty_rest_of_line ();
-
-  record_alignment (now_seg, temp);
-}
 
 static void
 s_bss (int ignore ATTRIBUTE_UNUSED)
@@ -3927,9 +3878,10 @@ s_arm_unwind_personality (int ignored ATTRIBUTE_UNUSED)
   if (unwind.personality_routine || unwind.personality_index != -1)
     as_bad (_("duplicate .personality directive"));
 
-  name = input_line_pointer;
-  c = get_symbol_end ();
+  c = get_symbol_name (& name);
   p = input_line_pointer;
+  if (c == '"')
+    ++ input_line_pointer;
   unwind.personality_routine = symbol_find_or_make (name);
   *p = c;
   demand_empty_rest_of_line ();
@@ -4691,7 +4643,7 @@ const pseudo_typeS md_pseudo_table[] =
   { "qn",          s_qn,          0 },
   { "unreq",	   s_unreq,	  0 },
   { "bss",	   s_bss,	  0 },
-  { "align",	   s_align,	  0 },
+  { "align",	   s_align_ptwo,  2 },
   { "arm",	   s_arm,	  0 },
   { "thumb",	   s_thumb,	  0 },
   { "code",	   s_code,	  0 },
@@ -7760,14 +7712,14 @@ static bfd_boolean
 is_double_a_single (bfd_int64_t v)
 {
   int exp = (int)((v >> 52) & 0x7FF);
-  bfd_int64_t mantissa = (v & (bfd_int64_t)0xFFFFFFFFFFFFF);
+  bfd_int64_t mantissa = (v & (bfd_int64_t)0xFFFFFFFFFFFFFULL);
 
   return (exp == 0 || exp == 0x7FF
 	  || (exp >= 1023 - 126 && exp <= 1023 + 127))
     && (mantissa & 0x1FFFFFFFl) == 0;
 }
 
-/* Returns a double precision value casted to single precision 
+/* Returns a double precision value casted to single precision
    (ignoring the least significant bits in exponent and mantissa).  */
 
 static int
@@ -7775,7 +7727,7 @@ double_to_single (bfd_int64_t v)
 {
   int sign = (int) ((v >> 63) & 1l);
   int exp = (int) ((v >> 52) & 0x7FF);
-  bfd_int64_t mantissa = (v & (bfd_int64_t)0xFFFFFFFFFFFFF);
+  bfd_int64_t mantissa = (v & (bfd_int64_t)0xFFFFFFFFFFFFFULL);
 
   if (exp == 0x7FF)
     exp = 0xFF;
@@ -7865,7 +7817,7 @@ move_or_literal_pool (int i, enum lit_type t, bfd_boolean mode_3)
 	    }
 	  else
 	    l = generic_bignum;
-	  
+
 #if defined BFD_HOST_64_BIT
 	  v =
 	    ((((((((bfd_int64_t) l[3] & LITTLENUM_MASK)
@@ -7922,7 +7874,7 @@ move_or_literal_pool (int i, enum lit_type t, bfd_boolean mode_3)
 		      return TRUE;
 		    }
 		  else if ((v & ~0xFFFF) == 0 || (v & ~0xFFFF0000) == 0)
-		    { 
+		    {
 		      /* The number may be loaded with a movw/movt instruction.  */
 		      int imm;
 
@@ -8000,9 +7952,9 @@ move_or_literal_pool (int i, enum lit_type t, bfd_boolean mode_3)
 
 		  /* Fill other bits in vmov encoding for both thumb and arm.  */
 		  if (thumb_mode)
-		    inst.instruction |= (0x7 << 29) | (0xF << 24);
+		    inst.instruction |= (0x7U << 29) | (0xF << 24);
 		  else
-		    inst.instruction |= (0xF << 28) | (0x1 << 25);
+		    inst.instruction |= (0xFU << 28) | (0x1 << 25);
 		  neon_write_immbits (immbits);
 		  return TRUE;
 		}
@@ -9974,7 +9926,7 @@ do_iwmmxt_wldstd (void)
       && inst.operands[1].immisreg)
     {
       inst.instruction &= ~0x1a000ff;
-      inst.instruction |= (0xf << 28);
+      inst.instruction |= (0xfU << 28);
       if (inst.operands[1].preind)
 	inst.instruction |= PRE_INDEX;
       if (!inst.operands[1].negative)
@@ -10053,7 +10005,7 @@ do_iwmmxt_wrwrwr_or_imm5 (void)
       }
     /* Map 32 -> 0, etc.  */
     inst.operands[2].imm &= 0x1f;
-    inst.instruction |= (0xf << 28) | ((inst.operands[2].imm & 0x10) << 4) | (inst.operands[2].imm & 0xf);
+    inst.instruction |= (0xfU << 28) | ((inst.operands[2].imm & 0x10) << 4) | (inst.operands[2].imm & 0xf);
   }
 }
 
@@ -17873,7 +17825,7 @@ md_assemble (char *str)
 	  || (thumb_mode == 1
 	      && !ARM_CPU_HAS_FEATURE (variant, *opcode->tvariant)))
 	{
-	  as_bad (_("selected processor does not support Thumb mode `%s'"), str);
+	  as_bad (_("selected processor does not support `%s' in Thumb mode"), str);
 	  return;
 	}
       if (inst.cond != COND_ALWAYS && !unified_syntax
@@ -17898,7 +17850,7 @@ md_assemble (char *str)
 		inst.size_req = 2;
 	      else if (inst.size_req == 4)
 		{
-		  as_bad (_("selected processor does not support Thumb-2 mode `%s'"), str);
+		  as_bad (_("selected processor does not support `%s' in Thumb-2 mode"), str);
 		  return;
 		}
 	    }
@@ -17964,7 +17916,7 @@ md_assemble (char *str)
 	  && !(opcode->avariant &&
 	       ARM_CPU_HAS_FEATURE (cpu_variant, *opcode->avariant)))
 	{
-	  as_bad (_("selected processor does not support ARM mode `%s'"), str);
+	  as_bad (_("selected processor does not support `%s' in ARM mode"), str);
 	  return;
 	}
       if (inst.size_req)
@@ -17975,7 +17927,7 @@ md_assemble (char *str)
 
       inst.instruction = opcode->avalue;
       if (opcode->tag == OT_unconditionalF)
-	inst.instruction |= 0xF << 28;
+	inst.instruction |= 0xFU << 28;
       else
 	inst.instruction |= inst.cond << 28;
       inst.size = INSN_SIZE;
@@ -21880,7 +21832,7 @@ arm_tc_equal_in_insn (int c ATTRIBUTE_UNUSED, char * name)
       else
 	free (nbuf);
     }
-  
+
   return FALSE;
 }
 
@@ -24748,8 +24700,8 @@ static const struct arm_cpu_option_table arm_cpus[] =
   ARM_CPU_OPT ("mpcorenovfp",	ARM_ARCH_V6K,	 FPU_NONE,	  "MPCore"),
   ARM_CPU_OPT ("arm1156t2-s",	ARM_ARCH_V6T2,	 FPU_NONE,	  NULL),
   ARM_CPU_OPT ("arm1156t2f-s",	ARM_ARCH_V6T2,	 FPU_ARCH_VFP_V2, NULL),
-  ARM_CPU_OPT ("arm1176jz-s",	ARM_ARCH_V6ZK,	 FPU_NONE,	  NULL),
-  ARM_CPU_OPT ("arm1176jzf-s",	ARM_ARCH_V6ZK,	 FPU_ARCH_VFP_V2, NULL),
+  ARM_CPU_OPT ("arm1176jz-s",	ARM_ARCH_V6KZ,	 FPU_NONE,	  NULL),
+  ARM_CPU_OPT ("arm1176jzf-s",	ARM_ARCH_V6KZ,	 FPU_ARCH_VFP_V2, NULL),
   ARM_CPU_OPT ("cortex-a5",	ARM_ARCH_V7A_MP_SEC,
 						 FPU_NONE,	  "Cortex-A5"),
   ARM_CPU_OPT ("cortex-a7",	ARM_ARCH_V7VE,   FPU_ARCH_NEON_VFP_V4,
@@ -24851,11 +24803,17 @@ static const struct arm_arch_option_table arm_archs[] =
   ARM_ARCH_OPT ("armv6j",	ARM_ARCH_V6,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv6k",	ARM_ARCH_V6K,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv6z",	ARM_ARCH_V6Z,	 FPU_ARCH_VFP),
-  ARM_ARCH_OPT ("armv6zk",	ARM_ARCH_V6ZK,	 FPU_ARCH_VFP),
+  /* The official spelling of this variant is ARMv6KZ, the name "armv6zk" is
+     kept to preserve existing behaviour.  */
+  ARM_ARCH_OPT ("armv6kz",	ARM_ARCH_V6KZ,	 FPU_ARCH_VFP),
+  ARM_ARCH_OPT ("armv6zk",	ARM_ARCH_V6KZ,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv6t2",	ARM_ARCH_V6T2,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv6kt2",	ARM_ARCH_V6KT2,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv6zt2",	ARM_ARCH_V6ZT2,	 FPU_ARCH_VFP),
-  ARM_ARCH_OPT ("armv6zkt2",	ARM_ARCH_V6ZKT2, FPU_ARCH_VFP),
+  /* The official spelling of this variant is ARMv6KZ, the name "armv6zkt2" is
+     kept to preserve existing behaviour.  */
+  ARM_ARCH_OPT ("armv6kzt2",	ARM_ARCH_V6KZT2, FPU_ARCH_VFP),
+  ARM_ARCH_OPT ("armv6zkt2",	ARM_ARCH_V6KZT2, FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv6-m",	ARM_ARCH_V6M,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv6s-m",	ARM_ARCH_V6SM,	 FPU_ARCH_VFP),
   ARM_ARCH_OPT ("armv7",	ARM_ARCH_V7,	 FPU_ARCH_VFP),
@@ -24989,6 +24947,8 @@ static const struct arm_option_fpu_value_table arm_fpus[] =
   {"crypto-neon-fp-armv8",
 			FPU_ARCH_CRYPTO_NEON_VFP_ARMV8},
   {"neon-fp-armv8.1",	FPU_ARCH_NEON_VFP_ARMV8_1},
+  {"crypto-neon-fp-armv8.1",
+			FPU_ARCH_CRYPTO_NEON_VFP_ARMV8_1},
   {NULL,		ARM_ARCH_NONE}
 };
 

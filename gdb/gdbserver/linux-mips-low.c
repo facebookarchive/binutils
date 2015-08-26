@@ -19,7 +19,7 @@
 #include "server.h"
 #include "linux-low.h"
 
-#include <sys/ptrace.h>
+#include "nat/gdb_ptrace.h"
 #include <endian.h>
 
 #include "nat/mips-linux-watch.h"
@@ -427,7 +427,7 @@ mips_linux_prepare_to_resume (struct lwp_info *lwp)
 	  int tid = ptid_get_lwp (ptid);
 
 	  if (-1 == ptrace (PTRACE_SET_WATCH_REGS, tid,
-			    &priv->watch_mirror))
+			    &priv->watch_mirror, NULL))
 	    perror_with_name ("Couldn't write watch register");
 	}
 

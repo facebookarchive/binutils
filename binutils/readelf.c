@@ -1608,12 +1608,9 @@ dump_relocations (FILE * file,
 
 	      if (is_rela)
 		{
-		  bfd_signed_vma off = rels[i].r_addend;
+		  bfd_vma off = rels[i].r_addend;
 
-		  /* PR 17531: file: 2e63226f.  */
-		  if (off == ((bfd_signed_vma) 1) << ((sizeof (bfd_signed_vma) * 8) - 1))
-		    printf (" + %" BFD_VMA_FMT "x", off);
-		  else if (off < 0)
+		  if ((bfd_signed_vma) off < 0)
 		    printf (" - %" BFD_VMA_FMT "x", - off);
 		  else
 		    printf (" + %" BFD_VMA_FMT "x", off);
@@ -1622,13 +1619,10 @@ dump_relocations (FILE * file,
 	}
       else if (is_rela)
 	{
-	  bfd_signed_vma off = rels[i].r_addend;
+	  bfd_vma off = rels[i].r_addend;
 
 	  printf ("%*c", is_32bit_elf ? 12 : 20, ' ');
-	  /* PR 17531: file: 2e63226f.  */
-	  if (off == ((bfd_signed_vma) 1) << ((sizeof (bfd_signed_vma) * 8) - 1))
-	    printf ("%" BFD_VMA_FMT "x", off);
-	  else if (off < 0)
+	  if ((bfd_signed_vma) off < 0)
 	    printf ("-%" BFD_VMA_FMT "x", - off);
 	  else
 	    printf ("%" BFD_VMA_FMT "x", off);
@@ -8683,7 +8677,7 @@ get_32bit_dynamic_section (FILE * file)
      might not have the luxury of section headers.  Look for the DT_NULL
      terminator to determine the number of entries.  */
   for (ext = edyn, dynamic_nent = 0;
-       (char *) ext < (char *) edyn + dynamic_size - sizeof (* entry);
+       (char *) (ext + 1) <= (char *) edyn + dynamic_size;
        ext++)
     {
       dynamic_nent++;
@@ -8731,8 +8725,8 @@ get_64bit_dynamic_section (FILE * file)
      might not have the luxury of section headers.  Look for the DT_NULL
      terminator to determine the number of entries.  */
   for (ext = edyn, dynamic_nent = 0;
-       /* PR 17533 file: 033-67080-0.004 - do not read off the end of the buffer.  */
-       (char *) ext < ((char *) edyn) + dynamic_size - sizeof (* ext);
+       /* PR 17533 file: 033-67080-0.004 - do not read past end of buffer.  */
+       (char *) (ext + 1) <= (char *) edyn + dynamic_size;
        ext++)
     {
       dynamic_nent++;
@@ -14490,7 +14484,7 @@ process_mips_specific (FILE * file)
 	      len = sizeof (* eopt);
 	      while (len < option->size)
 		{
-		  char datum = * ((char *) eopt + offset + len);
+		  unsigned char datum = * ((unsigned char *) eopt + offset + len);
 
 		  if (ISPRINT (datum))
 		    printf ("%c", datum);

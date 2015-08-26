@@ -1208,7 +1208,7 @@ address_info (char *exp, int from_tty)
     error (_("Argument required."));
 
   sym = lookup_symbol (exp, get_selected_block (&context_pc), VAR_DOMAIN,
-		       &is_a_field_of_this);
+		       &is_a_field_of_this).symbol;
   if (sym == NULL)
     {
       if (is_a_field_of_this.type != NULL)
@@ -1988,7 +1988,11 @@ print_variable_and_value (const char *name, struct symbol *var,
       struct value *val;
       struct value_print_options opts;
 
-      val = read_var_value (var, frame);
+      /* READ_VAR_VALUE needs a block in order to deal with non-local
+	 references (i.e. to handle nested functions).  In this context, we
+	 print variables that are local to this frame, so we can avoid passing
+	 a block to it.  */
+      val = read_var_value (var, NULL, frame);
       get_user_print_options (&opts);
       opts.deref_ref = 1;
       common_val_print (val, stream, indent, &opts, current_language);

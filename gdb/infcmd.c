@@ -1264,6 +1264,8 @@ signal_command (char *signum_exp, int from_tty)
 	oursig = gdb_signal_from_command (num);
     }
 
+  do_cleanups (args_chain);
+
   /* Look for threads other than the current that this command ends up
      resuming too (due to schedlock off), and warn if they'll get a
      signal delivered.  "signal 0" is used to suppress a previous
@@ -1530,7 +1532,7 @@ get_return_value (struct value *function, struct type *value_type,
 
   gdbarch = get_regcache_arch (stop_regs);
 
-  CHECK_TYPEDEF (value_type);
+  value_type = check_typedef (value_type);
   gdb_assert (TYPE_CODE (value_type) != TYPE_CODE_VOID);
 
   /* FIXME: 2003-09-27: When returning from a nested inferior function
@@ -1660,7 +1662,7 @@ finish_command_continuation (void *arg, int err)
 	    {
 	      struct value *func;
 
-	      func = read_var_value (a->function, get_current_frame ());
+	      func = read_var_value (a->function, NULL, get_current_frame ());
 	      TRY
 		{
 		  /* print_return_value can throw an exception in some
@@ -2540,7 +2542,7 @@ attach_command_post_wait (char *args, int from_tty, int async_exec)
 	 selected thread is stopped, others may still be executing.
 	 Be sure to explicitly stop all threads of the process.  This
 	 should have no effect on already stopped threads.  */
-      if (non_stop)
+      if (target_is_non_stop_p ())
 	target_stop (pid_to_ptid (inferior->pid));
 
       /* Tell the user/frontend where we're stopped.  */
@@ -2617,9 +2619,6 @@ attach_command (char *args, int from_tty)
      shouldn't refer to attach_target again.  */
   attach_target = NULL;
 
-  /* Done with ARGS.  */
-  do_cleanups (args_chain);
-
   /* Set up the "saved terminal modes" of the inferior
      based on what modes we are starting it with.  */
   target_terminal_init ();
@@ -2645,7 +2644,7 @@ attach_command (char *args, int from_tty)
   init_wait_for_inferior ();
   clear_proceed_status (0);
 
-  if (non_stop)
+  if (target_is_non_stop_p ())
     {
       /* If we find that the current thread isn't stopped, explicitly
 	 do so now, because we're going to install breakpoints and
@@ -2684,11 +2683,18 @@ attach_command (char *args, int from_tty)
 	  a->async_exec = async_exec;
 	  add_inferior_continuation (attach_command_continuation, a,
 				     attach_command_continuation_free_args);
+
+	  /* Done with ARGS.  */
+	  do_cleanups (args_chain);
+
 	  return;
 	}
 
       wait_for_inferior ();
     }
+
+  /* Done with ARGS.  */
+  do_cleanups (args_chain);
 
   attach_command_post_wait (args, from_tty, async_exec);
 }
@@ -2828,7 +2834,7 @@ interrupt_target_1 (int all_threads)
     ptid = minus_one_ptid;
   else
     ptid = inferior_ptid;
-  target_stop (ptid);
+  target_interrupt (ptid);
 
   /* Tag the thread as having been explicitly requested to stop, so
      other parts of gdb know not to resume this thread automatically,

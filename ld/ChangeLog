@@ -1,3 +1,137 @@
+2015-08-19  Alan Modra  <amodra@gmail.com>
+
+	* emultempl/aix.em: Don't set link_info.pic.
+	* emultempl/pe.em: Likewise.
+	* emultempl/pep.em: Likewise.
+	* emultempl/sunos.em: Likewise.
+	* lexsup.c (parse_args): Likewise.  Set type_pie for -pie.
+	* plugin.c (set_tv_header <LDPT_LINKER_OUTPUT>): Simplify.
+
+2015-08-18  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* ld/ldctor.c: Replace shared, executable, relocatable and pie
+	fields with bfd_link_executable, bfd_link_dll,
+	bfd_link_relocatable, bfd_link_pic and bfd_link_pie.
+	* ld/ldemul.c: Likewise.
+	* ld/ldfile.c: Likewise.
+	* ld/ldlang.c: Likewise.
+	* ld/ldmain.c: Likewise.
+	* ld/ldwrite.c: Likewise.
+	* ld/lexsup.c: Likewise.
+	* ld/pe-dll.c: Likewise.
+	* ld/plugin.c: Likewise.
+	* ld/emultempl/aarch64elf.em: Likewise.
+	* ld/emultempl/aix.em: Likewise.
+	* ld/emultempl/alphaelf.em: Likewise.
+	* ld/emultempl/armcoff.em: Likewise.
+	* ld/emultempl/armelf.em: Likewise.
+	* ld/emultempl/avrelf.em: Likewise.
+	* ld/emultempl/beos.em: Likewise.
+	* ld/emultempl/cr16elf.em: Likewise.
+	* ld/emultempl/elf-generic.em: Likewise.
+	* ld/emultempl/elf32.em: Likewise.
+	* ld/emultempl/genelf.em: Likewise.
+	* ld/emultempl/generic.em: Likewise.
+	* ld/emultempl/gld960.em: Likewise.
+	* ld/emultempl/gld960c.em: Likewise.
+	* ld/emultempl/hppaelf.em: Likewise.
+	* ld/emultempl/irix.em: Likewise.
+	* ld/emultempl/linux.em: Likewise.
+	* ld/emultempl/lnk960.em: Likewise.
+	* ld/emultempl/m68hc1xelf.em: Likewise.
+	* ld/emultempl/m68kcoff.em: Likewise.
+	* ld/emultempl/m68kelf.em: Likewise.
+	* ld/emultempl/metagelf.em: Likewise.
+	* ld/emultempl/mipself.em: Likewise.
+	* ld/emultempl/mmo.em: Likewise.
+	* ld/emultempl/msp430.em: Likewise.
+	* ld/emultempl/nds32elf.em: Likewise.
+	* ld/emultempl/needrelax.em: Likewise.
+	* ld/emultempl/nios2elf.em: Likewise.
+	* ld/emultempl/pe.em: Likewise.
+	* ld/emultempl/pep.em: Likewise.
+	* ld/emultempl/ppc32elf.em: Likewise.
+	* ld/emultempl/ppc64elf.em: Likewise.
+	* ld/emultempl/sh64elf.em: Likewise.
+	* ld/emultempl/solaris2.em: Likewise.
+	* ld/emultempl/spuelf.em: Likewise.
+	* ld/emultempl/sunos.em: Likewise.
+	* ld/emultempl/tic6xdsbt.em: Likewise.
+	* ld/emultempl/ticoff.em: Likewise.
+	* ld/emultempl/v850elf.em: Likewise.
+	* ld/emultempl/vms.em: Likewise.
+	* ld/emultempl/vxworks.em: Likewise.
+
+2015-08-18  Alan Modra  <amodra@gmail.com>
+
+	* ldexp.c (exp_fold_tree_1): Clear linker_def on symbol assignment.
+
+2015-08-06  Alan Modra  <amodra@gmail.com>
+
+	* ldexp.c (align_dot_val): Delete.
+	(fold_unary <ALIGN_K, NEXT>): Revert 2015-07-10 change.
+	(is_align_conditional): Revert 2015-07-20 change.
+	(exp_fold_tree_1): Likewise, but keep expanded comment.
+	* scripttempl/elf.sc (.ldata, .bss): Revert 2015-07-20 change.
+	* ld.texinfo (<ALIGN>): Correct description.
+
+2015-08-04  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* ld.texinfo (Options): Document --require-defined option.
+	* ldlang.c (struct require_defined_symbol): New structure.
+	(require_defined_symbol_list): New variable.
+	(ldlang_add_require_defined): New function.
+	(ldlang_check_require_defined_symbols): New function.
+	(lang_process): Check required symbols are defined.
+	* ldlang.h (ldlang_add_require_defined): Declare.
+	* ldlex.h (enum option_values): Add OPTION_REQUIRE_DEFINED_SYMBOL.
+	* lexsup.c (ld_options): Add '--require-defined' entry.
+	(parse_args): Handle '--requre-defined' entry.
+	* NEWS: Mention new '--require-defined' option.
+
+2015-08-03  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* ld.texinfo (MEMORY): Explain that multiple MEMORY commands are
+	acceptable.
+
+2015-07-29  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* lexsup.c (parse_args): Don't set link_info.executable to
+	TRUE for link_info.relocatable.
+
+2015-07-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2015-07-24  Nick Clifton  <nickc@redhat.com>
+
+	* emulparams/elf32rl78.sh (OTHER_SECTIONS): Provide a value for
+	the _-rl78_abs__ symbol.
+
+2015-07-20  Alan Modra  <amodra@gmail.com>
+
+	* emulparams/criself.sh (INIT_ADDR, FINI_ADDR): Define.
+	(INIT_START, FINI_START): Don't ALIGN.
+	* scriptempl/elf.sc (.init, .fini): Apply INIT_ADDR/FINI_ADDR.
+
+2015-07-20  Alan Modra  <amodra@gmail.com>
+
+	* scripttempl/elf.sc (.ldata, .bss): Align absolute value of dot.
+	* ldexp.c (is_align_conditional): Handle binary ALIGN.
+	(exp_fold_tree_1): Move code setting SEC_KEEP for assignments to
+	dot inside output sections.  Handle absolute expressions.
+
+2015-07-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* emultempl/elf32.em (gld${EMULATION_NAME}_handle_option): Make
+	--compress-debug-sections=zlib the same as
+	--compress-debug-sections=zlib-gabi.
+	* ld.texinfo: Change --compress-debug-sections=zlib to zlib-gabi.
+
+2015-07-14  Nick Clifton  <nickc@redhat.com>
+
+	* ld.texinfo (Options): Add missing period after @xref.
+
 2015-07-10  Alan Modra  <amodra@gmail.com>
 
 	* ldexp.c (align_dot_val): New function.

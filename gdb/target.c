@@ -444,7 +444,7 @@ enum terminal_state
     terminal_is_ours = 2
   };
 
-static enum terminal_state terminal_state;
+static enum terminal_state terminal_state = terminal_is_ours;
 
 /* See target.h.  */
 
@@ -1060,7 +1060,7 @@ memory_xfer_check_region (gdb_byte *readbuf, const gdb_byte *writebuf,
    instance, could have some of memory but delegate other bits to
    the target below it.  So, we must manually try all targets.  */
 
-static enum target_xfer_status
+enum target_xfer_status
 raw_memory_xfer_partial (struct target_ops *ops, gdb_byte *readbuf,
 			 const gdb_byte *writebuf, ULONGEST memaddr, LONGEST len,
 			 ULONGEST *xfered_len)
@@ -2779,11 +2779,13 @@ release_fileio_fd (int fd, fileio_fh_t *fh)
 #define fileio_fd_to_fh(fd) \
   VEC_index (fileio_fh_t, fileio_fhandles, (fd))
 
-/* See target.h.  */
+/* Helper for target_fileio_open and
+   target_fileio_open_warn_if_slow.  */
 
-int
-target_fileio_open (struct inferior *inf, const char *filename,
-		    int flags, int mode, int *target_errno)
+static int
+target_fileio_open_1 (struct inferior *inf, const char *filename,
+		      int flags, int mode, int warn_if_slow,
+		      int *target_errno)
 {
   struct target_ops *t;
 
@@ -2792,7 +2794,7 @@ target_fileio_open (struct inferior *inf, const char *filename,
       if (t->to_fileio_open != NULL)
 	{
 	  int fd = t->to_fileio_open (t, inf, filename, flags, mode,
-				      target_errno);
+				      warn_if_slow, target_errno);
 
 	  if (fd < 0)
 	    fd = -1;
@@ -2801,17 +2803,39 @@ target_fileio_open (struct inferior *inf, const char *filename,
 
 	  if (targetdebug)
 	    fprintf_unfiltered (gdb_stdlog,
-				"target_fileio_open (%d,%s,0x%x,0%o)"
+				"target_fileio_open (%d,%s,0x%x,0%o,%d)"
 				" = %d (%d)\n",
 				inf == NULL ? 0 : inf->num,
 				filename, flags, mode,
-				fd, fd != -1 ? 0 : *target_errno);
+				warn_if_slow, fd,
+				fd != -1 ? 0 : *target_errno);
 	  return fd;
 	}
     }
 
   *target_errno = FILEIO_ENOSYS;
   return -1;
+}
+
+/* See target.h.  */
+
+int
+target_fileio_open (struct inferior *inf, const char *filename,
+		    int flags, int mode, int *target_errno)
+{
+  return target_fileio_open_1 (inf, filename, flags, mode, 0,
+			       target_errno);
+}
+
+/* See target.h.  */
+
+int
+target_fileio_open_warn_if_slow (struct inferior *inf,
+				 const char *filename,
+				 int flags, int mode, int *target_errno)
+{
+  return target_fileio_open_1 (inf, filename, flags, mode, 1,
+			       target_errno);
 }
 
 /* See target.h.  */
@@ -3277,6 +3301,26 @@ target_stop (ptid_t ptid)
     }
 
   (*current_target.to_stop) (&current_target, ptid);
+}
+
+void
+target_interrupt (ptid_t ptid)
+{
+  if (!may_stop)
+    {
+      warning (_("May not interrupt or stop the target, ignoring attempt"));
+      return;
+    }
+
+  (*current_target.to_interrupt) (&current_target, ptid);
+}
+
+/* See target.h.  */
+
+void
+target_check_pending_interrupt (void)
+{
+  (*current_target.to_check_pending_interrupt) (&current_target);
 }
 
 /* See target/target.h.  */
@@ -3755,6 +3799,15 @@ maintenance_print_target_stack (char *cmd, int from_tty)
     }
 }
 
+/* See target.h.  */
+
+void
+target_async (int enable)
+{
+  infrun_async (enable);
+  current_target.to_async (&current_target, enable);
+}
+
 /* Controls if targets can report that they can/are async.  This is
    just for maintainers to use when debugging gdb.  */
 int target_async_permitted = 1;
@@ -3784,6 +3837,67 @@ maint_show_target_async_command (struct ui_file *file, int from_tty,
   fprintf_filtered (file,
 		    _("Controlling the inferior in "
 		      "asynchronous mode is %s.\n"), value);
+}
+
+/* Return true if the target operates in non-stop mode even with "set
+   non-stop off".  */
+
+static int
+target_always_non_stop_p (void)
+{
+  return current_target.to_always_non_stop_p (&current_target);
+}
+
+/* See target.h.  */
+
+int
+target_is_non_stop_p (void)
+{
+  return (non_stop
+	  || target_non_stop_enabled == AUTO_BOOLEAN_TRUE
+	  || (target_non_stop_enabled == AUTO_BOOLEAN_AUTO
+	      && target_always_non_stop_p ()));
+}
+
+/* Controls if targets can report that they always run in non-stop
+   mode.  This is just for maintainers to use when debugging gdb.  */
+enum auto_boolean target_non_stop_enabled = AUTO_BOOLEAN_AUTO;
+
+/* The set command writes to this variable.  If the inferior is
+   executing, target_non_stop_enabled is *not* updated.  */
+static enum auto_boolean target_non_stop_enabled_1 = AUTO_BOOLEAN_AUTO;
+
+/* Implementation of "maint set target-non-stop".  */
+
+static void
+maint_set_target_non_stop_command (char *args, int from_tty,
+				   struct cmd_list_element *c)
+{
+  if (have_live_inferiors ())
+    {
+      target_non_stop_enabled_1 = target_non_stop_enabled;
+      error (_("Cannot change this setting while the inferior is running."));
+    }
+
+  target_non_stop_enabled = target_non_stop_enabled_1;
+}
+
+/* Implementation of "maint show target-non-stop".  */
+
+static void
+maint_show_target_non_stop_command (struct ui_file *file, int from_tty,
+				    struct cmd_list_element *c,
+				    const char *value)
+{
+  if (target_non_stop_enabled == AUTO_BOOLEAN_AUTO)
+    fprintf_filtered (file,
+		      _("Whether the target is always in non-stop mode "
+			"is %s (currently %s).\n"), value,
+		      target_always_non_stop_p () ? "on" : "off");
+  else
+    fprintf_filtered (file,
+		      _("Whether the target is always in non-stop mode "
+			"is %s.\n"), value);
 }
 
 /* Temporary copies of permission settings.  */
@@ -3885,6 +3999,16 @@ Show whether gdb controls the inferior in asynchronous mode."), _("\
 Tells gdb whether to control the inferior in asynchronous mode."),
 			   maint_set_target_async_command,
 			   maint_show_target_async_command,
+			   &maintenance_set_cmdlist,
+			   &maintenance_show_cmdlist);
+
+  add_setshow_auto_boolean_cmd ("target-non-stop", no_class,
+				&target_non_stop_enabled_1, _("\
+Set whether gdb always controls the inferior in non-stop mode."), _("\
+Show whether gdb always controls the inferior in non-stop mode."), _("\
+Tells gdb whether to control the inferior in non-stop mode."),
+			   maint_set_target_non_stop_command,
+			   maint_show_target_non_stop_command,
 			   &maintenance_set_cmdlist,
 			   &maintenance_show_cmdlist);
 

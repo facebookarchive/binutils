@@ -763,6 +763,10 @@ V:ULONGEST:max_insn_length:::0:0
 # If your architecture doesn't need to adjust instructions before
 # single-stepping them, consider using simple_displaced_step_copy_insn
 # here.
+#
+# If the instruction cannot execute out of line, return NULL.  The
+# core falls back to stepping past the instruction in-line instead in
+# that case.
 M:struct displaced_step_closure *:displaced_step_copy_insn:CORE_ADDR from, CORE_ADDR to, struct regcache *regs:from, to, regs
 
 # Return true if GDB should use hardware single-stepping to execute
@@ -1018,7 +1022,7 @@ v:int:has_global_breakpoints:::0:0::0
 m:int:has_shared_address_space:void:::default_has_shared_address_space::0
 
 # True if a fast tracepoint can be set at an address.
-m:int:fast_tracepoint_valid_at:CORE_ADDR addr, int *isize, char **msg:addr, isize, msg::default_fast_tracepoint_valid_at::0
+m:int:fast_tracepoint_valid_at:CORE_ADDR addr, char **msg:addr, msg::default_fast_tracepoint_valid_at::0
 
 # Return the "auto" target charset.
 f:const char *:auto_charset:void::default_auto_charset:default_auto_charset::0

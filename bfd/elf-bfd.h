@@ -108,6 +108,15 @@ struct elf_link_virtual_table_entry
     struct elf_link_hash_entry *parent;
   };
 
+/* ELF symbol version.  */
+enum elf_symbol_version
+  {
+    unknown = 0,
+    unversioned,
+    versioned,
+    versioned_hidden
+  };
+
 /* ELF linker hash table entries.  */
 
 struct elf_link_hash_entry
@@ -178,8 +187,8 @@ struct elf_link_hash_entry
   unsigned int needs_plt : 1;
   /* Symbol appears in a non-ELF input file.  */
   unsigned int non_elf : 1;
-  /* Symbol should be marked as hidden in the version information.  */
-  unsigned int hidden : 1;
+  /* Symbol version information.  */
+  ENUM_BITFIELD (elf_symbol_version) versioned : 2;
   /* Symbol was forced to local scope due to a version script file.  */
   unsigned int forced_local : 1;
   /* Symbol was forced to be dynamic due to a version script file.  */
@@ -586,6 +595,7 @@ struct elf_link_hash_table
   asection *iplt;
   asection *irelplt;
   asection *irelifunc;
+  asection *dynsym;
 };
 
 /* Look up an entry in an ELF linker hash table.  */
@@ -1632,6 +1642,18 @@ struct output_elf_obj_tdata
   bfd_boolean flags_init;
 };
 
+/* Indicate if the bfd contains symbols that have the STT_GNU_IFUNC
+   symbol type or STB_GNU_UNIQUE binding.  Used to set the osabi
+   field in the ELF header structure.  */
+enum elf_gnu_symbols
+  {
+    elf_gnu_symbol_none = 0,
+    elf_gnu_symbol_any = 1 << 0,
+    elf_gnu_symbol_ifunc = (elf_gnu_symbol_any | 1 << 1),
+    elf_gnu_symbol_unique = (elf_gnu_symbol_any | 1 << 2),
+    elf_gnu_symbol_all = (elf_gnu_symbol_ifunc | elf_gnu_symbol_unique)
+  };
+
 /* Some private data is stashed away for future use using the tdata pointer
    in the bfd structure.  */
 
@@ -1742,10 +1764,7 @@ struct elf_obj_tdata
      symbols.  */
   bfd_boolean bad_symtab;
 
-  /* True if the bfd contains symbols that have the STT_GNU_IFUNC
-     symbol type or STB_GNU_UNIQUE binding.  Used to set the osabi
-     field in the ELF header structure.  */
-  bfd_boolean has_gnu_symbols;
+  enum elf_gnu_symbols has_gnu_symbols;
 
   /* Information grabbed from an elf core file.  */
   struct core_elf_obj_tdata *core;
@@ -2537,7 +2556,7 @@ extern asection _bfd_elf_large_com_section;
       else if (info->unresolved_syms_in_objects == RM_IGNORE		\
 	       && ELF_ST_VISIBILITY (h->other) == STV_DEFAULT)		\
 	ignored = TRUE;							\
-      else if (!info->relocatable)					\
+      else if (!bfd_link_relocatable (info))				\
 	{								\
 	  bfd_boolean err;						\
 	  err = (info->unresolved_syms_in_objects == RM_GENERATE_ERROR	\
@@ -2572,7 +2591,7 @@ extern asection _bfd_elf_large_com_section;
     _bfd_clear_contents (howto, input_bfd, input_section,		\
 			 contents + rel[index].r_offset);		\
 									\
-    if (info->relocatable						\
+    if (bfd_link_relocatable (info)					\
 	&& (input_section->flags & SEC_DEBUGGING))			\
       {									\
 	/* Only remove relocations in debug sections since other	\

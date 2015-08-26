@@ -817,8 +817,21 @@ _bfd_elf_setup_sections (bfd *abfd)
   for (i = 0; i < num_group; i++)
     {
       Elf_Internal_Shdr *shdr = elf_tdata (abfd)->group_sect_ptr[i];
-      Elf_Internal_Group *idx = (Elf_Internal_Group *) shdr->contents;
-      unsigned int n_elt = shdr->sh_size / 4;
+      Elf_Internal_Group *idx;
+      unsigned int n_elt;
+
+      /* PR binutils/18758: Beware of corrupt binaries with invalid group data.  */
+      if (shdr == NULL || shdr->bfd_section == NULL || shdr->contents == NULL)
+	{
+	  (*_bfd_error_handler)
+	    (_("%B: section group entry number %u is corrupt"),
+	     abfd, i);
+	  result = FALSE;
+	  continue;
+	}
+
+      idx = (Elf_Internal_Group *) shdr->contents;
+      n_elt = shdr->sh_size / 4;
 
       while (--n_elt != 0)
 	if ((++idx)->shdr->bfd_section)
@@ -1203,6 +1216,70 @@ _bfd_elf_copy_private_bfd_data (bfd *ibfd, bfd *obfd)
 
   /* Copy object attributes.  */
   _bfd_elf_copy_obj_attributes (ibfd, obfd);
+
+  /* This is an feature for objcopy --only-keep-debug:  When a section's type
+     is changed to NOBITS, we preserve the sh_link and sh_info fields so that
+     they can be matched up with the original.  */
+  Elf_Internal_Shdr ** iheaders = elf_elfsections (ibfd);
+  Elf_Internal_Shdr ** oheaders = elf_elfsections (obfd);
+
+  if (iheaders != NULL && oheaders != NULL)
+    {
+      unsigned int i;
+
+      for (i = 0; i < elf_numsections (obfd); i++)
+	{
+	  unsigned int j;
+	  Elf_Internal_Shdr * oheader = oheaders[i];
+
+	  if (oheader == NULL
+	      || oheader->sh_type != SHT_NOBITS
+	      || oheader->sh_size == 0
+	      || (oheader->sh_info != 0 && oheader->sh_link != 0))
+	    continue;
+
+	  /* Scan for the matching section in the input bfd.
+	     FIXME: We could use something better than a linear scan here.
+	     Unfortunately we cannot compare names as the output string table
+	     is empty, so instead we check size, address and type.  */
+	  for (j = 0; j < elf_numsections (ibfd); j++)
+	    {
+	      Elf_Internal_Shdr * iheader = iheaders[j];
+
+	      /* Since --only-keep-debug turns all non-debug sections
+		 into SHT_NOBITS sections, the output SHT_NOBITS type
+		 matches any input type.  */
+	      if ((oheader->sh_type == SHT_NOBITS
+		   || iheader->sh_type == oheader->sh_type)
+		  && iheader->sh_flags == oheader->sh_flags
+		  && iheader->sh_addralign == oheader->sh_addralign
+		  && iheader->sh_entsize == oheader->sh_entsize
+		  && iheader->sh_size == oheader->sh_size
+		  && iheader->sh_addr == oheader->sh_addr
+		  && (iheader->sh_info != oheader->sh_info
+		      || iheader->sh_link != oheader->sh_link))
+		{
+		  /* Note: Strictly speaking these assignments are wrong.
+		     The sh_link and sh_info fields should point to the
+		     relevent sections in the output BFD, which may not be in
+		     the same location as they were in the input BFD.  But the
+		     whole point of this action is to preserve the original
+		     values of the sh_link and sh_info fields, so that they
+		     can be matched up with the section headers in the
+		     original file.  So strictly speaking we may be creating
+		     an invalid ELF file, but it is only for a file that just
+		     contains debug info and only for sections without any
+		     contents.  */
+		  if (oheader->sh_link == 0)
+		    oheader->sh_link = iheader->sh_link;
+		  if (oheader->sh_info == 0)
+		    oheader->sh_info = iheader->sh_info;
+		  break;
+		}
+	    }
+	}
+    }
+
   return TRUE;
 }
 
@@ -1756,7 +1833,15 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	  goto success;
 	}
 
-      BFD_ASSERT (elf_onesymtab (abfd) == 0);
+      /* PR 18854: A binary might contain more than one symbol table.
+	 Unusual, but possible.  Warn, but continue.  */
+      if (elf_onesymtab (abfd) != 0)
+	{
+	  (*_bfd_error_handler)
+	    (_("%B: warning: multiple symbol tables detected - ignoring the table in section %u"),
+	     abfd, shindex);
+	  goto success;
+	}
       elf_onesymtab (abfd) = shindex;
       elf_tdata (abfd)->symtab_hdr = *hdr;
       elf_elfsections (abfd)[shindex] = hdr = &elf_tdata (abfd)->symtab_hdr;
@@ -1821,7 +1906,15 @@ bfd_section_from_shdr (bfd *abfd, unsigned int shindex)
 	  goto success;
 	}
 
-      BFD_ASSERT (elf_dynsymtab (abfd) == 0);
+      /* PR 18854: A binary might contain more than one dynamic symbol table.
+	 Unusual, but possible.  Warn, but continue.  */
+      if (elf_dynsymtab (abfd) != 0)
+	{
+	  (*_bfd_error_handler)
+	    (_("%B: warning: multiple dynamic symbol tables detected - ignoring the table in section %u"),
+	     abfd, shindex);
+	  goto success;
+	}
       elf_dynsymtab (abfd) = shindex;
       elf_tdata (abfd)->dynsymtab_hdr = *hdr;
       elf_elfsections (abfd)[shindex] = hdr = &elf_tdata (abfd)->dynsymtab_hdr;
@@ -3004,7 +3097,8 @@ elf_fake_sections (bfd *abfd, asection *asect, void *fsarg)
       if (arg->link_info
 	  /* Do the normal setup if we wouldn't create any sections here.  */
 	  && esd->rel.count + esd->rela.count > 0
-	  && (arg->link_info->relocatable || arg->link_info->emitrelocations))
+	  && (bfd_link_relocatable (arg->link_info)
+	      || arg->link_info->emitrelocations))
 	{
 	  if (esd->rel.count && esd->rel.hdr == NULL
 	      && !_bfd_elf_init_reloc_shdr (abfd, &esd->rel, name, FALSE,
@@ -3221,7 +3315,7 @@ assign_section_numbers (bfd *abfd, struct bfd_link_info *link_info)
   _bfd_elf_strtab_clear_all_refs (elf_shstrtab (abfd));
 
   /* SHT_GROUP sections are in relocatable files only.  */
-  if (link_info == NULL || link_info->relocatable)
+  if (link_info == NULL || bfd_link_relocatable (link_info))
     {
       /* Put SHT_GROUP sections first.  */
       for (sec = abfd->sections; sec != NULL; sec = sec->next)
@@ -4220,11 +4314,18 @@ _bfd_elf_map_sections_to_segments (bfd *abfd, struct bfd_link_info *info)
 	      new_segment = TRUE;
 	    }
 	  else if ((last_hdr->flags & (SEC_LOAD | SEC_THREAD_LOCAL)) == 0
-		   && (hdr->flags & (SEC_LOAD | SEC_THREAD_LOCAL)) != 0)
+		   && (hdr->flags & (SEC_LOAD | SEC_THREAD_LOCAL)) != 0
+		   && ((abfd->flags & D_PAGED) == 0
+		       || (((last_hdr->lma + last_size - 1) & -maxpagesize)
+			   != (hdr->lma & -maxpagesize))))
 	    {
-	      /* We don't want to put a loadable section after a
-		 nonloadable section in the same segment.
-		 Consider .tbss sections as loadable for this purpose.  */
+	      /* We don't want to put a loaded section after a
+		 nonloaded (ie. bss style) section in the same segment
+		 as that will force the non-loaded section to be loaded.
+		 Consider .tbss sections as loaded for this purpose.
+		 However, like the writable/non-writable case below,
+		 if they are on the same page then they must be put
+		 in the same segment.  */
 	      new_segment = TRUE;
 	    }
 	  else if ((abfd->flags & D_PAGED) == 0)
@@ -5471,9 +5572,7 @@ assign_file_positions_except_relocs (bfd *abfd,
 	}
 
       /* Set e_type in ELF header to ET_EXEC for -pie -Ttext-segment=.  */
-      if (link_info != NULL
-	  && link_info->executable
-	  && link_info->shared)
+      if (link_info != NULL && bfd_link_pie (link_info))
 	{
 	  unsigned int num_segments = elf_elfheader (abfd)->e_phnum;
 	  Elf_Internal_Phdr *segment = elf_tdata (abfd)->phdr;
@@ -5654,7 +5753,7 @@ _bfd_elf_assign_file_positions_for_non_load (bfd *abfd)
 		  if (d->rela.hdr
 		      && !_bfd_elf_set_reloc_sh_name (abfd,
 						      d->rela.hdr,
-						      name, FALSE))
+						      name, TRUE))
 		    return FALSE;
 
 		  /* Update section size and contents.  */
@@ -6810,7 +6909,8 @@ _bfd_elf_init_private_section_data (bfd *ibfd,
 
 {
   Elf_Internal_Shdr *ihdr, *ohdr;
-  bfd_boolean final_link = link_info != NULL && !link_info->relocatable;
+  bfd_boolean final_link = (link_info != NULL
+			    && !bfd_link_relocatable (link_info));
 
   if (ibfd->xvec->flavour != bfd_target_elf_flavour
       || obfd->xvec->flavour != bfd_target_elf_flavour)
@@ -7787,7 +7887,7 @@ error_return_verref:
 	    goto error_return_bad_verdef;
 
 	  iverdef = &iverdefarr[(iverdefmem.vd_ndx & VERSYM_VERSION) - 1];
-	  memcpy (iverdef, &iverdefmem, sizeof (Elf_Internal_Verdef));
+	  memcpy (iverdef, &iverdefmem, offsetof (Elf_Internal_Verdef, vd_bfd));
 
 	  iverdef->vd_bfd = abfd;
 
@@ -7836,6 +7936,7 @@ error_return_verref:
 			  ((bfd_byte *) everdaux + iverdaux->vda_next));
 	    }
 
+	  iverdef->vd_nodename = NULL;
 	  if (iverdef->vd_cnt)
 	    iverdef->vd_nodename = iverdef->vd_auxptr->vda_nodename;
 
@@ -8103,7 +8204,7 @@ _bfd_elf_sizeof_headers (bfd *abfd, struct bfd_link_info *info)
   const struct elf_backend_data *bed = get_elf_backend_data (abfd);
   int ret = bed->s->sizeof_ehdr;
 
-  if (!info->relocatable)
+  if (!bfd_link_relocatable (info))
     {
       bfd_size_type phdr_size = elf_program_header_size (abfd);
 

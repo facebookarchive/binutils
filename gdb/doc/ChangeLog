@@ -1,3 +1,94 @@
+2015-08-24  Pedro Alves  <palves@redhat.com>
+
+	* gdb.texinfo (Remote Configuration): Document the "set/show
+	remote multiprocess-extensions-packet" commands.
+
+2015-08-24  Pedro Alves  <palves@redhat.com>
+
+	* gdb.texinfo (Embedded Processors) <ARM>: Remove references to RDI.
+	<M32R>: Remove references to M32R/D.
+	<M68K>: Remove references to target dbug.
+	<MIPS Embedded>: Remove references to target r3900 and target
+	array.
+	<PowerPC Embedded>: Remove references to target dink32 and target
+	ppcbug, target sds
+	<PA, Sparclet, Sparclite, Z8000>: Delete nodes.
+
+2015-08-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (GDB Files): Add 'File Caching' menu entry.
+
+2015-08-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (File Caching): Document "set/show debug bfd-cache".
+
+2015-08-18  Andrew Burgess  <andrew.burgess@embecosm.com>
+
+	* gdb.texinfo (Maintenance Commands): Move documentation of "main
+	info bfds" to...
+	(File Caching): A New section.  Outline bfd caching, and add new
+	description for "main set/show bfd-sharing".
+
+2015-08-14  Doug Evans  <xdje42@gmail.com>
+
+	* gdb.texinfo (Machine Code): Update docs for mixed source/assembly
+	disassembly.
+	(GDB/MI Data Manipulation): Update docs for new disassembly modes.
+
+2015-08-11  Keith Seitz  <keiths@redhat.com>
+
+	* gdb.texinfo (Thread-Specific Breakpoints, Printing Source Lines):
+	Use "location(s)"instead of "linespec(s)".
+	(Specifying a Location): Rewrite.
+	Add subsections describing linespec, address, and explicit locations.
+	Add node/menu for each subsection.
+	(Source and Machine Code, C Preprocessor Macros)
+	(Create and Delete Trace points)
+	(Extensions for Ada Tasks): Use "location(s)" instead of "linespec(s)".
+	(Continuing at a Different Address): Remove "linespec" examples.
+	Add reference to "Specify a Location"
+	(The -break-insert Command): Rewrite.  Add anchor.
+	Add reference to appropriate manual section discussing locations.
+	(The -dprintf-insert Command): Refer to -break-insert for
+	specification of 'location'.
+
+2015-08-07  Pedro Alves  <palves@redhat.com>
+
+	* gdb.texinfo (Maintenance Commands): Document "maint set/show
+	target-non-stop".
+
+2015-08-07  Markus Metzger  <markus.t.metzger@intel.com>
+
+	* gdb.texinfo (Process Record and Replay): Document prefixing of
+	speculatively executed instructions in the "record instruction-history"
+	command.
+
+2015-07-20  Doug Evans  <dje@google.com>
+
+	* Makefile.in (STABS_DOC_BUILD_INCLUDES): Add gdb-cfg.texi, GDBvn.texi.
+
+2015-07-16  Doug Evans  <dje@google.com>
+
+	* stabs.texinfo: @include gdb-cfg.texi.
+
+2015-07-15  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	Revert the previous 2 commits:
+	gdbserver build-id attribute generator
+	Validate symbol file using build-id
+
+2015-07-15  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	* gdb.texinfo (Files): Add 'set validate-build-id'
+	and 'show validate-build-id'.
+
+2015-07-15  Aleksandar Ristovski  <aristovski@qnx.com
+	    Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+	gdbserver build-id attribute generator.
+	* gdb.texinfo (Library List Format for SVR4 Targets): Add
+	'build-id' in description, example, new attribute in dtd.
+
 2015-07-08  Andrew Burgess  <andrew.burgess@embecosm.com>
 
 	* gdb.texinfo (Selection): Update documentation for 'frame'
@@ -5,7 +96,7 @@
 
 2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
 
-        * gdb.texinfo (Maintenance Commands): Document "maint btrace"
+	* gdb.texinfo (Maintenance Commands): Document "maint btrace"
 	commands.
 
 2015-07-02  Markus Metzger  <markus.t.metzger@intel.com>
@@ -80,7 +171,7 @@
 	linux-namespaces" command.
 
 2015-06-10  Walfred Tedeschi  <walfred.tedeschi@intel.com>
-            Mircea Gherzan  <mircea.gherzan@intel.com>
+	    Mircea Gherzan  <mircea.gherzan@intel.com>
 
 	* gdb.texinfo (i386): Add documentation about "show mpx bound"
 	and "set mpx bound".
@@ -185,8 +276,8 @@
 2015-04-10  Jan Kratochvil  <jan.kratochvil@redhat.com>
 	    Eli Zaretskii  <eliz@gnu.org>
 
-	* gdb.texinfo (Compiling and Injecting Code): Describe set debug 
-	compile, show debug compile.  New subsection Compilation options for 
+	* gdb.texinfo (Compiling and Injecting Code): Describe set debug
+	compile, show debug compile.  New subsection Compilation options for
 	the compile command.  New subsection Compiler search for the compile
 	command.
 
@@ -1060,8 +1151,8 @@
 
 2013-11-07  Phil Muldoon  <pmuldoon@redhat.com>
 
-        * gdb.texinfo (Commands In Python): Document COMPLETE_EXPRESSION
-        constant.
+	* gdb.texinfo (Commands In Python): Document COMPLETE_EXPRESSION
+	constant.
 
 2013-11-07  Phil Muldoon  <pmuldoon@redhat.com>
 
@@ -1691,8 +1782,8 @@
 
 2012-12-23  Pierre Muller  <muller@sourceware.org>
 
-        * gdbint.texinfo (Function prototypes): Require use of "extern"
-        modifier for function prototypes in headers.
+	* gdbint.texinfo (Function prototypes): Require use of "extern"
+	modifier for function prototypes in headers.
 
 2012-12-19  Joel Brobecker  <brobecker@adacore.com>
 
@@ -1717,10 +1808,10 @@
 
 2012-12-14  Tom Tromey  <tromey@redhat.com>
 
-        * gdb.texinfo (SVR4 Process Information): Mention core files.
+	* gdb.texinfo (SVR4 Process Information): Mention core files.
 
 2012-12-12 Mircea Gherzan <mircea.gherzan@intel.com>
-    
+
 	* gdb.texinfo (GDB/MI Catchpoint Commands): New section.
 
 2012-12-11  Pedro Alves  <palves@redhat.com>
@@ -1836,7 +1927,7 @@
 	* observer.texi (memory_changed): Expand parameter LEN to ssize_t.
 
 2012-09-21  Yao Qi  <yao@codesourcery.com>
-            Pedro Alves  <palves@redhat.com>
+	    Pedro Alves  <palves@redhat.com>
 
 	* gdb.texinfo (GDB/MI Async Records): Document notification
 	'record-started' and 'record-stopped'.
@@ -2136,7 +2227,7 @@
 	appropriate.
 
 2012-05-18  Sandra Loosemore  <sandra@codesourcery.com>
-            Maciej W. Rozycki  <macro@codesourcery.com>
+	    Maciej W. Rozycki  <macro@codesourcery.com>
 
 	* gdb.texinfo (MIPS): Document "set mips compression" and "show
 	mips compression".
@@ -2425,7 +2516,7 @@
 	Mention condition-evaluation mode being shown in "info break".
 	(Break Conditions): Add description for target-side
 	conditional breakpoints.
-	(Remote Configuration): Mention conditional-breakpoints-packet. 
+	(Remote Configuration): Mention conditional-breakpoints-packet.
 	(Packets): Add cond-expr parameter to Z0/Z1 packets and explain
 	cond-expr.
 	(General Query Packets): Mention new ConditionalBreakpoint feature.
@@ -2660,17 +2751,17 @@
 
 2011-10-27  Kevin Pouget  <kevin.pouget@st.com>
 
-	* gdb.texinfo ((Frames In Python): Document 
+	* gdb.texinfo ((Frames In Python): Document
 	gdb.FRAME_UNWIND_FIRST_ERROR contant.
 
 2011-10-26  Paul Koning  <paul_koning@dell.com>
 
 	* gdb.texinfo (gdb.types): Document new deepitems function.
-	
+
 2011-10-25  Paul Koning  <paul_koning@dell.com>
 
 	PR python/13327
-	
+
 	* gdb.texinfo (Values From Inferior): Add is_lazy attribute,
 	fetch_lazy method.
 
@@ -2688,7 +2779,7 @@
 2011-10-13  Kevin Pouget  <kevin.pouget@st.com>
 
 	PR python/13285 Document named constants for frame unwind stop reasons
-	* gdb.texinfo (Frames In Python): Document gdb.FRAME_UNWIND_* 
+	* gdb.texinfo (Frames In Python): Document gdb.FRAME_UNWIND_*
 	constants.
 
 2011-10-12  Jan Kratochvil  <jan.kratochvil@redhat.com>
@@ -2799,7 +2890,7 @@
 	the syntax of Python.  Also put class and module names explicitly
 	on function, member, and variable names, matching Python
 	documentation conventions.
-	
+
 2011-09-15  Kevin Pouget  <kevin.pouget@st.com>
 
 	PR Python/12692 Add gdb.selected_inferior() to Python interface.
@@ -2823,11 +2914,11 @@
 
 2011-08-17  Phil Muldoon  <pmuldoon@redhat.com>
 
-        * gdb.texinfo (Prompt): Add set/show extended-prompt
-        documentation
-        (Basic Python): Add prompt_hook anchor.
-        (Python modules): Reword module text to reflect multiple modules.
-        (gdb.prompt): Document gdb.prompt module.
+	* gdb.texinfo (Prompt): Add set/show extended-prompt
+	documentation
+	(Basic Python): Add prompt_hook anchor.
+	(Python modules): Reword module text to reflect multiple modules.
+	(gdb.prompt): Document gdb.prompt module.
 
 2011-08-14  Yao Qi  <yao@codesourcery.com>
 
@@ -2873,10 +2964,10 @@
 
 2011-07-11  Phil Muldoon  <pmuldoon@redhat.com>
 
-        PR python/12438
+	PR python/12438
 	* gdb.texinfo (Python Commands): Add deprecate note to maint
-          set/show python print-stack.  Document set/show python
-          print-backtrace.
+	  set/show python print-stack.  Document set/show python
+	  print-backtrace.
 
 2011-07-05  Thiago Jung Bauermann  <bauerman.ibm.com>
 
@@ -3079,7 +3170,7 @@
 
 2011-02-27  Michael Snyder  <msnyder@vmware.com>
 
-	* gdb.texinfo (Inferiors and Programs): Update commands to show 
+	* gdb.texinfo (Inferiors and Programs): Update commands to show
 	that they can accept multiple arguments.
 
 2011-02-24  Joel Brobecker  <brobecker@adacore.com>
@@ -3237,7 +3328,7 @@
 
 2010-11-29  Phil Muldoon  <pmuldoon@redhat.com>
 
-        PR python/12199
+	PR python/12199
 
 	* gdb.texinfo (Breakpoints In Python): Document "delete" method.
 

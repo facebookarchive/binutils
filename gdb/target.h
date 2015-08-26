@@ -41,6 +41,7 @@ struct dcache_struct;
 struct inferior;
 
 #include "infrun.h" /* For enum exec_direction_kind.  */
+#include "breakpoint.h" /* For enum bptype.  */
 
 /* This include file defines the interface between the main part
    of the debugger, and the part which is target-specific, or
@@ -72,6 +73,8 @@ struct inferior;
 #include "gdb_signals.h"
 #include "btrace.h"
 #include "command.h"
+
+#include "break-common.h" /* For enum target_hw_bp_type.  */
 
 enum strata
   {
@@ -264,6 +267,11 @@ typedef enum target_xfer_status
 			     ULONGEST offset,
 			     ULONGEST len,
 			     ULONGEST *xfered_len);
+
+enum target_xfer_status
+  raw_memory_xfer_partial (struct target_ops *ops, gdb_byte *readbuf,
+			   const gdb_byte *writebuf, ULONGEST memaddr,
+			   LONGEST len, ULONGEST *xfered_len);
 
 /* Request that OPS transfer up to LEN addressable units of the target's
    OBJECT.  When reading from a memory object, the size of an addressable unit
@@ -510,7 +518,8 @@ struct target_ops
     int (*to_supports_stopped_by_hw_breakpoint) (struct target_ops *)
       TARGET_DEFAULT_RETURN (0);
 
-    int (*to_can_use_hw_breakpoint) (struct target_ops *, int, int, int)
+    int (*to_can_use_hw_breakpoint) (struct target_ops *,
+				     enum bptype, int, int)
       TARGET_DEFAULT_RETURN (0);
     int (*to_ranged_break_num_registers) (struct target_ops *)
       TARGET_DEFAULT_RETURN (-1);
@@ -523,11 +532,11 @@ struct target_ops
 
     /* Documentation of what the two routines below are expected to do is
        provided with the corresponding target_* macros.  */
-    int (*to_remove_watchpoint) (struct target_ops *,
-				 CORE_ADDR, int, int, struct expression *)
+    int (*to_remove_watchpoint) (struct target_ops *, CORE_ADDR, int,
+				 enum target_hw_bp_type, struct expression *)
       TARGET_DEFAULT_RETURN (-1);
-    int (*to_insert_watchpoint) (struct target_ops *,
-				 CORE_ADDR, int, int, struct expression *)
+    int (*to_insert_watchpoint) (struct target_ops *, CORE_ADDR, int,
+				 enum target_hw_bp_type, struct expression *)
       TARGET_DEFAULT_RETURN (-1);
 
     int (*to_insert_mask_watchpoint) (struct target_ops *,
@@ -633,6 +642,10 @@ struct target_ops
       TARGET_DEFAULT_RETURN (NULL);
     void (*to_stop) (struct target_ops *, ptid_t)
       TARGET_DEFAULT_IGNORE ();
+    void (*to_interrupt) (struct target_ops *, ptid_t)
+      TARGET_DEFAULT_IGNORE ();
+    void (*to_check_pending_interrupt) (struct target_ops *)
+      TARGET_DEFAULT_IGNORE ();
     void (*to_rcmd) (struct target_ops *,
 		     const char *command, struct ui_file *output)
       TARGET_DEFAULT_FUNC (default_rcmd);
@@ -661,6 +674,10 @@ struct target_ops
     /* This method must be implemented in some situations.  See the
        comment on 'to_can_run'.  */
     int (*to_supports_non_stop) (struct target_ops *)
+      TARGET_DEFAULT_RETURN (0);
+    /* Return true if the target operates in non-stop mode even with
+       "set non-stop off".  */
+    int (*to_always_non_stop_p) (struct target_ops *)
       TARGET_DEFAULT_RETURN (0);
     /* find_memory_regions support method for gcore */
     int (*to_find_memory_regions) (struct target_ops *,
@@ -860,11 +877,14 @@ struct target_ops
     /* Open FILENAME on the target, in the filesystem as seen by INF,
        using FLAGS and MODE.  If INF is NULL, use the filesystem seen
        by the debugger (GDB or, for remote targets, the remote stub).
-       Return a target file descriptor, or -1 if an error occurs (and
-       set *TARGET_ERRNO).  */
+       If WARN_IF_SLOW is nonzero, print a warning message if the file
+       is being accessed over a link that may be slow.  Return a
+       target file descriptor, or -1 if an error occurs (and set
+       *TARGET_ERRNO).  */
     int (*to_fileio_open) (struct target_ops *,
 			   struct inferior *inf, const char *filename,
-			   int flags, int mode, int *target_errno);
+			   int flags, int mode, int warn_if_slow,
+			   int *target_errno);
 
     /* Write up to LEN bytes from WRITE_BUF to FD on the target.
        Return the number of bytes written, or -1 if an error occurs
@@ -1289,8 +1309,8 @@ extern void target_detach (const char *, int);
 extern void target_disconnect (const char *, int);
 
 /* Resume execution of the target process PTID (or a group of
-   threads).  STEP says whether to single-step or to run free; SIGGNAL
-   is the signal to be given to the target, or GDB_SIGNAL_0 for no
+   threads).  STEP says whether to hardware single-step or to run free;
+   SIGGNAL is the signal to be given to the target, or GDB_SIGNAL_0 for no
    signal.  The caller may not pass GDB_SIGNAL_DEFAULT.  A specific
    PTID means `step/resume only this process id'.  A wildcard PTID
    (all threads, or all threads of process) means `step/resume
@@ -1666,6 +1686,20 @@ extern void target_update_thread_list (void);
 
 extern void target_stop (ptid_t ptid);
 
+/* Interrupt the target just like the user typed a ^C on the
+   inferior's controlling terminal.  (For instance, under Unix, this
+   should act like SIGINT).  This function is asynchronous.  */
+
+extern void target_interrupt (ptid_t ptid);
+
+/* Some targets install their own SIGINT handler while the target is
+   running.  This method is called from the QUIT macro to give such
+   targets a chance to process a Ctrl-C.  The target may e.g., choose
+   to interrupt the (potentially) long running operation, or give up
+   waiting and disconnect.  */
+
+extern void target_check_pending_interrupt (void);
+
 /* Send the specified COMMAND to the target's monitor
    (shell,interpreter) for execution.  The result of the query is
    placed in OUTBUF.  */
@@ -1739,8 +1773,16 @@ extern int target_async_permitted;
 #define target_is_async_p() (current_target.to_is_async_p (&current_target))
 
 /* Enables/disabled async target events.  */
-#define target_async(ENABLE) \
-     (current_target.to_async (&current_target, (ENABLE)))
+extern void target_async (int enable);
+
+/* Whether support for controlling the target backends always in
+   non-stop mode is enabled.  */
+extern enum auto_boolean target_non_stop_enabled;
+
+/* Is the target in non-stop mode?  Some targets control the inferior
+   in non-stop mode even with "set non-stop off".  Always true if "set
+   non-stop" is on.  */
+extern int target_is_non_stop_p (void);
 
 #define target_execution_direction() \
   (current_target.to_execution_direction (&current_target))
@@ -1983,6 +2025,14 @@ extern int target_search_memory (CORE_ADDR start_addr,
 extern int target_fileio_open (struct inferior *inf,
 			       const char *filename, int flags,
 			       int mode, int *target_errno);
+
+/* Like target_fileio_open, but print a warning message if the
+   file is being accessed over a link that may be slow.  */
+extern int target_fileio_open_warn_if_slow (struct inferior *inf,
+					    const char *filename,
+					    int flags,
+					    int mode,
+					    int *target_errno);
 
 /* Write up to LEN bytes from WRITE_BUF to FD on the target.
    Return the number of bytes written, or -1 if an error occurs

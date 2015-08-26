@@ -660,6 +660,7 @@ btrace_compute_ftrace_bts (struct thread_info *tp,
 	  insn.pc = pc;
 	  insn.size = size;
 	  insn.iclass = ftrace_classify_insn (gdbarch, pc);
+	  insn.flags = 0;
 
 	  ftrace_update_insns (end, &insn);
 
@@ -723,6 +724,19 @@ pt_reclassify_insn (enum pt_insn_class iclass)
     default:
       return BTRACE_INSN_OTHER;
     }
+}
+
+/* Return the btrace instruction flags for INSN.  */
+
+static enum btrace_insn_flag
+pt_btrace_insn_flags (const struct pt_insn *insn)
+{
+  enum btrace_insn_flag flags = 0;
+
+  if (insn->speculative)
+    flags |= BTRACE_INSN_FLAG_SPECULATIVE;
+
+  return flags;
 }
 
 /* Add function branch trace using DECODER.  */
@@ -792,6 +806,7 @@ ftrace_add_pt (struct pt_insn_decoder *decoder,
 	  btinsn.pc = (CORE_ADDR) insn.ip;
 	  btinsn.size = (gdb_byte) insn.size;
 	  btinsn.iclass = pt_reclassify_insn (insn.iclass);
+	  btinsn.flags = pt_btrace_insn_flags (&insn);
 
 	  ftrace_update_insns (end, &btinsn);
 	}
@@ -1414,18 +1429,17 @@ parse_xml_btrace_block (struct gdb_xml_parser *parser,
 
 static void
 parse_xml_raw (struct gdb_xml_parser *parser, const char *body_text,
-	       gdb_byte **pdata, unsigned long *psize)
+	       gdb_byte **pdata, size_t *psize)
 {
   struct cleanup *cleanup;
   gdb_byte *data, *bin;
-  unsigned long size;
-  size_t len;
+  size_t len, size;
 
   len = strlen (body_text);
-  size = len / 2;
-
-  if ((size_t) size * 2 != len)
+  if (len % 2 != 0)
     gdb_xml_error (parser, _("Bad raw data size."));
+
+  size = len / 2;
 
   bin = data = xmalloc (size);
   cleanup = make_cleanup (xfree, data);

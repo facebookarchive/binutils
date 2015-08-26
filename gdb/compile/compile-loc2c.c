@@ -85,7 +85,7 @@ compute_stack_depth_worker (int start, int *need_tempvar,
 
   while (op_ptr < op_end)
     {
-      enum dwarf_location_atom op = *op_ptr;
+      enum dwarf_location_atom op = (enum dwarf_location_atom) *op_ptr;
       uint64_t reg;
       int64_t offset;
       int ndx = op_ptr - base;
@@ -636,7 +636,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 		 "there is no selected frame"),
 	       SYMBOL_PRINT_NAME (sym));
 
-      val = read_var_value (sym, frame);
+      val = read_var_value (sym, NULL, frame);
       if (VALUE_LVAL (val) != lval_memory)
 	error (_("Symbol \"%s\" cannot be used for compilation evaluation "
 		 "as its address has not been found."),
@@ -667,7 +667,7 @@ do_compile_dwarf_expr_to_c (int indent, struct ui_file *stream,
 
   while (op_ptr < op_end)
     {
-      enum dwarf_location_atom op = *op_ptr;
+      enum dwarf_location_atom op = (enum dwarf_location_atom) *op_ptr;
       uint64_t uoffset, reg;
       int64_t offset;
 

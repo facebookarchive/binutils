@@ -49,6 +49,7 @@
 #include "observer.h"
 #include "maint.h"
 #include "filenames.h"
+#include "frame.h"
 
 /* readline include files.  */
 #include "readline/readline.h"
@@ -66,6 +67,10 @@
 #include "cli-out.h"
 #include "tracepoint.h"
 #include "inf-loop.h"
+
+#if defined(TUI)
+# include "tui/tui.h"
+#endif
 
 extern void initialize_all_files (void);
 
@@ -325,10 +330,11 @@ void
 check_frame_language_change (void)
 {
   static int warned = 0;
+  struct frame_info *frame;
 
   /* First make sure that a new frame has been selected, in case the
      command or the hooks changed the program state.  */
-  deprecated_safe_get_selected_frame ();
+  frame = deprecated_safe_get_selected_frame ();
   if (current_language != expected_language)
     {
       if (language_mode == language_mode_auto && info_verbose)
@@ -348,7 +354,7 @@ check_frame_language_change (void)
     {
       enum language flang;
 
-      flang = get_frame_language ();
+      flang = get_frame_language (frame);
       if (!warned
 	  && flang != language_unknown
 	  && flang != current_language->la_language)
@@ -748,6 +754,21 @@ static char *gdb_readline_wrapper_result;
    return.  */
 static void (*saved_after_char_processing_hook) (void);
 
+
+/* The number of nested readline secondary prompts that are currently
+   active.  */
+
+static int gdb_secondary_prompt_depth = 0;
+
+/* See top.h.  */
+
+int
+gdb_in_secondary_prompt_p (void)
+{
+  return gdb_secondary_prompt_depth > 0;
+}
+
+
 /* This function is called when readline has seen a complete line of
    text.  */
 
@@ -802,6 +823,8 @@ gdb_readline_wrapper_cleanup (void *arg)
 
   gdb_readline_wrapper_result = NULL;
   gdb_readline_wrapper_done = 0;
+  gdb_secondary_prompt_depth--;
+  gdb_assert (gdb_secondary_prompt_depth >= 0);
 
   after_char_processing_hook = saved_after_char_processing_hook;
   saved_after_char_processing_hook = NULL;
@@ -827,6 +850,7 @@ gdb_readline_wrapper (const char *prompt)
 
   cleanup->target_is_async_orig = target_is_async_p ();
 
+  gdb_secondary_prompt_depth++;
   back_to = make_cleanup (gdb_readline_wrapper_cleanup, cleanup);
 
   if (cleanup->target_is_async_orig)
@@ -1486,6 +1510,21 @@ quit_confirm (void)
   return qr;
 }
 
+/* Prepare to exit GDB cleanly by undoing any changes made to the
+   terminal so that we leave the terminal in the state we acquired it.  */
+
+static void
+undo_terminal_modifications_before_exit (void)
+{
+  target_terminal_ours ();
+#if defined(TUI)
+  tui_disable ();
+#endif
+  if (async_command_editing_p)
+    gdb_disable_readline ();
+}
+
+
 /* Quit without asking for confirmation.  */
 
 void
@@ -1493,6 +1532,8 @@ quit_force (char *args, int from_tty)
 {
   int exit_code = 0;
   struct qt_args qt;
+
+  undo_terminal_modifications_before_exit ();
 
   /* An optional expression may be used to cause gdb to terminate with the 
      value of that expression.  */

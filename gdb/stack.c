@@ -318,7 +318,7 @@ read_frame_local (struct symbol *sym, struct frame_info *frame,
 
   TRY
     {
-      argp->val = read_var_value (sym, frame);
+      argp->val = read_var_value (sym, NULL, frame);
     }
   CATCH (except, RETURN_MASK_ERROR)
     {
@@ -344,7 +344,7 @@ read_frame_arg (struct symbol *sym, struct frame_info *frame,
     {
       TRY
 	{
-	  val = read_var_value (sym, frame);
+	  val = read_var_value (sym, NULL, frame);
 	}
       CATCH (except, RETURN_MASK_ERROR)
 	{
@@ -471,7 +471,7 @@ read_frame_arg (struct symbol *sym, struct frame_info *frame,
 
 	  TRY
 	    {
-	      val = read_var_value (sym, frame);
+	      val = read_var_value (sym, NULL, frame);
 	    }
 	  CATCH (except, RETURN_MASK_ERROR)
 	    {
@@ -621,7 +621,7 @@ print_frame_args (struct symbol *func, struct frame_info *frame,
 	      struct symbol *nsym;
 
 	      nsym = lookup_symbol (SYMBOL_LINKAGE_NAME (sym),
-				    b, VAR_DOMAIN, NULL);
+				    b, VAR_DOMAIN, NULL).symbol;
 	      gdb_assert (nsym != NULL);
 	      if (SYMBOL_CLASS (nsym) == LOC_REGISTER
 		  && !SYMBOL_IS_ARGUMENT (nsym))
@@ -2163,7 +2163,7 @@ iterate_over_block_arg_vars (const struct block *b,
 	     are not combined in symbol-reading.  */
 
 	  sym2 = lookup_symbol (SYMBOL_LINKAGE_NAME (sym),
-				b, VAR_DOMAIN, NULL);
+				b, VAR_DOMAIN, NULL).symbol;
 	  (*cb) (SYMBOL_PRINT_NAME (sym), sym2, cb_data);
 	}
     }
@@ -2422,7 +2422,7 @@ return_command (char *retval_exp, int from_tty)
 	  return_type = value_type (return_value);
 	}
       do_cleanups (old_chain);
-      CHECK_TYPEDEF (return_type);
+      return_type = check_typedef (return_type);
       return_value = value_cast (return_type, return_value);
 
       /* Make sure the value is fully evaluated.  It may live in the
@@ -2431,7 +2431,7 @@ return_command (char *retval_exp, int from_tty)
 	value_fetch_lazy (return_value);
 
       if (thisfun != NULL)
-	function = read_var_value (thisfun, thisframe);
+	function = read_var_value (thisfun, NULL, thisframe);
 
       rv_conv = RETURN_VALUE_REGISTER_CONVENTION;
       if (TYPE_CODE (return_type) == TYPE_CODE_VOID)
@@ -2565,51 +2565,6 @@ func_command (char *arg, int from_tty)
     printf_filtered (_("'%s' not within current stack frame.\n"), arg);
   else if (frame != get_selected_frame (NULL))
     select_and_print_frame (frame);
-}
-
-/* Gets the language of the current frame.  */
-
-enum language
-get_frame_language (void)
-{
-  struct frame_info *frame = deprecated_safe_get_selected_frame ();
-
-  if (frame)
-    {
-      CORE_ADDR pc = 0;
-      int pc_p = 0;
-
-      /* We determine the current frame language by looking up its
-         associated symtab.  To retrieve this symtab, we use the frame
-         PC.  However we cannot use the frame PC as is, because it
-         usually points to the instruction following the "call", which
-         is sometimes the first instruction of another function.  So
-         we rely on get_frame_address_in_block(), it provides us with
-         a PC that is guaranteed to be inside the frame's code
-         block.  */
-
-      TRY
-	{
-	  pc = get_frame_address_in_block (frame);
-	  pc_p = 1;
-	}
-      CATCH (ex, RETURN_MASK_ERROR)
-	{
-	  if (ex.error != NOT_AVAILABLE_ERROR)
-	    throw_exception (ex);
-	}
-      END_CATCH
-
-      if (pc_p)
-	{
-	  struct compunit_symtab *cust = find_pc_compunit_symtab (pc);
-
-	  if (cust != NULL)
-	    return compunit_language (cust);
-	}
-    }
-
-  return language_unknown;
 }
 
 

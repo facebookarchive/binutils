@@ -33,7 +33,7 @@
 
 #include <elf/common.h>
 #include <sys/user.h>
-#include <sys/ptrace.h>
+#include "nat/gdb_ptrace.h"
 #include <sys/utsname.h>
 #include <sys/procfs.h>
 
@@ -66,23 +66,6 @@
 
 extern int arm_apcs_32;
 
-/* On GNU/Linux, threads are implemented as pseudo-processes, in which
-   case we may be tracing more than one process at a time.  In that
-   case, inferior_ptid will contain the main process ID and the
-   individual thread (process) ID.  get_thread_id () is used to get
-   the thread id if it's available, and the process id otherwise.  */
-
-static int
-get_thread_id (ptid_t ptid)
-{
-  int tid = ptid_get_lwp (ptid);
-  if (0 == tid)
-    tid = ptid_get_pid (ptid);
-  return tid;
-}
-
-#define GET_THREAD_ID(PTID)	get_thread_id (PTID)
-
 /* Get the whole floating point state of the process and store it
    into regcache.  */
 
@@ -93,7 +76,7 @@ fetch_fpregs (struct regcache *regcache)
   gdb_byte fp[ARM_LINUX_SIZEOF_NWFPE];
 
   /* Get the thread id for the ptrace call.  */
-  tid = GET_THREAD_ID (inferior_ptid);
+  tid = ptid_get_lwp (inferior_ptid);
 
   /* Read the floating point state.  */
   if (have_ptrace_getregset == TRIBOOL_TRUE)
@@ -133,7 +116,7 @@ store_fpregs (const struct regcache *regcache)
   gdb_byte fp[ARM_LINUX_SIZEOF_NWFPE];
 
   /* Get the thread id for the ptrace call.  */
-  tid = GET_THREAD_ID (inferior_ptid);
+  tid = ptid_get_lwp (inferior_ptid);
 
   /* Read the floating point state.  */
   if (have_ptrace_getregset == TRIBOOL_TRUE)
@@ -193,7 +176,7 @@ fetch_regs (struct regcache *regcache)
   elf_gregset_t regs;
 
   /* Get the thread id for the ptrace call.  */
-  tid = GET_THREAD_ID (inferior_ptid);
+  tid = ptid_get_lwp (inferior_ptid);
 
   if (have_ptrace_getregset == TRIBOOL_TRUE)
     {
@@ -223,7 +206,7 @@ store_regs (const struct regcache *regcache)
   elf_gregset_t regs;
 
   /* Get the thread id for the ptrace call.  */
-  tid = GET_THREAD_ID (inferior_ptid);
+  tid = ptid_get_lwp (inferior_ptid);
 
   /* Fetch the general registers.  */
   if (have_ptrace_getregset == TRIBOOL_TRUE)
@@ -277,7 +260,7 @@ fetch_wmmx_regs (struct regcache *regcache)
   int ret, regno, tid;
 
   /* Get the thread id for the ptrace call.  */
-  tid = GET_THREAD_ID (inferior_ptid);
+  tid = ptid_get_lwp (inferior_ptid);
 
   ret = ptrace (PTRACE_GETWMMXREGS, tid, 0, regbuf);
   if (ret < 0)
@@ -306,7 +289,7 @@ store_wmmx_regs (const struct regcache *regcache)
   int ret, regno, tid;
 
   /* Get the thread id for the ptrace call.  */
-  tid = GET_THREAD_ID (inferior_ptid);
+  tid = ptid_get_lwp (inferior_ptid);
 
   ret = ptrace (PTRACE_GETWMMXREGS, tid, 0, regbuf);
   if (ret < 0)
@@ -351,7 +334,7 @@ fetch_vfp_regs (struct regcache *regcache)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
   /* Get the thread id for the ptrace call.  */
-  tid = GET_THREAD_ID (inferior_ptid);
+  tid = ptid_get_lwp (inferior_ptid);
 
   if (have_ptrace_getregset == TRIBOOL_TRUE)
     {
@@ -383,7 +366,7 @@ store_vfp_regs (const struct regcache *regcache)
   struct gdbarch_tdep *tdep = gdbarch_tdep (gdbarch);
 
   /* Get the thread id for the ptrace call.  */
-  tid = GET_THREAD_ID (inferior_ptid);
+  tid = ptid_get_lwp (inferior_ptid);
 
   if (have_ptrace_getregset == TRIBOOL_TRUE)
     {
@@ -553,7 +536,7 @@ arm_linux_read_description (struct target_ops *ops)
     {
       elf_gregset_t gpregs;
       struct iovec iov;
-      int tid = GET_THREAD_ID (inferior_ptid);
+      int tid = ptid_get_lwp (inferior_ptid);
 
       iov.iov_base = &gpregs;
       iov.iov_len = sizeof (gpregs);
@@ -636,7 +619,7 @@ arm_linux_get_hwbp_cap (void)
       int tid;
       unsigned int val;
 
-      tid = GET_THREAD_ID (inferior_ptid);
+      tid = ptid_get_lwp (inferior_ptid);
       if (ptrace (PTRACE_GETHBPREGS, tid, 0, &val) < 0)
 	available = 0;
       else
@@ -686,7 +669,8 @@ arm_linux_get_hw_watchpoint_count (void)
    there is not an appropriate resource available, otherwise returns 1.  */
 static int
 arm_linux_can_use_hw_breakpoint (struct target_ops *self,
-				 int type, int cnt, int ot)
+				 enum bptype type,
+				 int cnt, int ot)
 {
   if (type == bp_hardware_watchpoint || type == bp_read_watchpoint
       || type == bp_access_watchpoint || type == bp_watchpoint)
@@ -922,14 +906,14 @@ arm_linux_hw_breakpoint_initialize (struct gdbarch *gdbarch,
   p->control = arm_hwbp_control_initialize (mask, arm_hwbp_break, 1);
 }
 
-/* Get the ARM hardware breakpoint type from the RW value we're given when
-   asked to set a watchpoint.  */
+/* Get the ARM hardware breakpoint type from the TYPE value we're
+   given when asked to set a watchpoint.  */
 static arm_hwbp_type 
-arm_linux_get_hwbp_type (int rw)
+arm_linux_get_hwbp_type (enum target_hw_bp_type type)
 {
-  if (rw == hw_read)
+  if (type == hw_read)
     return arm_hwbp_load;
-  else if (rw == hw_write)
+  else if (type == hw_write)
     return arm_hwbp_store;
   else
     return arm_hwbp_access;
@@ -938,7 +922,8 @@ arm_linux_get_hwbp_type (int rw)
 /* Initialize the hardware breakpoint structure P for a watchpoint at ADDR
    to LEN.  The type of watchpoint is given in RW.  */
 static void
-arm_linux_hw_watchpoint_initialize (CORE_ADDR addr, int len, int rw,
+arm_linux_hw_watchpoint_initialize (CORE_ADDR addr, int len,
+				    enum target_hw_bp_type type,
 				    struct arm_linux_hw_breakpoint *p)
 {
   const struct arm_linux_hwbp_cap *cap = arm_linux_get_hwbp_cap ();
@@ -951,7 +936,7 @@ arm_linux_hw_watchpoint_initialize (CORE_ADDR addr, int len, int rw,
 
   p->address = (unsigned int) addr;
   p->control = arm_hwbp_control_initialize (mask, 
-					    arm_linux_get_hwbp_type (rw), 1);
+					    arm_linux_get_hwbp_type (type), 1);
 }
 
 /* Are two break-/watch-points equal?  */
@@ -1147,7 +1132,8 @@ arm_linux_region_ok_for_hw_watchpoint (struct target_ops *self,
 /* Insert a Hardware breakpoint.  */
 static int
 arm_linux_insert_watchpoint (struct target_ops *self,
-			     CORE_ADDR addr, int len, int rw,
+			     CORE_ADDR addr, int len,
+			     enum target_hw_bp_type rw,
 			     struct expression *cond)
 {
   struct lwp_info *lp;
@@ -1165,8 +1151,8 @@ arm_linux_insert_watchpoint (struct target_ops *self,
 
 /* Remove a hardware breakpoint.  */
 static int
-arm_linux_remove_watchpoint (struct target_ops *self,
-			     CORE_ADDR addr, int len, int rw,
+arm_linux_remove_watchpoint (struct target_ops *self, CORE_ADDR addr,
+			     int len, enum target_hw_bp_type rw,
 			     struct expression *cond)
 {
   struct lwp_info *lp;

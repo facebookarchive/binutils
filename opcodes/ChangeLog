@@ -1,3 +1,126 @@
+2015-08-25  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* sparc-dis.c (print_insn_sparc): Handle the privileged register
+	%pmcdper.
+
+2015-08-24  Jan Stancek  <jstancek@redhat.com>
+
+	* i386-dis.c (print_insn): Fix decoding of three byte operands.
+
+2015-08-21  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR binutils/18257
+	* i386-dis.c: Use MOD_TABLE for most of mask instructions.
+	(MOD enum): Add MOD_VEX_W_0_0F41_P_0_LEN_1,
+	MOD_VEX_W_1_0F41_P_0_LEN_1, MOD_VEX_W_0_0F41_P_2_LEN_1,
+	MOD_VEX_W_1_0F41_P_2_LEN_1, MOD_VEX_W_0_0F42_P_0_LEN_1,
+	MOD_VEX_W_1_0F42_P_0_LEN_1, MOD_VEX_W_0_0F42_P_2_LEN_1,
+	MOD_VEX_W_1_0F42_P_2_LEN_1, MOD_VEX_W_0_0F44_P_0_LEN_1,
+	MOD_VEX_W_1_0F44_P_0_LEN_1, MOD_VEX_W_0_0F44_P_2_LEN_1,
+	MOD_VEX_W_1_0F44_P_2_LEN_1, MOD_VEX_W_0_0F45_P_0_LEN_1,
+	MOD_VEX_W_1_0F45_P_0_LEN_1, MOD_VEX_W_0_0F45_P_2_LEN_1,
+	MOD_VEX_W_1_0F45_P_2_LEN_1, MOD_VEX_W_0_0F46_P_0_LEN_1,
+	MOD_VEX_W_1_0F46_P_0_LEN_1, MOD_VEX_W_0_0F46_P_2_LEN_1,
+	MOD_VEX_W_1_0F46_P_2_LEN_1, MOD_VEX_W_0_0F47_P_0_LEN_1,
+	MOD_VEX_W_1_0F47_P_0_LEN_1, MOD_VEX_W_0_0F47_P_2_LEN_1,
+	MOD_VEX_W_1_0F47_P_2_LEN_1, MOD_VEX_W_0_0F4A_P_0_LEN_1,
+	MOD_VEX_W_1_0F4A_P_0_LEN_1, MOD_VEX_W_0_0F4A_P_2_LEN_1,
+	MOD_VEX_W_1_0F4A_P_2_LEN_1, MOD_VEX_W_0_0F4B_P_0_LEN_1,
+	MOD_VEX_W_1_0F4B_P_0_LEN_1, MOD_VEX_W_0_0F4B_P_2_LEN_1,
+	MOD_VEX_W_0_0F91_P_0_LEN_0, MOD_VEX_W_1_0F91_P_0_LEN_0,
+	MOD_VEX_W_0_0F91_P_2_LEN_0, MOD_VEX_W_1_0F91_P_2_LEN_0,
+	MOD_VEX_W_0_0F92_P_0_LEN_0, MOD_VEX_W_0_0F92_P_2_LEN_0,
+	MOD_VEX_W_0_0F92_P_3_LEN_0, MOD_VEX_W_1_0F92_P_3_LEN_0,
+	MOD_VEX_W_0_0F93_P_0_LEN_0, MOD_VEX_W_0_0F93_P_2_LEN_0,
+	MOD_VEX_W_0_0F93_P_3_LEN_0, MOD_VEX_W_1_0F93_P_3_LEN_0,
+	MOD_VEX_W_0_0F98_P_0_LEN_0, MOD_VEX_W_1_0F98_P_0_LEN_0,
+	MOD_VEX_W_0_0F98_P_2_LEN_0, MOD_VEX_W_1_0F98_P_2_LEN_0,
+	MOD_VEX_W_0_0F99_P_0_LEN_0, MOD_VEX_W_1_0F99_P_0_LEN_0,
+	MOD_VEX_W_0_0F99_P_2_LEN_0, MOD_VEX_W_1_0F99_P_2_LEN_0,
+	MOD_VEX_W_0_0F3A30_P_2_LEN_0, MOD_VEX_W_1_0F3A30_P_2_LEN_0,
+	MOD_VEX_W_0_0F3A31_P_2_LEN_0, MOD_VEX_W_1_0F3A31_P_2_LEN_0,
+	MOD_VEX_W_0_0F3A32_P_2_LEN_0, MOD_VEX_W_1_0F3A32_P_2_LEN_0,
+	MOD_VEX_W_0_0F3A33_P_2_LEN_0, MOD_VEX_W_1_0F3A33_P_2_LEN_0.
+	(vex_w_table): Replace terminals with MOD_TABLE entries for
+	most of mask instructions.
+
+2015-08-17  Alan Modra  <amodra@gmail.com>
+
+	* cgen.sh: Trim trailing space from cgen output.
+	* ia64-gen.c (print_dependency_table): Don't generate trailing space.
+	(print_dis_table): Likewise.
+	* opc2c.c (dump_lines): Likewise.
+	(orig_filename): Warning fix.
+	* ia64-asmtab.c: Regenerate.
+
+2015-08-13  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* arm-dis.c (print_insn_arm): Disassembling for all targets V6
+	and higher with ARM instruction set will now mark the 26-bit
+	versions of teq,tst,cmn and cmp as UNPREDICTABLE.
+	(arm_opcodes): Fix for unpredictable nop being recognized as a
+	teq.
+
+2015-08-12  Simon Dardis  <simon.dardis@imgtec.com>
+
+	* micromips-opc.c (micromips_opcodes): Re-order table so that move
+	based on 'or' is first.
+	* mips-opc.c (mips_builtin_opcodes): Ditto.
+
+2015-08-11  Nick Clifton  <nickc@redhat.com>
+
+	PR 18800
+	* aarch64-tbl.h (aarch64_opcode_table): Fix mask for SIMD EXT
+	instruction.
+
+2015-08-10  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* mips-opc.c (mips_builtin_opcodes): Add "sigrie".
+
+2015-08-07  Amit Pawar <Amit.Pawar@amd.com>
+
+	* i386-gen.c: Remove CpuFMA4 from CPU_ZNVER1_FLAGS.
+	* i386-init.h: Regenerated.
+
+2015-07-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR binutils/13571
+	* i386-dis.c (MOD_0FC3): New.
+	(PREFIX_0FC3): Renamed to ...
+	(PREFIX_MOD_0_0FC3): This.
+	(dis386_twobyte): Replace PREFIX_0FC3 with MOD_0FC3.
+	(prefix_table): Replace Ma with Ev on movntiS.
+	(mod_table): Add MOD_0FC3.
+
+2015-07-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2015-07-23  Alan Modra  <amodra@gmail.com>
+
+	PR 18708
+	* i386-dis.c (get64): Avoid signed integer overflow.
+
+2015-07-22  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR binutils/18631
+	* i386-dis-evex.h (EVEX_W_0F78_P_2): Replace "EXxmmq" with
+	"EXEvexHalfBcstXmmq" for the second operand.
+	(EVEX_W_0F79_P_2): Likewise.
+	(EVEX_W_0F7A_P_2): Likewise.
+	(EVEX_W_0F7B_P_2): Likewise.
+
+2015-07-16  Alessandro Marzocchi  <alessandro.marzocchi@gmail.com>
+
+	* arm-dis.c (print_insn_coprocessor): Added support for quarter
+	float bitfield format.
+	(coprocessor_opcodes): Changed VFP vmov reg,immediate to use new
+	quarter float bitfield format.
+
+2015-07-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
 2015-07-03  Alan Modra  <amodra@gmail.com>
 
 	* ppc-opc.c (PPC750, PPC7450, PPC860): Define using PPC_OPCODE_*.
@@ -62,7 +185,7 @@
 
 2015-06-19  Peter Bergner  <bergner@vnet.ibm.com>
 
-        * ppc-dis.h (skip_optional_operands): Use ppc_optional_operand_value.
+	* ppc-dis.h (skip_optional_operands): Use ppc_optional_operand_value.
 	* ppc-opc.c (FXM4): Add non-zero optional value.
 	(TBR): Likewise.
 	(SXL): Likewise.

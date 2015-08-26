@@ -474,14 +474,14 @@ get_out_value_type (struct symbol *func_sym, struct objfile *objfile,
     error (_("No \"%s\" symbol found"), COMPILE_I_EXPR_PTR_TYPE);
 
   gdb_type = SYMBOL_TYPE (gdb_val_sym);
-  CHECK_TYPEDEF (gdb_type);
+  gdb_type = check_typedef (gdb_type);
 
   gdb_ptr_type_sym = block_lookup_symbol (block, COMPILE_I_EXPR_PTR_TYPE,
 					  VAR_DOMAIN);
   if (gdb_ptr_type_sym == NULL)
     error (_("No \"%s\" symbol found"), COMPILE_I_EXPR_PTR_TYPE);
   gdb_ptr_type = SYMBOL_TYPE (gdb_ptr_type_sym);
-  CHECK_TYPEDEF (gdb_ptr_type);
+  gdb_ptr_type = check_typedef (gdb_ptr_type);
   if (TYPE_CODE (gdb_ptr_type) != TYPE_CODE_PTR)
     error (_("Type of \"%s\" is not a pointer"), COMPILE_I_EXPR_PTR_TYPE);
   gdb_type_from_ptr = TYPE_TARGET_TYPE (gdb_ptr_type);
@@ -676,7 +676,7 @@ compile_object_load (const char *object_file, const char *source_file,
 
   func_sym = lookup_global_symbol_from_objfile (objfile,
 						GCC_FE_WRAPPER_FUNCTION,
-						VAR_DOMAIN);
+						VAR_DOMAIN).symbol;
   if (func_sym == NULL)
     error (_("Cannot find function \"%s\" in compiled module \"%s\"."),
 	   GCC_FE_WRAPPER_FUNCTION, objfile_name (objfile));

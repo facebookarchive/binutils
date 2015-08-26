@@ -21,7 +21,7 @@
 #include "inferior.h"
 #include "elf/common.h"
 #include "gdb_proc_service.h"
-#include <sys/ptrace.h>
+#include "nat/gdb_ptrace.h"
 #include <sys/user.h>
 #include <sys/procfs.h>
 #include <sys/uio.h>
@@ -357,6 +357,15 @@ x86_linux_get_thread_area (pid_t pid, void *addr, unsigned int *base_addr)
 }
 
 
+/* to_always_non_stop_p implementation.  */
+
+static int
+x86_linux_always_non_stop_p (struct target_ops *self)
+{
+  /* Enabling this breaks the btrace target.  */
+  return 0;
+}
+
 /* Create an x86 GNU/Linux target.  */
 
 struct target_ops *
@@ -388,6 +397,8 @@ x86_linux_create_target (void)
   t->to_teardown_btrace = x86_linux_teardown_btrace;
   t->to_read_btrace = x86_linux_read_btrace;
   t->to_btrace_conf = x86_linux_btrace_conf;
+
+  t->to_always_non_stop_p = x86_linux_always_non_stop_p;
 
   return t;
 }

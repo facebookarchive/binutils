@@ -62,7 +62,7 @@
 
 #include "readline/readline.h"
 
-#include <sys/time.h>
+#include "gdb_sys_time.h"
 #include <time.h>
 
 #include "gdb_usleep.h"
@@ -429,7 +429,7 @@ make_cleanup_free_so (struct so_list *so)
 static void
 do_restore_current_language (void *p)
 {
-  enum language saved_lang = (uintptr_t) p;
+  enum language saved_lang = (enum language) (uintptr_t) p;
 
   set_language (saved_lang);
 }
@@ -1039,6 +1039,18 @@ quit (void)
   else
     throw_quit ("Quit (expect signal SIGINT when the program is resumed)");
 #endif
+}
+
+/* See defs.h.  */
+
+void
+maybe_quit (void)
+{
+  if (check_quit_flag () || sync_quit_force_run)
+    quit ();
+  if (deprecated_interactive_hook)
+    deprecated_interactive_hook ();
+  target_check_pending_interrupt ();
 }
 
 

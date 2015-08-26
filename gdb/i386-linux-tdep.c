@@ -379,9 +379,9 @@ i386_canonicalize_syscall (int syscall)
   enum { i386_syscall_max = 499 };
 
   if (syscall <= i386_syscall_max)
-    return syscall;
+    return (enum gdb_syscall) syscall;
   else
-    return -1;
+    return gdb_sys_no_syscall;
 }
 
 /* Parse the arguments of current system call instruction and record

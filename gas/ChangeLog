@@ -1,7 +1,307 @@
+2015-08-25  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* config/tc-sparc.c (priv_reg_table): New privileged register
+	%pmcdper.
+
+2015-08-21  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/18581
+	* expr.c (get_symbol_end): Rename to get_symbol_name.  Add a
+	return parameter pointing to the start of the symbol.  Allow
+	symbol names enclosed in double quotes.
+	(restore_line_pointer): New function.  Replace the NUL character
+	inserted into the input stream with the given character.  If the
+	character was a double quote, advance the input pointer.
+	* expr.h (get_symbol_end): Delete.
+	(get_symbol_name): Add prototype.
+	(restore_line_pointer): Prototype.
+	* read.h (SKIP_WHITESPACE_AFTER_NAME): New macro.
+	* doc/as.texinfo (Symbol Intro): Document that symbol names can
+	now be enclosed in double quotes.
+	* cond.c (s_ifdef): Replace get_symbol_end with get_symbol_name.
+	Use restore_line_pointer to replace the NUL in the input stream.
+	Use SKIP_WHITESPACE_AFTER_NAME to skip past the end of a symbol.
+	Check for the use of double quoted symbol names.
+	* expr.c: Likewise.
+	* config/obj-aout.c: Likewise.
+	* config/obj-coff-seh.c: Likewise.
+	* config/obj-coff.c: Likewise.
+	* config/obj-elf.c: Likewise.
+	* config/obj-evax.c: Likewise.
+	* config/obj-macho.c: Likewise.
+	* config/obj-som.c: Likewise.
+	* config/tc-alpha.c: Likewise.
+	* config/tc-arc.c: Likewise.
+	* config/tc-arm.c: Likewise.
+	* config/tc-dlx.c: Likewise.
+	* config/tc-h8300.c: Likewise.
+	* config/tc-hppa.c: Likewise.
+	* config/tc-i370.c: Likewise.
+	* config/tc-i386-intel.c: Likewise.
+	* config/tc-i386.c: Likewise.
+	* config/tc-i960.c: Likewise.
+	* config/tc-ia64.c: Likewise.
+	* config/tc-iq2000.c: Likewise.
+	* config/tc-m32r.c: Likewise.
+	* config/tc-m68hc11.c: Likewise.
+	* config/tc-m68k.c: Likewise.
+	* config/tc-microblaze.c: Likewise.
+	* config/tc-mips.c: Likewise.
+	* config/tc-mmix.c: Likewise.
+	* config/tc-mn10200.c: Likewise.
+	* config/tc-mn10300.c: Likewise.
+	* config/tc-nios2.c: Likewise.
+	* config/tc-ppc.c: Likewise.
+	* config/tc-s390.c: Likewise.
+	* config/tc-score.c: Likewise.
+	* config/tc-score7.c: Likewise.
+	* config/tc-sparc.c: Likewise.
+	* config/tc-tic4x.c: Likewise.
+	* config/tc-tic54x.c: Likewise.
+	* config/tc-tic6x.c: Likewise.
+	* config/tc-tilegx.c: Likewise.
+	* config/tc-tilepro.c: Likewise.
+	* config/tc-v850.c: Likewise.
+	* config/tc-xtensa.c: Likewise.
+	* config/tc-z80.c: Likewise.
+	* dw2gencfi.c: Likewise.
+	* dwarf2dbgc.: Likewise.
+	* ecoff.c: Likewise.
+	* read.c: Likewise.
+	* stabs.c: Likewise.
+
+2015-08-19  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/tc-aarch64.c (reloc_table): New relocation types support for
+	dtprel_lo12.
+	(ldst_lo12_determine_real_reloc_type): Support
+	BFD_RELOC_AARCH64_TLSLD_LDST16_DTPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLD_LDST16_DTPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLD_LDST32_DTPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLD_LDST32_DTPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLD_LDST64_DTPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLD_LDST64_DTPREL_LO12_NC,
+	BFD_RELOC_AARCH64_TLSLD_LDST8_DTPREL_LO12,
+	BFD_RELOC_AARCH64_TLSLD_LDST8_DTPREL_LO12_NC.
+	(parse_operands): Likewise.
+	(md_apply_fix): Likewise.
+	(aarch64_force_relocation): Likewise.
+	(process_movw_reloc_info): Likewise.
+
+2015-08-19  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/tc-aarch64.c (reloc_table): New relocation modifiers,
+	"dtprel_hi12", "dtprel_g0", "dtprel_g0_nc", "dtprel_g1",
+	"dtprel_g1_nc", "dtprel_g2".
+	(md_apply_fix): Support new relocation types.
+	(aarch64_force_relocation): Likewise.
+	(process_movw_reloc_info): Likewise.
+
+2015-08-19  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/tc-aarch64.c (reloc_table): New relocation modifiers.
+	(md_apply_fix): Support BFD_RELOC_AARCH64_TLSLD_ADD_DTPREL_LO12_NC.
+	(aarch64_force_relocation): Likewise.
+
+2015-08-17  Alan Modra  <amodra@gmail.com>
+
+	* gas/config/tc-arm.c (s_align): Delete.
+	(md_pseudo_table): Use s_align_ptwo for "align".
+	* gas/config/tc-arm.h (TC_ALIGN_ZERO_IS_DEFAULT): Define.
+	* read.c (s_align): Modify for TC_ALIGN_ZERO_IS_DEFAULT.
+
+2015-08-13  Alan Modra  <amodra@gmail.com>
+
+	* expr.c (operand): Rewrite handling of operands starting with "0f".
+	If atof_generic only parses "-" or "+", treat as expression.
+
+2015-08-13  Alan Modra  <amodra@gmail.com>
+	    DJ Delorie  <dj@redhat.com>
+
+	* expr.c (integer_constant): Return O_absent expression if eol.
+	(operand): For targets with both LOCAL_LABELS_FB and
+	NUMBERS_WITH_SUFFIX set, treat "0b" not followed by binary
+	digits as a local label reference.  Correct handling of 0b prefix.
+	If a suffix is not allowed, error on 0B.
+
+2015-08-13  Alan Modra  <amodra@gmail.com>
+
+	* doc/as.texinfo (Local Labels): Allowed range of N in local
+	labels is non-negative integers, not positive integers.
+
+2015-08-12  David Weatherford  <weath@cadence.com>
+
+	* config/tc-xtensa.c (struct litpool_frag, struct litpool_seg):
+	New structures.
+	(xtensa_maybe_create_literal_pool_frag): New function.
+	(litpool_seg_list, auto_litpools, auto_litpool_limit)
+	(litpool_buf, litpool_slotbuf): New static variables.
+	(option_auto_litpools, option_no_auto_litpools)
+	(option_auto_litpool_limit): New enum identifiers.
+	(md_longopts): Add entries for auto-litpools, no-auto-litpools
+	and auto-litpool-limit.
+	(md_parse_option): Handle option_auto_litpools,
+	option_no_auto_litpools and option_auto_litpool_limit.
+	(md_show_usage): Add help for --[no-]auto-litpools and
+	--auto-litpool-limit.
+	(xtensa_mark_literal_pool_location): Record a place for literal
+	pool with a call to xtensa_maybe_create_literal_pool_frag.
+	(get_literal_pool_location): Find highest priority literal pool
+	or convert candidate to literal pool when auto-litpools are used.
+	(xg_assemble_vliw_tokens): Create literal pool after jump
+	instruction.
+	(xtensa_check_frag_count): Create candidate literal pool every
+	auto_litpool_limit frags.
+	(xtensa_relax_frag): Add jump around literals to non-empty
+	literal pool.
+	(xtensa_move_literals): Estimate literal pool addresses and move
+	unreachable literals closer to their users, converting candidate
+	to literal pool if needed.
+	(xtensa_switch_to_non_abs_literal_fragment): Only emit error
+	about missing .literal_position in case auto-litpools are not
+	used.
+	* config/tc-xtensa.h (xtensa_relax_statesE): New relaxation
+	state: RELAX_LITERAL_POOL_CANDIDATE_BEGIN.
+	* doc/as.texinfo (Xtensa options):  Document --auto-litpools and
+	--no-auto-litpools options.
+	* doc/c-xtensa.texi (Xtensa options): Likewise.
+
+2015-08-12  Simon Dardis  <simon.dardis@imgtec.com>
+
+	* config/tc-mips.c (move_register): Change to use 'or' only.
+	(s_cpload, s_cpsetup, s_cprestore, s_cpreturn): Update to
+	use or for move.
+
+2015-08-11  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/tc-aarch64.c (reloc_table): New relocation modifiers
+	"dtprel_lo12".
+	(md_apply_fix): Support BFD_RELOC_AARCH64_TLSLD_ADD_DTPREL_LO12.
+	(aarch64_force_relocation): Likewise.
+
+2015-08-11  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/tc-aarch64.c (reloc_table): New relocation modifiers.
+	(md_apply_fix): Support BFD_RELOC_AARCH64_TLSLD_ADD_LO12_NC.
+	(aarch64_force_relocation): Likewise.
+
+2015-08-11  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/tc-aarch64.c (reloc_table): New relocation modifiers.
+	(md_apply_fix): Support BFD_RELOC_AARCH64_TLSLD_ADR_PAGE21.
+	(aarch64_force_relocation): Likewise.
+
+2015-08-11  Nick Clifton  <nickc@redhat.com>
+
+	PR gas/18765
+	* config/tc-arm.c (move_or_literal_pool): Use U suffix to remove
+	compile time warnings about constant expressions being shifted
+	into bit 31.
+	(do_iwmmxt_wldstd): Likewise.
+	(do_iwmmxt_wrwrwr_or_imm5): Likewise.
+	(md_assemble): Likewise.
+
+	PR gas/18574
+	* config/tc-msp430.c (msp430_operands): Rewrite if statements to
+	remove redundant checks.
+	(md_apply_fix): Likewise.
+
+	PR gas/18677
+	* config/tc-mmix.c (md_assemble): Fix typo checking operands with
+	a numeric constant value.
+
+	PR gas/18678
+	* config/tc-tic4x.c (tic4x_insn_check): Fix typo.
+
+	PR gas/18679
+	* config/xtensa-relax.c (same_operand_name): Fix typo.
+
+2015-08-08  Hans-Peter Nilsson  <hp@axis.com>
+
+	* tc-arm.c (double_to_single, is_double_a_single): Append ULL to
+	0xFFFFFFFFFFFFF to avoid errors on 32-bit hosts.
+
+2015-08-04  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* doc/c-aarch64.texi (.xword): Document directive.
+
+2015-08-03  Nick Clifton  <nickc@redhat.com>
+
+	* doc/as.texinfo (Overview): Add --hash-size to the synopsis and
+	fix typo in its entry: @kindex -> @item.
+
+2015-07-28  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* config/tc-mips.c (mips_cpu_info_table): Add m5100 and m5101 entries.
+	* doc/c-mips.texi: Document m5100 and m5101 for -march=.
+
+2015-07-28  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* config/tc-mips.c (mips_cpu_info_table): Add interaptiv entry.
+	* doc/c-mips.text: Document -march=interaptiv.
+
+2015-07-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure: Regenerated.
+
+2015-07-24  Nick Clifton  <nickc@redhat.com>
+
+	* config/tc-rl78.c (rl78_abs_sym): New local variable.
+	(md_begin): Initialise the new symbol.
+	(OPIMM): Define the value to be relative to the new symbol and not
+	the absolute section symbol.
+
+2015-07-22  Alan Modra  <amodra@gmail.com>
+
+	PR gas/18687
+	* input-scrub.c (input_scrub_next_buffer): Rearrange and simplify
+	loop.  Don't drop lines at end of file lacking a newline, add a
+	newline instead.  Ensure partial_size is zero whenever
+	partial_where is NULL.  Adjust buffer size for extra char.
+	(input_scrub_push, input_scrub_begin): Adjust buffer size here too.
+
+2015-07-20  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* NEWS: Mention corrected spelling of armv6kz.
+	* config/tc-arm.c (arm_cpus): Replace ARM_ARCH_V6ZK with
+	ARM_ARCH_V6KZ.
+	(arm_archs): Likewise. Also add "armv6kz" and "armv6kzt2".
+	* doc/c-arm.texi: Replace "armv6zk" with "armv6kz".
+
+2015-07-16  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/tc-aarch64.c (reloc_table): New relocation modifiers.
+	(md_apply_fix): Support BFD_RELOC_AARCH64_TLSLD_ADR_PREL21.
+	(aarch64_force_relocation): Ditto.
+
+2015-07-16  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* config/tc-arm.c (arm_fpus): Add crypto-neon-fp-armv8.1.
+	* doc/c-arm.texi (-mfpu=): Likewise.  Correct the entry for
+	neon-fp-armv8.1.
+
+2015-07-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/tc-arm.c (md_assemble): Rephrase the "selected processor does
+	not support ARM mode" error messages.
+
+2015-07-15  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/tc-i386.c (flag_compress_debug): Replace
+	COMPRESS_DEBUG_GNU_ZLIB with COMPRESS_DEBUG_GABI_ZLIB.
+
+2015-07-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* as.c (parse_args): Make --compress-debug-sections and
+	--compress-debug-sections=zlib the same as
+	--compress-debug-sections=zlib-gabi.
+	* doc/as.texinfo: Change --compress-debug-sections and
+	--compress-debug-sections=zlib to zlib-gabi.
+
 2015-07-09  Catherine Moore  <clm@codesourcery.com>
 
-        * config/tc-mips.c (check_fpabi):  Handle
-        VAL_GNU_MIPS_ABI_FP_NAN2008.
+	* config/tc-mips.c (check_fpabi):  Handle
+	VAL_GNU_MIPS_ABI_FP_NAN2008.
 
 2015-07-08  Ciro Santilli  <ciro.santilli@gmail.com>
 
@@ -258,8 +558,8 @@
 	(aarch64_force_relocation): Ditto.
 
 2015-05-28  Catherine Moore  <clm@codesourcery.com>
-            Bernd Schmidt <bernds@codesourcery.com>
-            Paul Brook <paul@codesourcery.com>
+	    Bernd Schmidt <bernds@codesourcery.com>
+	    Paul Brook <paul@codesourcery.com>
 
 	gas/
 	* config/tc-alpha.c (all_cfi_sections): Declare.

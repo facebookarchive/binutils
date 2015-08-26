@@ -252,6 +252,17 @@ get_target_type (struct type *type)
   return type;
 }
 
+/* See gdbtypes.h.  */
+
+unsigned int
+type_length_units (struct type *type)
+{
+  struct gdbarch *arch = get_type_arch (type);
+  int unit_size = gdbarch_addressable_memory_unit_size (arch);
+
+  return TYPE_LENGTH (type) / unit_size;
+}
+
 /* Alloc a new type instance structure, fill it with some defaults,
    and point it at OLDTYPE.  Allocate the new type instance from the
    same place as OLDTYPE.  */
@@ -898,7 +909,7 @@ has_static_range (const struct range_bounds *bounds)
 int
 get_discrete_bounds (struct type *type, LONGEST *lowp, LONGEST *highp)
 {
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
   switch (TYPE_CODE (type))
     {
     case TYPE_CODE_RANGE:
@@ -1074,7 +1085,7 @@ create_array_type_with_stride (struct type *result_type,
 
       if (get_discrete_bounds (range_type, &low_bound, &high_bound) < 0)
 	low_bound = high_bound = 0;
-      CHECK_TYPEDEF (element_type);
+      element_type = check_typedef (element_type);
       /* Be careful when setting the array length.  Ada arrays can be
 	 empty arrays with the high_bound being smaller than the low_bound.
 	 In such cases, the array length should be zero.  */
@@ -1383,7 +1394,7 @@ type_name_no_tag_or_error (struct type *type)
   const char *name;
   struct objfile *objfile;
 
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
 
   name = type_name_no_tag (type);
   if (name != NULL)
@@ -1409,7 +1420,7 @@ lookup_typename (const struct language_defn *language,
   struct type *type;
 
   sym = lookup_symbol_in_language (name, block, VAR_DOMAIN,
-				   language->la_language, NULL);
+				   language->la_language, NULL).symbol;
   if (sym != NULL && SYMBOL_CLASS (sym) == LOC_TYPEDEF)
     return SYMBOL_TYPE (sym);
 
@@ -1453,7 +1464,7 @@ lookup_struct (const char *name, const struct block *block)
 {
   struct symbol *sym;
 
-  sym = lookup_symbol (name, block, STRUCT_DOMAIN, 0);
+  sym = lookup_symbol (name, block, STRUCT_DOMAIN, 0).symbol;
 
   if (sym == NULL)
     {
@@ -1476,7 +1487,7 @@ lookup_union (const char *name, const struct block *block)
   struct symbol *sym;
   struct type *t;
 
-  sym = lookup_symbol (name, block, STRUCT_DOMAIN, 0);
+  sym = lookup_symbol (name, block, STRUCT_DOMAIN, 0).symbol;
 
   if (sym == NULL)
     error (_("No union type named %s."), name);
@@ -1499,7 +1510,7 @@ lookup_enum (const char *name, const struct block *block)
 {
   struct symbol *sym;
 
-  sym = lookup_symbol (name, block, STRUCT_DOMAIN, 0);
+  sym = lookup_symbol (name, block, STRUCT_DOMAIN, 0).symbol;
   if (sym == NULL)
     {
       error (_("No enum type named %s."), name);
@@ -1528,7 +1539,7 @@ lookup_template_type (char *name, struct type *type,
   strcat (nam, TYPE_NAME (type));
   strcat (nam, " >");	/* FIXME, extra space still introduced in gcc?  */
 
-  sym = lookup_symbol (nam, block, VAR_DOMAIN, 0);
+  sym = lookup_symbol (nam, block, VAR_DOMAIN, 0).symbol;
 
   if (sym == NULL)
     {
@@ -1562,7 +1573,7 @@ lookup_struct_elt_type (struct type *type, const char *name, int noerr)
 
   for (;;)
     {
-      CHECK_TYPEDEF (type);
+      type = check_typedef (type);
       if (TYPE_CODE (type) != TYPE_CODE_PTR
 	  && TYPE_CODE (type) != TYPE_CODE_REF)
 	break;
@@ -1639,7 +1650,7 @@ get_unsigned_type_max (struct type *type, ULONGEST *max)
 {
   unsigned int n;
 
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_INT && TYPE_UNSIGNED (type));
   gdb_assert (TYPE_LENGTH (type) <= sizeof (ULONGEST));
 
@@ -1656,7 +1667,7 @@ get_signed_type_minmax (struct type *type, LONGEST *min, LONGEST *max)
 {
   unsigned int n;
 
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_INT && !TYPE_UNSIGNED (type));
   gdb_assert (TYPE_LENGTH (type) <= sizeof (LONGEST));
 
@@ -1675,7 +1686,7 @@ get_signed_type_minmax (struct type *type, LONGEST *min, LONGEST *max)
 int
 internal_type_vptr_fieldno (struct type *type)
 {
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT
 	      || TYPE_CODE (type) == TYPE_CODE_UNION);
   if (!HAVE_CPLUS_STRUCT (type))
@@ -1688,7 +1699,7 @@ internal_type_vptr_fieldno (struct type *type)
 void
 set_type_vptr_fieldno (struct type *type, int fieldno)
 {
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT
 	      || TYPE_CODE (type) == TYPE_CODE_UNION);
   if (!HAVE_CPLUS_STRUCT (type))
@@ -1702,7 +1713,7 @@ set_type_vptr_fieldno (struct type *type, int fieldno)
 struct type *
 internal_type_vptr_basetype (struct type *type)
 {
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT
 	      || TYPE_CODE (type) == TYPE_CODE_UNION);
   gdb_assert (TYPE_SPECIFIC_FIELD (type) == TYPE_SPECIFIC_CPLUS_STUFF);
@@ -1714,7 +1725,7 @@ internal_type_vptr_basetype (struct type *type)
 void
 set_type_vptr_basetype (struct type *type, struct type *basetype)
 {
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
   gdb_assert (TYPE_CODE (type) == TYPE_CODE_STRUCT
 	      || TYPE_CODE (type) == TYPE_CODE_UNION);
   if (!HAVE_CPLUS_STRUCT (type))
@@ -1737,7 +1748,7 @@ set_type_vptr_basetype (struct type *type, struct type *basetype)
 int
 get_vptr_fieldno (struct type *type, struct type **basetypep)
 {
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
 
   if (TYPE_VPTR_FIELDNO (type) < 0)
     {
@@ -1874,7 +1885,7 @@ resolve_dynamic_range (struct type *dyn_range_type,
   gdb_assert (TYPE_CODE (dyn_range_type) == TYPE_CODE_RANGE);
 
   prop = &TYPE_RANGE_DATA (dyn_range_type)->low;
-  if (dwarf2_evaluate_property (prop, addr_stack, &value))
+  if (dwarf2_evaluate_property (prop, NULL, addr_stack, &value))
     {
       low_bound.kind = PROP_CONST;
       low_bound.data.const_val = value;
@@ -1886,7 +1897,7 @@ resolve_dynamic_range (struct type *dyn_range_type,
     }
 
   prop = &TYPE_RANGE_DATA (dyn_range_type)->high;
-  if (dwarf2_evaluate_property (prop, addr_stack, &value))
+  if (dwarf2_evaluate_property (prop, NULL, addr_stack, &value))
     {
       high_bound.kind = PROP_CONST;
       high_bound.data.const_val = value;
@@ -1933,7 +1944,7 @@ resolve_dynamic_array (struct type *type,
   ary_dim = check_typedef (TYPE_TARGET_TYPE (elt_type));
 
   if (ary_dim != NULL && TYPE_CODE (ary_dim) == TYPE_CODE_ARRAY)
-    elt_type = resolve_dynamic_array (TYPE_TARGET_TYPE (type), addr_stack);
+    elt_type = resolve_dynamic_array (ary_dim, addr_stack);
   else
     elt_type = TYPE_TARGET_TYPE (type);
 
@@ -2128,7 +2139,8 @@ resolve_dynamic_type_internal (struct type *type,
 
   /* Resolve data_location attribute.  */
   prop = TYPE_DATA_LOCATION (resolved_type);
-  if (prop != NULL && dwarf2_evaluate_property (prop, addr_stack, &value))
+  if (prop != NULL
+      && dwarf2_evaluate_property (prop, NULL, addr_stack, &value))
     {
       TYPE_DYN_PROP_ADDR (prop) = value;
       TYPE_DYN_PROP_KIND (prop) = PROP_CONST;
@@ -2245,7 +2257,7 @@ check_typedef (struct type *type)
 	      stub_noname_complaint ();
 	      return make_qualified_type (type, instance_flags, NULL);
 	    }
-	  sym = lookup_symbol (name, 0, STRUCT_DOMAIN, 0);
+	  sym = lookup_symbol (name, 0, STRUCT_DOMAIN, 0).symbol;
 	  if (sym)
 	    TYPE_TARGET_TYPE (type) = SYMBOL_TYPE (sym);
 	  else					/* TYPE_CODE_UNDEF */
@@ -2336,7 +2348,7 @@ check_typedef (struct type *type)
 	  stub_noname_complaint ();
 	  return make_qualified_type (type, instance_flags, NULL);
 	}
-      sym = lookup_symbol (name, 0, STRUCT_DOMAIN, 0);
+      sym = lookup_symbol (name, 0, STRUCT_DOMAIN, 0).symbol;
       if (sym)
         {
           /* Same as above for opaque types, we can replace the stub
@@ -2679,7 +2691,7 @@ can_dereference (struct type *t)
 {
   /* FIXME: Should we return true for references as well as
      pointers?  */
-  CHECK_TYPEDEF (t);
+  t = check_typedef (t);
   return
     (t != NULL
      && TYPE_CODE (t) == TYPE_CODE_PTR
@@ -2689,7 +2701,7 @@ can_dereference (struct type *t)
 int
 is_integral_type (struct type *t)
 {
-  CHECK_TYPEDEF (t);
+  t = check_typedef (t);
   return
     ((t != NULL)
      && ((TYPE_CODE (t) == TYPE_CODE_INT)
@@ -2705,7 +2717,7 @@ is_integral_type (struct type *t)
 static int
 is_scalar_type (struct type *type)
 {
-  CHECK_TYPEDEF (type);
+  type = check_typedef (type);
 
   switch (TYPE_CODE (type))
     {
@@ -2727,7 +2739,7 @@ is_scalar_type (struct type *type)
 int
 is_scalar_type_recursive (struct type *t)
 {
-  CHECK_TYPEDEF (t);
+  t = check_typedef (t);
 
   if (is_scalar_type (t))
     return 1;
@@ -2809,8 +2821,8 @@ distance_to_ancestor (struct type *base, struct type *dclass, int is_public)
   int i;
   int d;
 
-  CHECK_TYPEDEF (base);
-  CHECK_TYPEDEF (dclass);
+  base = check_typedef (base);
+  dclass = check_typedef (dclass);
 
   if (class_types_same_p (base, dclass))
     return 0;
@@ -2859,8 +2871,8 @@ is_unique_ancestor_worker (struct type *base, struct type *dclass,
 {
   int i, count = 0;
 
-  CHECK_TYPEDEF (base);
-  CHECK_TYPEDEF (dclass);
+  base = check_typedef (base);
+  dclass = check_typedef (dclass);
 
   for (i = 0; i < TYPE_N_BASECLASSES (dclass) && count < 2; ++i)
     {
@@ -3179,8 +3191,8 @@ static int
 check_types_equal (struct type *type1, struct type *type2,
 		   VEC (type_equality_entry_d) **worklist)
 {
-  CHECK_TYPEDEF (type1);
-  CHECK_TYPEDEF (type2);
+  type1 = check_typedef (type1);
+  type2 = check_typedef (type2);
 
   if (type1 == type2)
     return 1;
