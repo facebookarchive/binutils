@@ -2808,16 +2808,18 @@ insert_bp_location (struct bp_location *bl,
 	      observer_notify_breakpoint_modified (bl->owner);
 	      if (!*disabled_breaks)
 		{
-		  fprintf_unfiltered (tmp_error_stream, 
-				      "Cannot insert breakpoint %d.\n", 
-				      bl->owner->number);
+		  if (bl->owner != NULL)
+		    fprintf_unfiltered (tmp_error_stream,
+					"Cannot insert breakpoint %d.\n",
+					bl->owner->number);
 		  fprintf_unfiltered (tmp_error_stream, 
 				      "Temporarily disabling shared "
 				      "library breakpoints:\n");
 		}
 	      *disabled_breaks = 1;
-	      fprintf_unfiltered (tmp_error_stream,
-				  "breakpoint #%d\n", bl->owner->number);
+	      if (bl->owner != NULL)
+		fprintf_unfiltered (tmp_error_stream,
+				    "breakpoint #%d\n", bl->owner->number);
 	      return 0;
 	    }
 	  else
@@ -2826,9 +2828,10 @@ insert_bp_location (struct bp_location *bl,
 		{
 		  *hw_breakpoint_error = 1;
 		  *hw_bp_error_explained_already = bp_err_message != NULL;
-                  fprintf_unfiltered (tmp_error_stream,
-                                      "Cannot insert hardware breakpoint %d%s",
-                                      bl->owner->number, bp_err_message ? ":" : ".\n");
+		  if (bl->owner != NULL)
+		    fprintf_unfiltered (tmp_error_stream,
+					"Cannot insert hardware breakpoint %d%s",
+					bl->owner->number, bp_err_message ? ":" : ".\n");
                   if (bp_err_message != NULL)
                     fprintf_unfiltered (tmp_error_stream, "%s.\n", bp_err_message);
 		}
@@ -2841,13 +2844,14 @@ insert_bp_location (struct bp_location *bl,
 						bl->gdbarch, bl->address);
 		      struct cleanup *old_chain = make_cleanup (xfree, message);
 
-		      fprintf_unfiltered (tmp_error_stream,
-					  "Cannot insert breakpoint %d.\n"
-					  "%s\n",
-					  bl->owner->number, message);
+		      if (bl->owner != NULL)
+			fprintf_unfiltered (tmp_error_stream,
+					    "Cannot insert breakpoint %d.\n"
+					    "%s\n",
+					    bl->owner->number, message);
 		      do_cleanups (old_chain);
 		    }
-		  else
+		  else if (bl->owner != NULL)
 		    {
 		      fprintf_unfiltered (tmp_error_stream,
 					  "Cannot insert breakpoint %d: %s\n",
