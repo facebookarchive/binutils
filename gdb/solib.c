@@ -592,7 +592,9 @@ init_search_hints_from_so (struct so_search_hints *hints,
    expansion stuff?).  */
 
 static int
-solib_map_sections (struct so_list *so)
+solib_map_sections (struct so_list *so,
+		    size_t nr_so,
+		    size_t nr_so_total)
 {
   const struct target_so_ops *ops = target_so_ops ();
   char *filename;
@@ -604,6 +606,8 @@ solib_map_sections (struct so_list *so)
   filename = xstrdup (so->so_name);
   old_chain = make_cleanup (xfree, filename);
   init_search_hints_from_so (&hints, so);
+  hints.nr_so = nr_so;
+  hints.nr_so_total = nr_so_total;
   abfd = ops->bfd_open2 (filename, &hints);
 
   do_cleanups (old_chain);
@@ -937,7 +941,8 @@ update_solib_list (int from_tty, struct target_ops *target)
     {
       int not_found = 0;
       const char *not_found_filename = NULL;
-
+      size_t nr_so_total;
+      size_t nr_so;
       struct so_list *i;
 
       observer_notify_solib_about_to_search (current_inferior ());
@@ -945,8 +950,14 @@ update_solib_list (int from_tty, struct target_ops *target)
       /* Add the new shared objects to GDB's list.  */
       *gdb_link = inferior;
 
-      /* Fill in the rest of each of the `struct so_list' nodes.  */
+      /* Count shared libraries we'll be loading for the benefit of
+	 UI.  */
+      nr_so_total = 0;
       for (i = inferior; i; i = i->next)
+	nr_so_total += 1;
+
+      /* Fill in the rest of each of the `struct so_list' nodes.  */
+      for (i = inferior, nr_so = 0; i; i = i->next)
 	{
 
 	  i->pspace = current_program_space;
@@ -955,7 +966,7 @@ update_solib_list (int from_tty, struct target_ops *target)
 	  TRY
 	    {
 	      /* Fill in the rest of the `struct so_list' node.  */
-	      if (!solib_map_sections (i))
+	      if (!solib_map_sections (i, nr_so++, nr_so_total))
 		{
 		  not_found++;
 		  if (not_found_filename == NULL)
@@ -1428,6 +1439,7 @@ reload_shared_libraries_1 (int from_tty)
 {
   struct so_list *so;
   struct cleanup *old_chain = make_cleanup (null_cleanup, NULL);
+  size_t nr_so = 0;
 
   if (print_symbol_loading_p (from_tty, 0, 0))
     printf_unfiltered (_("Loading symbols for shared libraries.\n"));
@@ -1475,7 +1487,7 @@ reload_shared_libraries_1 (int from_tty)
 
 	  TRY
 	    {
-	      solib_map_sections (so);
+	      solib_map_sections (so, nr_so++, 0);
 	    }
 
 	  CATCH (e, RETURN_MASK_ERROR)

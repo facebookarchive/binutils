@@ -1725,6 +1725,14 @@ gdbpy_invoke_solib_find_hook
       hints->minidump_id.bytes,
       hints->minidump_id.length);
 
+  if (hints != NULL)
+    {
+      gdbpy_add_search_hint_core_addr (py_so, "nr_so",
+				       (CORE_ADDR) hints->nr_so);
+      gdbpy_add_search_hint_core_addr (py_so, "nr_so_total",
+				       (CORE_ADDR) hints->nr_so_total);
+    }
+
   py_ret = PyObject_CallFunction (
     solib_find_hook, "ssiO", hook_spec, name, flags, py_so);
 

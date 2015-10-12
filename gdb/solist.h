@@ -98,6 +98,11 @@ struct so_search_hints {
     const void *bytes;
     size_t length;
   } minidump_id;
+
+  /* Optional sequence information that extensions can use to
+     display a user-friendly progress indication.  */
+  size_t nr_so;
+  size_t nr_so_total;
 };
 
 struct target_so_ops
