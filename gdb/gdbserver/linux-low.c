@@ -2812,6 +2812,40 @@ ignore_event (struct target_waitstatus *ourstatus)
   return null_ptid;
 }
 
+/* Return whether the given signal might be a stop */
+static int
+maybe_gdb_wants_breakpoint (int wstat)
+{
+  if (!linux_wstatus_maybe_breakpoint (wstat))
+    return 0;
+
+  if (WIFSTOPPED (wstat) &&
+      (WSTOPSIG (wstat) == SIGILL
+       || WSTOPSIG (wstat) == SIGSEGV))
+    {
+      struct regcache* regcache = get_thread_regcache (current_thread, 1);
+      CORE_ADDR stop_pc = 0;
+      CORE_ADDR stop_sp = 0;
+      int crash_near_stack = 0;
+
+      if (the_low_target.get_pc)
+	stop_pc = (*the_low_target.get_pc) (regcache);
+
+      if (the_low_target.get_sp)
+	stop_sp = (*the_low_target.get_sp) (regcache);
+
+      if (stop_pc != 0 && stop_sp != 0 &&
+	  ((stop_pc < stop_sp && stop_sp - stop_pc <= 1024) ||
+	   (stop_sp <= stop_pc && stop_pc - stop_sp <= 1024)))
+	crash_near_stack = 1;
+
+      if (!crash_near_stack)
+	return 0;
+    }
+
+  return 1;
+}
+
 /* Wait for process, returns status.  */
 
 static ptid_t
@@ -3139,7 +3173,7 @@ linux_wait_1 (ptid_t ptid,
 	  (pass_signals[gdb_signal_from_host (WSTOPSIG (w))]
 	   && !(WSTOPSIG (w) == SIGSTOP
 		&& current_thread->last_resume_kind == resume_stop)
-	   && !linux_wstatus_maybe_breakpoint (w))))
+	   && !maybe_gdb_wants_breakpoint (w))))
     {
       siginfo_t info, *info_p;
 

@@ -226,6 +226,16 @@ arm_get_pc (struct regcache *regcache)
   return pc;
 }
 
+static CORE_ADDR
+arm_get_sp (struct regcache *regcache)
+{
+  unsigned long pc;
+  collect_register_by_name (regcache, "sp", &pc);
+  if (debug_threads)
+    debug_printf ("stop sp is %08lx\n", pc);
+  return pc;
+}
+
 static void
 arm_set_pc (struct regcache *regcache, CORE_ADDR pc)
 {
@@ -948,6 +958,14 @@ struct linux_target_ops the_low_target = {
   arm_new_thread,
   arm_new_fork,
   arm_prepare_to_resume,
+  NULL, /* process_qsupported */
+  NULL, /* supports_tracepoints */
+  NULL, /* get_thread_area */
+  NULL, /* install_fast_tracepoint_jump_pad */
+  NULL, /* emit_ops */
+  NULL, /* get_min_fast_tracepoint_insn_len */
+  NULL, /* supports_range_stepping */
+  arm_get_sp
 };
 
 void

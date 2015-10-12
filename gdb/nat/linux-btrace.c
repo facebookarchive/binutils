@@ -970,6 +970,8 @@ linux_read_bts (struct btrace_data_bts *btrace,
   __u64 data_head, data_tail;
   unsigned int retries = 5;
 
+  data_head = 0; // Shut up compiler
+
   pevent = &tinfo->variant.bts.bts;
 
   /* For delta reads, we return at least the partial last block containing

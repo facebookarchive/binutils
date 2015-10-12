@@ -223,6 +223,9 @@ struct linux_target_ops
 
   /* Returns true if the low target supports range stepping.  */
   int (*supports_range_stepping) (void);
+
+  /* Get the stack pointer from a regcache */
+  CORE_ADDR (*get_sp) (struct regcache *regcache);
 };
 
 extern struct linux_target_ops the_low_target;

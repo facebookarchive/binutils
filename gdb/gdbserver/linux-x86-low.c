@@ -128,7 +128,6 @@ static const char *xmltarget_amd64_linux_no_xml = "@<target>\
 
 #ifdef __ANDROID__
 /* Work around buggy NDK headers */
-#define ptrace(a,b,c,d) ptrace((a),(b),(void*)(c),(void*)(d))
 
 #ifndef NT_X86_XSTATE
 #define NT_X86_XSTATE 0x202
@@ -504,6 +503,25 @@ x86_get_pc (struct regcache *regcache)
     {
       unsigned int pc;
       collect_register_by_name (regcache, "eip", &pc);
+      return (CORE_ADDR) pc;
+    }
+}
+
+static CORE_ADDR
+x86_get_sp (struct regcache *regcache)
+{
+  int use_64bit = register_size (regcache->tdesc, 0) == 8;
+
+  if (use_64bit)
+    {
+      unsigned long pc;
+      collect_register_by_name (regcache, "rsp", &pc);
+      return (CORE_ADDR) pc;
+    }
+  else
+    {
+      unsigned int pc;
+      collect_register_by_name (regcache, "esp", &pc);
       return (CORE_ADDR) pc;
     }
 }
@@ -3312,6 +3330,7 @@ struct linux_target_ops the_low_target =
   x86_emit_ops,
   x86_get_min_fast_tracepoint_insn_len,
   x86_supports_range_stepping,
+  x86_get_sp,
 };
 
 void
