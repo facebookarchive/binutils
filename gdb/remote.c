@@ -7732,7 +7732,7 @@ remote_serial_write (const char *str, int len)
 {
   struct remote_state *rs = get_remote_state ();
 
-  if (serial_write (rs->remote_desc, str, len))
+  if (rs->remote_desc == NULL || serial_write (rs->remote_desc, str, len))
     {
       unpush_and_perror (_("Remote communication error.  "
 			   "Target disconnected."));
