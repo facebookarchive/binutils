@@ -1824,6 +1824,7 @@ do_captured_thread_select (struct ui_out *uiout, void *tidstr)
 {
   int num;
   struct thread_info *tp;
+  char* name;
 
   num = value_as_long (parse_and_eval (tidstr));
 
@@ -1841,6 +1842,13 @@ do_captured_thread_select (struct ui_out *uiout, void *tidstr)
 
   ui_out_text (uiout, "[Switching to thread ");
   ui_out_field_int (uiout, "new-thread-id", pid_to_thread_id (inferior_ptid));
+  name = tp->name ? tp->name : target_thread_name (tp);
+  if (name)
+    {
+      ui_out_text (uiout, " \"");
+      ui_out_text (uiout, name);
+      ui_out_text (uiout, "\"");
+    }
   ui_out_text (uiout, " (");
   ui_out_text (uiout, target_pid_to_str (inferior_ptid));
   ui_out_text (uiout, ")]");
