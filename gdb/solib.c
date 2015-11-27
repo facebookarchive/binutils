@@ -1211,7 +1211,7 @@ info_sharedlibrary_command (char *pattern, int from_tty)
 	ui_out_field_string (uiout, "syms-read",
 			     so->symbols_loaded ? "Yes" : "No");
 
-      ui_out_field_string (uiout, "name", so->so_name);
+      ui_out_field_string (uiout, "name", so->so_original_name);
 
       ui_out_text (uiout, "\n");
 
