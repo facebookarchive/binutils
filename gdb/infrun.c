@@ -8503,28 +8503,30 @@ save_infcall_suspend_state (void)
 void
 restore_infcall_suspend_state (struct infcall_suspend_state *inf_state)
 {
-  struct thread_info *tp = inferior_thread ();
-  struct regcache *regcache = get_current_regcache ();
-  struct gdbarch *gdbarch = get_regcache_arch (regcache);
-
-  tp->suspend = inf_state->thread_suspend;
-
-  stop_pc = inf_state->stop_pc;
-
-  if (inf_state->siginfo_gdbarch == gdbarch)
-    {
-      struct type *type = gdbarch_get_siginfo_type (gdbarch);
-
-      /* Errors ignored.  */
-      target_write (&current_target, TARGET_OBJECT_SIGNAL_INFO, NULL,
-		    inf_state->siginfo_data, 0, TYPE_LENGTH (type));
-    }
-
-  /* The inferior can be gone if the user types "print exit(0)"
-     (and perhaps other times).  */
+  /* The inferior can be gone if the user types "print exit(0)" (and
+     perhaps other times).  */
   if (target_has_execution)
-    /* NB: The register write goes through to the target.  */
-    regcache_cpy (regcache, inf_state->registers);
+    {
+      struct thread_info *tp = inferior_thread ();
+      struct regcache *regcache = get_current_regcache ();
+      struct gdbarch *gdbarch = get_regcache_arch (regcache);
+
+      tp->suspend = inf_state->thread_suspend;
+
+      stop_pc = inf_state->stop_pc;
+
+      if (inf_state->siginfo_gdbarch == gdbarch)
+	{
+	  struct type *type = gdbarch_get_siginfo_type (gdbarch);
+
+	  /* Errors ignored.  */
+	  target_write (&current_target, TARGET_OBJECT_SIGNAL_INFO, NULL,
+			inf_state->siginfo_data, 0, TYPE_LENGTH (type));
+	}
+
+      /* NB: The register write goes through to the target.  */
+      regcache_cpy (regcache, inf_state->registers);
+    }
 
   discard_infcall_suspend_state (inf_state);
 }
@@ -8632,39 +8634,42 @@ restore_selected_frame (void *args)
 void
 restore_infcall_control_state (struct infcall_control_state *inf_status)
 {
-  struct thread_info *tp = inferior_thread ();
-  struct inferior *inf = current_inferior ();
-
-  if (tp->control.step_resume_breakpoint)
-    tp->control.step_resume_breakpoint->disposition = disp_del_at_next_stop;
-
-  if (tp->control.exception_resume_breakpoint)
-    tp->control.exception_resume_breakpoint->disposition
-      = disp_del_at_next_stop;
-
-  /* Handle the bpstat_copy of the chain.  */
-  bpstat_clear (&tp->control.stop_bpstat);
-
-  tp->control = inf_status->thread_control;
-  inf->control = inf_status->inferior_control;
-
-  /* Other fields:  */
-  stop_stack_dummy = inf_status->stop_stack_dummy;
-  stopped_by_random_signal = inf_status->stopped_by_random_signal;
-  stop_after_trap = inf_status->stop_after_trap;
-
-  if (target_has_stack)
+  if (target_has_execution)
     {
-      /* The point of catch_errors is that if the stack is clobbered,
-         walking the stack might encounter a garbage pointer and
-         error() trying to dereference it.  */
-      if (catch_errors
-	  (restore_selected_frame, &inf_status->selected_frame_id,
-	   "Unable to restore previously selected frame:\n",
-	   RETURN_MASK_ERROR) == 0)
-	/* Error in restoring the selected frame.  Select the innermost
-	   frame.  */
-	select_frame (get_current_frame ());
+      struct thread_info *tp = inferior_thread ();
+      struct inferior *inf = current_inferior ();
+
+      if (tp->control.step_resume_breakpoint)
+	tp->control.step_resume_breakpoint->disposition = disp_del_at_next_stop;
+
+      if (tp->control.exception_resume_breakpoint)
+	tp->control.exception_resume_breakpoint->disposition
+	  = disp_del_at_next_stop;
+
+      /* Handle the bpstat_copy of the chain.  */
+      bpstat_clear (&tp->control.stop_bpstat);
+
+      tp->control = inf_status->thread_control;
+      inf->control = inf_status->inferior_control;
+
+      /* Other fields:  */
+      stop_stack_dummy = inf_status->stop_stack_dummy;
+      stopped_by_random_signal = inf_status->stopped_by_random_signal;
+      stop_after_trap = inf_status->stop_after_trap;
+
+      if (target_has_stack)
+	{
+	  /* The point of catch_errors is that if the stack is clobbered,
+	     walking the stack might encounter a garbage pointer and
+	     error() trying to dereference it.  */
+	  if (catch_errors
+	      (restore_selected_frame, &inf_status->selected_frame_id,
+	       "Unable to restore previously selected frame:\n",
+	       RETURN_MASK_ERROR) == 0)
+	    /* Error in restoring the selected frame.  Select the innermost
+	       frame.  */
+	    select_frame (get_current_frame ());
+	}
     }
 
   xfree (inf_status);
