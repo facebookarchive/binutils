@@ -39,6 +39,7 @@
 #include "observer.h"
 #include "objfiles.h"
 #include "extension.h"
+#include "arch-utils.h"
 
 extern unsigned int overload_debug;
 /* Local functions.  */
@@ -91,7 +92,7 @@ static struct value *value_maybe_namespace_elt (const struct type *,
 						const char *, int,
 						enum noside);
 
-static CORE_ADDR allocate_space_in_inferior (int);
+static CORE_ADDR allocate_space_in_inferior (CORE_ADDR);
 
 static struct value *cast_into_complex (struct type *, struct value *);
 
@@ -178,19 +179,14 @@ find_function_in_inferior (const char *name, struct objfile **objf_p)
     }
 }
 
-/* Allocate NBYTES of space in the inferior using the inferior's
-   malloc and return a value that is a pointer to the allocated
-   space.  */
-
-struct value *
-value_allocate_space_in_inferior (int len)
+static CORE_ADDR
+allocate_space_in_inferior_raw_malloc (CORE_ADDR size)
 {
   struct objfile *objf;
   struct value *val = find_function_in_inferior ("malloc", &objf);
   struct gdbarch *gdbarch = get_objfile_arch (objf);
   struct value *blocklen;
-
-  blocklen = value_from_longest (builtin_type (gdbarch)->builtin_int, len);
+  blocklen = value_from_longest (builtin_type (gdbarch)->builtin_int, size);
   val = call_function_by_hand (val, 1, &blocklen);
   if (value_logical_not (val))
     {
@@ -200,13 +196,66 @@ value_allocate_space_in_inferior (int len)
       else
 	error (_("No memory available to program: call to malloc failed"));
     }
-  return val;
+  return value_as_long (val);
 }
 
 static CORE_ADDR
-allocate_space_in_inferior (int len)
+allocate_space_in_inferior_raw (CORE_ADDR size)
 {
-  return value_as_long (value_allocate_space_in_inferior (len));
+  CORE_ADDR mem = 0;
+  TRY
+    {
+      mem = gdbarch_infcall_mmap (
+	target_gdbarch (),
+	size,
+	GDB_MMAP_PROT_READ | GDB_MMAP_PROT_WRITE);
+    }
+  CATCH (except, RETURN_MASK_ERROR)
+    {
+    }
+  END_CATCH;
+
+  if (mem == 0)
+    mem = allocate_space_in_inferior_raw_malloc (size);
+
+  return mem;
+}
+
+static CORE_ADDR
+allocate_space_in_inferior (CORE_ADDR size)
+{
+  static const CORE_ADDR chunk_size = 4096;
+  static const unsigned chunk_align = 16;
+  struct inferior* inferior = current_inferior ();
+
+  if (size % chunk_align)
+    size += chunk_align - (size % chunk_align);
+
+  if (size > chunk_size)
+    return allocate_space_in_inferior_raw (size);
+
+  if (inferior->memblock_pos + size >= inferior->memblock_end)
+    {
+      CORE_ADDR new_chunk = allocate_space_in_inferior_raw (chunk_size);
+      inferior->memblock_pos = new_chunk;
+      inferior->memblock_end = new_chunk + chunk_size;
+    }
+
+  inferior->memblock_pos += size;
+  return inferior->memblock_pos - size;
+}
+
+/* Allocate NBYTES of space in the inferior using the inferior's
+   malloc and return a value that is a pointer to the allocated
+   space.  */
+
+struct value *
+value_allocate_space_in_inferior (int len)
+{
+  CORE_ADDR mem = allocate_space_in_inferior (len);
+  return value_from_pointer (
+    builtin_type (target_gdbarch ())->builtin_data_ptr,
+    mem);
 }
 
 /* Cast struct value VAL to type TYPE and return as a value.

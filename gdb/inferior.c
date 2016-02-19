@@ -257,6 +257,9 @@ exit_inferior_1 (struct inferior *inftoex, int silent)
     }
 
   inf->pending_detach = 0;
+
+  inf->memblock_pos = 0;
+  inf->memblock_end = 0;
 }
 
 void

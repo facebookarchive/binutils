@@ -2346,9 +2346,7 @@ static CORE_ADDR
 linux_infcall_mmap (CORE_ADDR size, unsigned prot)
 {
   struct objfile *objf;
-  /* Do there still exist any Linux systems without "mmap64"?
-     "mmap" uses 64-bit off_t on x86_64 and 32-bit off_t on i386 and x32.  */
-  struct value *mmap_val = find_function_in_inferior ("mmap64", &objf);
+  struct value *mmap_val = find_function_in_inferior ("mmap", &objf);
   struct value *addr_val;
   struct gdbarch *gdbarch = get_objfile_arch (objf);
   CORE_ADDR retval;
@@ -2371,7 +2369,7 @@ linux_infcall_mmap (CORE_ADDR size, unsigned prot)
 				       GDB_MMAP_MAP_PRIVATE
 				       | GDB_MMAP_MAP_ANONYMOUS);
   arg[ARG_FD] = value_from_longest (builtin_type (gdbarch)->builtin_int, -1);
-  arg[ARG_OFFSET] = value_from_longest (builtin_type (gdbarch)->builtin_int64,
+  arg[ARG_OFFSET] = value_from_longest (builtin_type (gdbarch)->builtin_long,
 					0);
   addr_val = call_function_by_hand (mmap_val, ARG_LAST, arg);
   retval = value_as_address (addr_val);

@@ -396,6 +396,12 @@ struct inferior
      this gdbarch.  */
   struct gdbarch *gdbarch;
 
+  /* Address of next available allocation to carve.  */
+  CORE_ADDR memblock_pos;
+
+  /* End of current inferior-allocation memory block.  */
+  CORE_ADDR memblock_end;
+
   /* Per inferior data-pointers required by other GDB modules.  */
   REGISTRY_FIELDS;
 };
