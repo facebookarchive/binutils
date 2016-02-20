@@ -42,6 +42,7 @@ struct target_desc_info;
 
 #include "progspace.h"
 #include "registry.h"
+#include "hashtab.h"
 
 struct infcall_suspend_state;
 struct infcall_control_state;
@@ -401,6 +402,12 @@ struct inferior
 
   /* End of current inferior-allocation memory block.  */
   CORE_ADDR memblock_end;
+
+  /* Interned values we've coereced and copied into the inferior's
+     address space.  We leak these into the inferior anyway, so we
+     might as well remember what we made while the inferior is
+     alive.  */
+  htab_t interned_values;
 
   /* Per inferior data-pointers required by other GDB modules.  */
   REGISTRY_FIELDS;

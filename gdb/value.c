@@ -204,6 +204,9 @@ struct value
   /* If the value has been released.  */
   unsigned int released : 1;
 
+  /* If the value is internable.  */
+  unsigned int internable : 1;
+
   /* Register number if the value is from a register.  */
   short regnum;
 
@@ -1697,6 +1700,7 @@ value_copy (struct value *arg)
   val->embedded_offset = value_embedded_offset (arg);
   val->pointed_to_offset = arg->pointed_to_offset;
   val->modifiable = arg->modifiable;
+  val->internable = arg->internable;
   if (!value_lazy (val))
     {
       memcpy (value_contents_all_raw (val), value_contents_all_raw (arg),
@@ -3748,6 +3752,20 @@ coerce_array (struct value *arg)
     }
   return arg;
 }
+
+
+int
+value_internable_p (const struct value* value)
+{
+  return value->internable;
+}
+
+void
+value_set_internable (struct value* value, int internable)
+{
+  value->internable = !!internable;
+}
+
 
 
 /* Return the return value convention that will be used for the

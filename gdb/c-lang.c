@@ -661,6 +661,7 @@ evaluate_subexp_c (struct type *expect_type, struct expression *exp,
 	    else
 	      result = value_cstring ("", 0, type);
 	    do_cleanups (cleanup);
+	    value_set_internable (result, 1);
 	    return result;
 	  }
 
@@ -707,6 +708,7 @@ evaluate_subexp_c (struct type *expect_type, struct expression *exp,
 				      type);
 	  }
 	do_cleanups (cleanup);
+	value_set_internable (result, 1);
 	return result;
       }
       break;

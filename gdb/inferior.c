@@ -102,6 +102,8 @@ free_inferior (struct inferior *inf)
   free_environ (inf->environment);
   target_desc_info_free (inf->tdesc_info);
   xfree (inf->priv);
+  if (inf->interned_values)
+    htab_delete (inf->interned_values);
   xfree (inf);
 }
 
@@ -260,6 +262,12 @@ exit_inferior_1 (struct inferior *inftoex, int silent)
 
   inf->memblock_pos = 0;
   inf->memblock_end = 0;
+
+  if (inf->interned_values)
+    {
+      htab_delete (inf->interned_values);
+      inf->interned_values = NULL;
+    }
 }
 
 void

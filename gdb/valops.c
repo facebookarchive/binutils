@@ -1429,19 +1429,150 @@ value_must_coerce_to_target (struct value *val)
    instance, strings are constructed as character arrays in GDB's
    storage, and this function copies them to the target.  */
 
+struct interned_value
+{
+  hashval_t hash;
+  const gdb_byte* contents;
+  LONGEST length;
+  CORE_ADDR addr;
+};
+
+static hashval_t
+interned_value_hash (const void* a)
+{
+  const struct interned_value* xa = a;
+  return xa->hash;
+}
+
+static int
+interned_value_eq (const void* a, const void* b)
+{
+  const struct interned_value* xa = a;
+  const struct interned_value* xb = b;
+
+  return
+    xa->length == xb->length &&
+    memcmp (xa->contents, xb->contents, xa->length) == 0;
+}
+
+static void
+interned_value_del (void* a)
+{
+    struct interned_value* xa = a;
+    xfree ((gdb_byte*) xa->contents);
+    xfree (xa);
+}
+
+static hashval_t
+interned_value_compute_hash (const gdb_byte* contents, LONGEST length)
+{
+  hashval_t hash = 0;
+  LONGEST i;
+  for (i = 0; i < length; ++i)
+    hash = 31*hash + contents[i];
+  return hash;
+}
+
+static int value_interning = 1;
+static void
+show_value_interning (struct ui_file *file, int from_tty,
+		      struct cmd_list_element *c,
+		      const char *value)
+{
+  fprintf_filtered (file, _("Combining identical inferior values "
+			    "is %s.\n"),
+		    value);
+}
+
+static void
+set_value_interning (char *args, int from_tty,
+		     struct cmd_list_element *c)
+{
+  struct inferior* inferior;
+  if (!value_interning)
+    ALL_INFERIORS (inferior)
+      if (inferior->interned_values)
+	{
+	  htab_delete (inferior->interned_values);
+	  inferior->interned_values = NULL;
+	}
+}
+
 struct value *
 value_coerce_to_target (struct value *val)
 {
+  struct inferior* inferior;
+  const struct type* type;
   LONGEST length;
+  int intern;
   CORE_ADDR addr;
 
   if (!value_must_coerce_to_target (val))
     return val;
 
-  length = TYPE_LENGTH (check_typedef (value_type (val)));
-  addr = allocate_space_in_inferior (length);
-  write_memory (addr, value_contents (val), length);
-  return value_at_lazy (value_type (val), addr);
+  inferior = current_inferior ();
+  type = check_typedef (value_type (val));
+  length = TYPE_LENGTH (type);
+  intern = value_interning && value_internable_p (val);
+
+  if (intern)
+    {
+      struct interned_value search_iv;
+      struct interned_value *iv;
+      void** slot;
+      const gdb_byte* contents = value_contents (val);
+      hashval_t hash = interned_value_compute_hash (contents, length);
+
+      memset (&search_iv, 0, sizeof (search_iv));
+      search_iv.contents = contents;
+      search_iv.length = length;
+      search_iv.hash = hash;
+
+      if (!inferior->interned_values)
+	inferior->interned_values = htab_create_alloc (
+	  10,
+	  interned_value_hash,
+	  interned_value_eq,
+	  interned_value_del,
+	  xcalloc,
+	  xfree);
+
+      slot = htab_find_slot (
+	inferior->interned_values,
+	&search_iv,
+	INSERT);
+
+      if (slot == NULL)
+	malloc_failure (0);
+
+      if (*slot == HTAB_EMPTY_ENTRY || *slot == HTAB_DELETED_ENTRY)
+	{
+	  iv = xcalloc (1, sizeof (*iv));
+	  iv->hash = hash;
+	  iv->length = length;
+	  iv->contents = xmalloc (length);
+	  addr = allocate_space_in_inferior (length);
+	  write_memory (addr, contents, length);
+	  memcpy ((gdb_byte*) iv->contents, contents, length);
+	  iv->addr = addr;
+	  *slot = iv;
+	}
+      else
+	{
+	  iv = *slot;
+	  addr = iv->addr;
+	}
+
+      val = value_at_lazy (value_type (val), addr);
+    }
+  else
+    {
+      addr = allocate_space_in_inferior (length);
+      write_memory (addr, value_contents (val), length);
+      val = value_at_lazy (value_type (val), addr);
+    }
+
+  return val;
 }
 
 /* Given a value which is an array, return a value which is a pointer
@@ -3927,4 +4058,13 @@ Show overload resolution in evaluating C++ functions."),
 			   show_overload_resolution,
 			   &setlist, &showlist);
   overload_resolution = 1;
+
+  add_setshow_boolean_cmd ("value-interning", class_support,
+			   &value_interning, _ ("\
+Set whether we combine identical inferior values."), _ ("\
+Whether we combine identical inferior values."),
+			   NULL,
+			   set_value_interning,
+			   show_value_interning,
+			   &setlist, &showlist);
 }

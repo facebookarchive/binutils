@@ -1092,6 +1092,14 @@ extern struct type *result_type_of_xmethod (struct value *method,
 					    int argc, struct value **argv);
 
 extern struct value *call_xmethod (struct value *method,
-				   int argc, struct value **argv);
+                                   int argc, struct value **argv);
+
+/* An "internable" value is one that we cache in the inferior; all
+   instances of an internable value with the same content resolve to
+   the same memory location in the inferior.  Internable values are
+   useful for C string literals, which have the same semantics in C
+   source.  */
+extern int value_internable_p (const struct value* value);
+extern void value_set_internable (struct value* value, int internable);
 
 #endif /* !defined (VALUE_H) */
